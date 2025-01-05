@@ -1,0 +1,19 @@
+services:
+  database:
+    container_name: database
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=pg
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB=crud
+      - PGTZ=GMT+7
+    ports:
+      - 5432:5432
+    volumes:
+      - db:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U pg -d crud" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
