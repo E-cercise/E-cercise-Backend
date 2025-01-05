@@ -1,6 +1,6 @@
 services:
   database:
-    container_name: database
+    container_name: e-cercise-database
     image: postgres:16-alpine
     restart: always
     environment:
@@ -9,7 +9,7 @@ services:
       - POSTGRES_DB=crud
       - PGTZ=GMT+7
     ports:
-      - 5432:5432
+      - 5433:5432
     volumes:
       - db:/var/lib/postgresql/data
     healthcheck:
@@ -17,3 +17,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+volumes:
+  db:

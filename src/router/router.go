@@ -2,9 +2,11 @@ package router
 
 import (
 	"github.com/E-cercise/E-cercise/src/config"
+	logger2 "github.com/E-cercise/E-cercise/src/logger"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/helmet"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"gorm.io/gorm"
 	"net/http"
@@ -27,13 +29,17 @@ func InitRouter(db *gorm.DB) *fiber.App {
 	// Recovery middleware
 	app.Use(recover.New())
 
+	app.Use(logger.New())
+
 	// Define API group
 	apiGroup := app.Group("/api")
 
 	// Root endpoint
 	apiGroup.Get("", func(c *fiber.Ctx) error {
-		return c.Status(http.StatusOK).JSON(fiber.Map{"message": "Hello TimeSheet"})
+		return c.Status(http.StatusOK).JSON(fiber.Map{"message": "Hello E-cercise"})
 	})
+
+	logger2.Log.Info("Router initialized")
 
 	return app
 }
