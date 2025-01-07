@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"github.com/E-cercise/E-cercise/src/model"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -38,29 +39,56 @@ func DatabaseConnection() *gorm.DB {
 		panic(err)
 	}
 
-	//err = migrateEnum(db)
-	//if err != nil {
-	//	panic(err)
-	//}
-	//
-	//err = db.AutoMigrate(&model.User{}, &model.MasterSkill{}, &model.UserSkill{}, &model.UserProfile{},
-	//	&model.ResetPasswordToken{}, &model.TimeSheet{},
-	//	&model.Epic{}, &model.OTRequest{},
-	//	&model.Section{}, &model.Project{},
-	//	&model.Request{}, &model.Position{},
-	//	&model.TimeSheetRow{}, &model.Role{},
-	//	&model.Permission{}, &model.Section{},
-	//	&model.Department{}, &model.Position{},
-	//	&model.Address{}, &model.Attachment{},
-	//	&model.InternDetail{}, &model.PartTimeDetail{},
-	//	&model.Technology{}, &model.University{},
-	//	&model.Major{}, &model.Bank{},
-	//	&model.UserBank{}, &model.Consent{},
-	//)
+	err = migrateEnum(db)
+	if err != nil {
+		panic(err)
+	}
+
+	err = db.AutoMigrate(&model.User{}, &model.Image{}, &model.Equipment{}, &model.LineEquipment{},
+		&model.Cart{}, &model.Order{}, &model.MuscleGroup{})
 
 	if err != nil {
 		panic(err)
 	}
 
 	return db
+}
+
+func migrateEnum(db *gorm.DB) error {
+
+	err := db.Exec(`
+		DO $$
+		BEGIN
+			IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'role_type') THEN
+				CREATE TYPE role_type AS ENUM (
+				 	'USER',
+					'ADMIN'
+				);
+			END IF;
+		END$$;
+	`).Error
+
+	if err != nil {
+		return err
+	}
+
+	err = db.Exec(`
+		DO $$
+		BEGIN
+			IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_status') THEN
+				CREATE TYPE order_status AS ENUM (
+				 	'Placed',
+					'Paid',
+					'Shipped out',
+					'Received'
+				);
+			END IF;
+		END$$;
+	`).Error
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
