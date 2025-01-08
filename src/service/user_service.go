@@ -12,7 +12,7 @@ import (
 )
 
 type UserService interface {
-	RegisterUser(reqBody request.RegisterRequest) (*model.User, error)
+	RegisterUser(reqBody request.RegisterRequest) error
 }
 
 type userService struct {
@@ -24,28 +24,31 @@ func NewUserService(db *gorm.DB, userRepo repository.UserRepository) UserService
 	return &userService{db: db, userRepo: userRepo}
 }
 
-func (s *userService) RegisterUser(reqBody request.RegisterRequest) (*model.User, error) {
+func (s *userService) RegisterUser(reqBody request.RegisterRequest) error {
 	existingUser, err := s.userRepo.FindByEmail(reqBody.Email)
 	if existingUser != nil || err != nil {
-		return nil, errors.New("email already exists")
+		return errors.New("email already exists")
 	}
 
 	password, err := helper.EncryptPassword(reqBody.Password)
 	if err != nil {
-		return nil, errors.New("failed to encrypt password")
+		return errors.New("failed to encrypt password")
 	}
 
 	newUser := model.User{
-		Email:    reqBody.Email,
-		Password: password,
+		Email:     reqBody.Email,
+		Password:  password,
+		FirstName: reqBody.FirstName,
+		LastName:  reqBody.LastName,
+		Address:   reqBody.Address,
 	}
 
 	err = s.userRepo.CreateUser(&newUser)
 	if err != nil {
 		logger.Log.WithError(err).Error("failed to create user")
-		return nil, fmt.Errorf("failed to create user: %w", err)
+		return fmt.Errorf("failed to create user: %w", err)
 	}
 
-	return &newUser, nil
+	return nil
 
 }
