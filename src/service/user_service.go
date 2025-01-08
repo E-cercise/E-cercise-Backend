@@ -9,10 +9,12 @@ import (
 	"github.com/E-cercise/E-cercise/src/model"
 	"github.com/E-cercise/E-cercise/src/repository"
 	"gorm.io/gorm"
+	"strings"
 )
 
 type UserService interface {
 	RegisterUser(reqBody request.RegisterRequest) error
+	LoginUser(reqBody request.LoginRequest) (*string, error)
 }
 
 type userService struct {
@@ -36,11 +38,12 @@ func (s *userService) RegisterUser(reqBody request.RegisterRequest) error {
 	}
 
 	newUser := model.User{
-		Email:     reqBody.Email,
-		Password:  password,
-		FirstName: reqBody.FirstName,
-		LastName:  reqBody.LastName,
-		Address:   reqBody.Address,
+		Email:       reqBody.Email,
+		Password:    password,
+		FirstName:   reqBody.FirstName,
+		LastName:    reqBody.LastName,
+		Address:     reqBody.Address,
+		PhoneNumber: reqBody.PhoneNumber,
 	}
 
 	err = s.userRepo.CreateUser(&newUser)
@@ -50,5 +53,29 @@ func (s *userService) RegisterUser(reqBody request.RegisterRequest) error {
 	}
 
 	return nil
+
+}
+
+func (s *userService) LoginUser(reqBody request.LoginRequest) (*string, error) {
+
+	user, err := s.userRepo.FindByEmail(strings.ToLower(reqBody.Email))
+
+	if user == nil && err == nil {
+		return nil, errors.New(fmt.Sprintf("Email %v does not exist", reqBody.Email))
+	}
+
+	valid := helper.ComparePassword(reqBody.Password, user.Password)
+
+	if valid != true {
+		return nil, errors.New("invalid password")
+	}
+
+	token, err := helper.CreateToken(user.ID, user.FirstName, user.LastName)
+
+	if err != nil {
+		return nil, errors.New("failed to create token, JWT Error")
+	}
+
+	return &token, nil
 
 }

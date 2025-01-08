@@ -10,5 +10,6 @@ func AuthRouter(router fiber.Router, authController *controller.AuthController) 
 	authGroup := router.Group("/auth")
 
 	authGroup.Post("/register", validation.ValidateUserRegister(), authController.UserRegister)
+	authGroup.Post("/login", validation.ValidateLoginRequest(), authController.Login)
 
 }

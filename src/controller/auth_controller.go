@@ -30,3 +30,25 @@ func (c *AuthController) UserRegister(ctx *fiber.Ctx) error {
 		"message": "User registered successfully",
 	})
 }
+
+func (c *AuthController) Login(ctx *fiber.Ctx) error {
+
+	var loginBody request.LoginRequest
+
+	if err := ctx.BodyParser(&loginBody); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request data",
+		})
+	}
+
+	accessToken, err := c.UserService.LoginUser(loginBody)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"access_token": accessToken,
+	})
+}

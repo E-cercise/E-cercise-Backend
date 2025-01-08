@@ -30,3 +30,23 @@ func ValidateUserRegister() fiber.Handler {
 		return ctx.Next()
 	}
 }
+
+func ValidateLoginRequest() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		var loginBody request.LoginRequest
+		if err := c.BodyParser(&loginBody); err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Invalid request data",
+			})
+		}
+
+		if err := validate.Struct(&loginBody); err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": err.Error(),
+			})
+		}
+
+		c.Locals("loginBody", loginBody)
+		return c.Next()
+	}
+}
