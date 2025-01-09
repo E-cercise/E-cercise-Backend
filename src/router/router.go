@@ -2,7 +2,10 @@ package router
 
 import (
 	"github.com/E-cercise/E-cercise/src/config"
+	"github.com/E-cercise/E-cercise/src/controller"
 	logger2 "github.com/E-cercise/E-cercise/src/logger"
+	"github.com/E-cercise/E-cercise/src/repository"
+	"github.com/E-cercise/E-cercise/src/service"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/helmet"
@@ -13,6 +16,12 @@ import (
 )
 
 func InitRouter(db *gorm.DB) *fiber.App {
+
+	userRepo := repository.NewUserRepository(db)
+
+	userService := service.NewUserService(db, userRepo)
+
+	authController := controller.NewAuthControllerImpl(userService)
 
 	app := fiber.New()
 
@@ -38,6 +47,8 @@ func InitRouter(db *gorm.DB) *fiber.App {
 	apiGroup.Get("", func(c *fiber.Ctx) error {
 		return c.Status(http.StatusOK).JSON(fiber.Map{"message": "Hello E-cercise"})
 	})
+
+	AuthRouter(apiGroup, authController)
 
 	logger2.Log.Info("Router initialized")
 
