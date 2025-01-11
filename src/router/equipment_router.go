@@ -8,10 +8,10 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func EquipmentRouter(router fiber.Router, equipmentController controller.EquipmentController, userRepo repository.UserRepository) {
+func EquipmentRouter(router fiber.Router, equipmentController *controller.EquipmentController, userRepo repository.UserRepository) {
 	equipmentGroup := router.Group("/equipment")
 
-	equipmentGroup.Post("/all", middleware.Authentication(userRepo),
-		middleware.RoleAuthorization(enum.RoleUser, enum.RoleAdmin), equipmentController.GetAllEquipment)
+	equipmentGroup.Get("/all", middleware.Authentication(userRepo),
+		middleware.RoleAuthorization(enum.RoleUser, enum.RoleAdmin), equipmentController.GetAllEquipment) //group by collaborative filtering later
 
 }

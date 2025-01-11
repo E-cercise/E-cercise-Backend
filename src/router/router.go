@@ -18,10 +18,13 @@ import (
 func InitRouter(db *gorm.DB) *fiber.App {
 
 	userRepo := repository.NewUserRepository(db)
+	equipmentRepo := repository.NewEquipmentRepository(db)
 
 	userService := service.NewUserService(db, userRepo)
+	equipmentService := service.NewEquipmentService(db, equipmentRepo)
 
 	authController := controller.NewAuthControllerImpl(userService)
+	equipmentController := controller.NewEquipmentControllerImpl(equipmentService)
 
 	app := fiber.New()
 
@@ -49,6 +52,7 @@ func InitRouter(db *gorm.DB) *fiber.App {
 	})
 
 	AuthRouter(apiGroup, authController)
+	EquipmentRouter(apiGroup, equipmentController, userRepo)
 
 	logger2.Log.Info("Router initialized")
 

@@ -13,8 +13,8 @@ type equipmentRepository struct {
 	db *gorm.DB
 }
 
-func NewEquipmentRepository(db *gorm.DB) UserRepository {
-	return &userRepository{db: db}
+func NewEquipmentRepository(db *gorm.DB) EquipmentRepository {
+	return &equipmentRepository{db: db}
 }
 
 func (r *equipmentRepository) FindAll() ([]model.Equipment, error) {
