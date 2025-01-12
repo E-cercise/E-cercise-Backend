@@ -23,6 +23,12 @@ func InitRouter(db *gorm.DB) *fiber.App {
 	userService := service.NewUserService(db, userRepo)
 	equipmentService := service.NewEquipmentService(db, equipmentRepo)
 
+	cloudinaryService, err := service.NewCloudinaryService()
+
+	if err != nil {
+		panic(err)
+	}
+
 	authController := controller.NewAuthControllerImpl(userService)
 	equipmentController := controller.NewEquipmentControllerImpl(equipmentService)
 
