@@ -4,7 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/E-cercise/E-cercise/src/enum"
+	"github.com/E-cercise/E-cercise/src/logger"
+	"github.com/E-cercise/E-cercise/src/model"
 	"github.com/E-cercise/E-cercise/src/repository"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"mime/multipart"
 	"path/filepath"
@@ -12,7 +15,7 @@ import (
 )
 
 type ImageService interface {
-	UploadImage(context context.Context, file multipart.File, fileHeader multipart.FileHeader, isPrimary bool) (string, error)
+	UploadImage(context context.Context, file multipart.File, fileHeader *multipart.FileHeader, isPrimary bool) (string, error)
 	//GetAllEquipmentData() (*response.EquipmentsResponse, error)
 
 }
@@ -27,7 +30,7 @@ func NewImageService(db *gorm.DB, imageRepo repository.ImageRepository, cloudina
 	return &imageService{db: db, imageRepo: imageRepo, cloudinaryService: cloudinaryService}
 }
 
-func (s *imageService) UploadImage(context context.Context, file multipart.File, fileHeader multipart.FileHeader, isPrimary bool) (string, error) {
+func (s *imageService) UploadImage(context context.Context, file multipart.File, fileHeader *multipart.FileHeader, isPrimary bool) (string, error) {
 	tx := s.db.Begin()
 
 	defer func() {
@@ -36,12 +39,35 @@ func (s *imageService) UploadImage(context context.Context, file multipart.File,
 		}
 	}()
 
-	folder := generateFileName(&fileHeader, enum.Temp.ToString())
+	filePath, err := s.cloudinaryService.UploadImage(context, file, fileHeader, enum.Temp.ToString())
+
+	if err != nil {
+		tx.Rollback()
+		logger.Log.WithError(err).Error("error uploading image to cloudinary")
+		return "", err
+	}
+
+	newImage := model.Image{
+		EquipmentID:    uuid.UUID{},
+		IsPrimary:      isPrimary,
+		CloudinaryPath: filePath,
+		State:          enum.Temp,
+	}
+
+	err = s.imageRepo.CreateImage(tx, &newImage)
+
+	if err != nil {
+		tx.Rollback()
+		logger.Log.WithError(err).Error("error creating image")
+		return "", err
+	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
 		return "", err
 	}
+
+	return newImage.ID.String(), nil
 }
 
 func generateFileName(fileHeader *multipart.FileHeader, folder string) string {
