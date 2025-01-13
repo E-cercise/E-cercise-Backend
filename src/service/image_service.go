@@ -7,7 +7,6 @@ import (
 	"github.com/E-cercise/E-cercise/src/logger"
 	"github.com/E-cercise/E-cercise/src/model"
 	"github.com/E-cercise/E-cercise/src/repository"
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"mime/multipart"
 	"path/filepath"
@@ -48,7 +47,7 @@ func (s *imageService) UploadImage(context context.Context, file multipart.File,
 	}
 
 	newImage := model.Image{
-		EquipmentID:    uuid.UUID{},
+		EquipmentID:    nil,
 		IsPrimary:      isPrimary,
 		CloudinaryPath: filePath,
 		State:          enum.Temp,

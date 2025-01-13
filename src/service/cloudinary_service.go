@@ -68,6 +68,17 @@ func (s *cloudinaryService) UploadImage(ctx context.Context, file multipart.File
 		return "", fmt.Errorf("failed to upload image: %v", err)
 	}
 
+	if resp.Error.Message != "" {
+		logger.Log.Errorf("Cloudinary API error: %s", resp.Error.Message)
+		return "", fmt.Errorf("cloudinary API error: %s", resp.Error.Message)
+	}
+
+	if resp.SecureURL == "" {
+		return "", fmt.Errorf("Cloudinary response SecureURL is null")
+	}
+
+	logger.Log.Infof("Cloudinary upload response: %+v", resp)
+
 	return resp.SecureURL, nil
 }
 
