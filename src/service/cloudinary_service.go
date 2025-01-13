@@ -55,7 +55,6 @@ func (s *cloudinaryService) UploadImage(ctx context.Context, file multipart.File
 
 	// Upload parameters
 	uploadParams := uploader.UploadParams{
-		Folder:   folder,
 		PublicID: fileName, // Use the generated file name
 	}
 
@@ -116,15 +115,6 @@ func (s *cloudinaryService) SaveImage(ctx context.Context, imgPath string, equip
 	if err != nil {
 		return "", err
 	}
-
-	//// Update image record in the database
-	//image.EquipmentID = equipmentID
-	//image.CloudinaryPath = newPublicID
-	//image.State = enum.Archive
-	//err = s.db.Save(&image).Error // Assumes s.db is your GORM DB instance
-	//if err != nil {
-	//	return "", fmt.Errorf("failed to update image record: %v", err)
-	//}
 
 	return newPublicID, nil
 }
