@@ -7,9 +7,9 @@ type EquipmentsResponse struct {
 }
 
 type Equipment struct {
-	ID    uuid.UUID `json:"ID"`
-	Name  string    `json:"name"`
-	Price float64   `json:"price"`
-	//ImagePath string `json:"image_path"`
+	ID        uuid.UUID `json:"ID"`
+	Name      string    `json:"name"`
+	Price     float64   `json:"price"`
+	ImagePath string    `json:"image_path"`
 	//Rating float64 `json:"rating"`
 }

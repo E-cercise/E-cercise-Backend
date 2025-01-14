@@ -33,11 +33,22 @@ func (s *equipmentService) GetEquipmentData(q request.EquipmentListRequest, pagi
 	}
 
 	var resp response.EquipmentsResponse
+
 	for _, equipment := range equipments {
+
+		primaryImage := helper.FindPrimaryImageFromEquipment(equipment)
+		var imagePath string
+		if primaryImage == nil {
+			imagePath = "https://res.cloudinary.com/drwodnunx/image/upload/v1736740947/temp/img_20250113110225.jpg.jpg"
+		} else {
+			imagePath = primaryImage.CloudinaryPath
+		}
+
 		eq := response.Equipment{
-			ID:    equipment.ID,
-			Name:  equipment.Name,
-			Price: equipment.Price,
+			ID:        equipment.ID,
+			Name:      equipment.Name,
+			Price:     equipment.Price,
+			ImagePath: imagePath,
 		}
 		resp.Equipments = append(resp.Equipments, eq)
 

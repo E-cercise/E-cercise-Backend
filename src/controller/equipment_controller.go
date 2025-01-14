@@ -42,7 +42,7 @@ func (c *EquipmentController) GetAllEquipment(ctx *fiber.Ctx) error {
 		})
 	}
 
-	equipments, err := c.EquipmentService.GetEquipmentData()
+	equipments, err := c.EquipmentService.GetEquipmentData(req, paginator)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
@@ -50,6 +50,10 @@ func (c *EquipmentController) GetAllEquipment(ctx *fiber.Ctx) error {
 	}
 
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
-		"equipments": &equipments,
+		"equipments":  &equipments,
+		"page":        paginator.Page,
+		"limit":       paginator.Limit,
+		"total_pages": paginator.TotalPages,
+		"total_rows":  paginator.TotalRows,
 	})
 }
