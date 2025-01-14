@@ -1,14 +1,17 @@
 package service
 
 import (
+	"github.com/E-cercise/E-cercise/src/data/request"
 	"github.com/E-cercise/E-cercise/src/data/response"
+	"github.com/E-cercise/E-cercise/src/helper"
 	"github.com/E-cercise/E-cercise/src/logger"
 	"github.com/E-cercise/E-cercise/src/repository"
 	"gorm.io/gorm"
+	"strings"
 )
 
 type EquipmentService interface {
-	GetAllEquipmentData() (*response.EquipmentsResponse, error)
+	GetEquipmentData(q request.EquipmentListRequest, paginator *helper.Paginator) (*response.EquipmentsResponse, error)
 }
 
 type equipmentService struct {
@@ -20,8 +23,9 @@ func NewEquipmentService(db *gorm.DB, equipmentRepo repository.EquipmentReposito
 	return &equipmentService{db: db, equipmentRepo: equipmentRepo}
 }
 
-func (s *equipmentService) GetAllEquipmentData() (*response.EquipmentsResponse, error) {
-	equipments, err := s.equipmentRepo.FindAll()
+func (s *equipmentService) GetEquipmentData(q request.EquipmentListRequest, paginator *helper.Paginator) (*response.EquipmentsResponse, error) {
+	muscleGroup := strings.Split(q.MuscleGroup, ",")
+	equipments, err := s.equipmentRepo.FindEquipmentList(q.Q, muscleGroup, paginator)
 
 	if err != nil {
 		logger.Log.WithError(err).Error("error during find all equipments")
