@@ -18,10 +18,22 @@ import (
 func InitRouter(db *gorm.DB) *fiber.App {
 
 	userRepo := repository.NewUserRepository(db)
+	equipmentRepo := repository.NewEquipmentRepository(db)
+	imageRepo := repository.NewImageRepository(db)
+
+	cloudinaryService, err := service.NewCloudinaryService()
+
+	if err != nil {
+		panic(err)
+	}
 
 	userService := service.NewUserService(db, userRepo)
+	equipmentService := service.NewEquipmentService(db, equipmentRepo)
+	imageService := service.NewImageService(db, imageRepo, cloudinaryService)
 
 	authController := controller.NewAuthControllerImpl(userService)
+	equipmentController := controller.NewEquipmentControllerImpl(equipmentService)
+	imageController := controller.NewImageControllerImpl(imageService)
 
 	app := fiber.New()
 
@@ -49,6 +61,8 @@ func InitRouter(db *gorm.DB) *fiber.App {
 	})
 
 	AuthRouter(apiGroup, authController)
+	EquipmentRouter(apiGroup, equipmentController, userRepo)
+	ImageRouter(apiGroup, imageController, userRepo)
 
 	logger2.Log.Info("Router initialized")
 
