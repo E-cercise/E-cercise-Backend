@@ -57,3 +57,14 @@ func (c *EquipmentController) GetAllEquipment(ctx *fiber.Ctx) error {
 		"total_rows":  paginator.TotalRows,
 	})
 }
+
+func (c *EquipmentController) AddEquipment(ctx *fiber.Ctx) error {
+	req, ok := ctx.Locals("req").(request.EquipmentPostRequest)
+
+	if !ok {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "failed to parse request body (Controller)",
+		})
+	}
+
+}
