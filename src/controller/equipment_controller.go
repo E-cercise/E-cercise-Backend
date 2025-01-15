@@ -63,8 +63,19 @@ func (c *EquipmentController) AddEquipment(ctx *fiber.Ctx) error {
 
 	if !ok {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "failed to parse request body (Controller)",
+			"error": "failed to parse request body (Controller)",
 		})
 	}
+
+	if err := c.EquipmentService.AddEquipment(req); err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":     "failed to add equipment",
+			"error_msg": err.Error(),
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "equipment add successfully",
+	})
 
 }

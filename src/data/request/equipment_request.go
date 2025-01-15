@@ -25,7 +25,7 @@ type Image struct {
 }
 
 type Option struct {
-	Avaliable int64   `json:"avaliable"`
+	Available int     `json:"available"`
 	Price     float64 `json:"price"`
 	Weight    float64 `json:"weight"`
 }

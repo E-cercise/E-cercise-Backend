@@ -9,6 +9,8 @@ import (
 
 type EquipmentRepository interface {
 	FindEquipmentList(q string, muscleGroup []string, paginator *helper.Paginator) ([]model.Equipment, error)
+	CreateEquipment(tx *gorm.DB, eq model.Equipment) error
+	AddEquipmentOption(tx *gorm.DB, options model.EquipmentOption) error
 }
 
 type equipmentRepository struct {
@@ -45,7 +47,16 @@ func (r *equipmentRepository) FindEquipmentList(q string, muscleGroup []string, 
 	}
 	paginator.CalculateTotalPages()
 
-	err := r.db.Offset(paginator.Offset()).Limit(paginator.Limit).Find(&equipments).Error
+	err := query.Preload("EquipmentOptions").Offset(paginator.Offset()).
+		Limit(paginator.Limit).Find(&equipments).Error
 
 	return equipments, err
+}
+
+func (r *equipmentRepository) CreateEquipment(tx *gorm.DB, eq model.Equipment) error {
+	return tx.Create(&eq).Error
+}
+
+func (r *equipmentRepository) AddEquipmentOption(tx *gorm.DB, options model.EquipmentOption) error {
+	return tx.Create(&options).Error
 }
