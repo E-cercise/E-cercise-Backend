@@ -93,12 +93,17 @@ func (s *cloudinaryService) DeleteImage(ctx context.Context, publicID string) er
 // MoveImage moves an image from one folder to another on Cloudinary
 func (s *cloudinaryService) MoveImage(ctx context.Context, fromPublicID, toPublicID string) error {
 
-	_, err := s.cloudinary.Upload.Rename(ctx, uploader.RenameParams{
+	resp, err := s.cloudinary.Upload.Rename(ctx, uploader.RenameParams{
 		FromPublicID: fromPublicID,
 		ToPublicID:   toPublicID,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to move image: %v", err)
+	}
+
+	if resp.Error != nil && resp.Error != "" {
+		logger.Log.Errorf("Cloudinary API error: %v", resp.Error)
+		return fmt.Errorf("cloudinary API error: %v", resp.Error)
 	}
 
 	return nil

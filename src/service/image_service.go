@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"mime/multipart"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -39,7 +40,7 @@ func (s *imageService) UploadImage(context context.Context, file multipart.File,
 		}
 	}()
 
-	fileName := generateFileName(enum.Temp.ToString())
+	fileName := generateFileName(enum.Temp.ToString(), fileHeader)
 
 	cloudinaryPath, err := s.cloudinaryService.UploadImage(context, file, fileHeader, fileName)
 
@@ -73,9 +74,10 @@ func (s *imageService) UploadImage(context context.Context, file multipart.File,
 	return newImage.ID.String(), nil
 }
 
-func generateFileName(folder string) string {
+func generateFileName(folder string, fileheader *multipart.FileHeader) string {
 	timestamp := time.Now().Format("20060102150405") // e.g., "20250112094530"
-	return fmt.Sprintf("%s/%s_%s", folder, "img", timestamp)
+	ext := filepath.Ext(fileheader.Filename)
+	return fmt.Sprintf("%s/%s_%s%s", folder, "img", timestamp, ext)
 }
 
 func (s *imageService) ArchiveImage(tx *gorm.DB, context context.Context, imgID uuid.UUID, eqpID uuid.UUID) error {
@@ -92,9 +94,9 @@ func (s *imageService) ArchiveImage(tx *gorm.DB, context context.Context, imgID 
 	}
 
 	oldPublicID := img.ImgPath
-	newPublicID := strings.ReplaceAll(img.ImgPath, "/temp", fmt.Sprintf("/archive/%v", eqpID))
+	newPublicID := strings.ReplaceAll(img.ImgPath, "temp/", fmt.Sprintf("archive/%v/", eqpID))
 
-	img.CloudinaryPath = strings.ReplaceAll(img.CloudinaryPath, "/temp", fmt.Sprintf("/archive/%v", eqpID))
+	img.CloudinaryPath = strings.ReplaceAll(img.CloudinaryPath, "temp/", fmt.Sprintf("archive/%v/", eqpID))
 	img.ImgPath = newPublicID
 
 	if err = s.imageRepo.SaveImage(tx, img); err != nil {
@@ -104,7 +106,7 @@ func (s *imageService) ArchiveImage(tx *gorm.DB, context context.Context, imgID 
 
 	err = s.cloudinaryService.MoveImage(context, oldPublicID, newPublicID)
 	if err != nil {
-		logger.Log.WithError(err).Error("error move image in cloudinary")
+		logger.Log.WithError(err).Error("error move image in cloudinary", "err", err.Error())
 		return err
 	}
 

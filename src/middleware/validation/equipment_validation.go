@@ -18,7 +18,7 @@ func ValidateAddEquipment() fiber.Handler {
 
 		if !request.ValidateMuscleGroup(req.MuscleGroupUsed) {
 			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error": "Invalid muscle group format. Allowed formats are 'fk_{int}' and 'bk_{int}'",
+				"error": "Invalid muscle group format. Allowed formats are 'ft_{int}' and 'bk_{int}'",
 			})
 		}
 

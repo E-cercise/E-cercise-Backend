@@ -32,7 +32,7 @@ type Option struct {
 
 func ValidateMuscleGroup(muscleGroups []string) bool {
 	// Define the regex pattern
-	pattern := `^(fk|bk)_[0-9]+$`
+	pattern := `^(ft|bk)_[0-9]+$`
 	re := regexp.MustCompile(pattern)
 
 	// Validate each muscle group

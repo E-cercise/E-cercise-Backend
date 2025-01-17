@@ -41,7 +41,6 @@ func (s *equipmentService) GetEquipmentData(q request.EquipmentListRequest, pagi
 	var resp response.EquipmentsResponse
 
 	for _, equipment := range equipments {
-
 		primaryImage := helper.FindPrimaryImageFromEquipment(equipment)
 		var imagePath string
 		if primaryImage == nil {
@@ -84,7 +83,10 @@ func (s *equipmentService) AddEquipment(req request.EquipmentPostRequest, contex
 		}
 	}()
 
+	equipmentID := uuid.New()
+
 	newEquipment := model.Equipment{
+		ID:             equipmentID,
 		Name:           req.Name,
 		Brand:          req.Band,
 		Model:          req.Model,
@@ -102,7 +104,7 @@ func (s *equipmentService) AddEquipment(req request.EquipmentPostRequest, contex
 
 	for _, option := range req.Option {
 		newOption := model.EquipmentOption{
-			EquipmentID:       newEquipment.ID,
+			EquipmentID:       equipmentID,
 			Weight:            option.Weight,
 			Price:             option.Price,
 			RemainingProducts: option.Available,
@@ -123,16 +125,15 @@ func (s *equipmentService) AddEquipment(req request.EquipmentPostRequest, contex
 		}
 	}
 
-	if err := s.muscleGroupRepo.AddGroup(tx, req.MuscleGroupUsed, newEquipment.ID); err != nil {
+	if err := s.muscleGroupRepo.AddGroup(tx, req.MuscleGroupUsed, equipmentID); err != nil {
 		tx.Rollback()
 		logger.Log.WithError(err).Error("error adding muscle Group to equipment")
 		return err
 	}
 
-	//TODO: add images db (maybe archive image too)
 	for _, img := range req.Images {
 		imgID := uuid.MustParse(img.ID)
-		err = s.imageService.ArchiveImage(tx, context, imgID, newEquipment.ID)
+		err = s.imageService.ArchiveImage(tx, context, imgID, equipmentID)
 		if err != nil {
 			tx.Rollback()
 			logger.Log.WithError(err).Error("error archiving image", imgID)
