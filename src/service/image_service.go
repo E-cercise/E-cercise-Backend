@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"mime/multipart"
-	"path/filepath"
 	"strings"
 	"time"
 )
@@ -40,7 +39,7 @@ func (s *imageService) UploadImage(context context.Context, file multipart.File,
 		}
 	}()
 
-	fileName := generateFileName(enum.Temp.ToString(), fileHeader)
+	fileName := generateFileName(enum.Temp.ToString())
 
 	cloudinaryPath, err := s.cloudinaryService.UploadImage(context, file, fileHeader, fileName)
 
@@ -74,10 +73,9 @@ func (s *imageService) UploadImage(context context.Context, file multipart.File,
 	return newImage.ID.String(), nil
 }
 
-func generateFileName(folder string, fileheader *multipart.FileHeader) string {
+func generateFileName(folder string) string {
 	timestamp := time.Now().Format("20060102150405") // e.g., "20250112094530"
-	ext := filepath.Ext(fileheader.Filename)
-	return fmt.Sprintf("%s/%s_%s%s", folder, "img", timestamp, ext)
+	return fmt.Sprintf("%s/%s_%s", folder, "img", timestamp)
 }
 
 func (s *imageService) ArchiveImage(tx *gorm.DB, context context.Context, imgID uuid.UUID, eqpID uuid.UUID) error {

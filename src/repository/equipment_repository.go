@@ -31,14 +31,14 @@ func (r *equipmentRepository) FindEquipmentList(q string, muscleGroup []string, 
 	}
 
 	if len(muscleGroup) > 0 {
-		nameConditions := make([]string, 0)
-		args := make([]interface{}, 0)
-		for _, group := range muscleGroup {
-			cond := "ILIKE ?"
-			nameConditions = append(nameConditions, cond)
-			likePattern := "%" + group + "%"
-			args = append(args, likePattern, likePattern)
+		nameConditions := make([]string, len(muscleGroup))
+		args := make([]interface{}, len(muscleGroup))
+
+		for i, group := range muscleGroup {
+			nameConditions[i] = "name ILIKE ?"
+			args[i] = "%" + group + "%"
 		}
+
 		query = query.Where(strings.Join(nameConditions, " OR "), args...)
 	}
 
