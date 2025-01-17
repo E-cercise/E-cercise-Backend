@@ -67,7 +67,7 @@ func (c *EquipmentController) AddEquipment(ctx *fiber.Ctx) error {
 		})
 	}
 
-	if err := c.EquipmentService.AddEquipment(req); err != nil {
+	if err := c.EquipmentService.AddEquipment(req, ctx.Context()); err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error":     "failed to add equipment",
 			"error_msg": err.Error(),

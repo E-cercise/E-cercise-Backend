@@ -7,16 +7,17 @@ import (
 	"github.com/E-cercise/E-cercise/src/logger"
 	"github.com/E-cercise/E-cercise/src/model"
 	"github.com/E-cercise/E-cercise/src/repository"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"mime/multipart"
-	"path/filepath"
+	"strings"
 	"time"
 )
 
 type ImageService interface {
 	UploadImage(context context.Context, file multipart.File, fileHeader *multipart.FileHeader, isPrimary bool) (string, error)
 	//GetAllEquipmentData() (*response.EquipmentsResponse, error)
-
+	ArchiveImage(tx *gorm.DB, context context.Context, imgID uuid.UUID, eqpID uuid.UUID) error
 }
 
 type imageService struct {
@@ -38,7 +39,9 @@ func (s *imageService) UploadImage(context context.Context, file multipart.File,
 		}
 	}()
 
-	filePath, err := s.cloudinaryService.UploadImage(context, file, fileHeader, enum.Temp.ToString())
+	fileName := generateFileName(enum.Temp.ToString())
+
+	cloudinaryPath, err := s.cloudinaryService.UploadImage(context, file, fileHeader, fileName)
 
 	if err != nil {
 		tx.Rollback()
@@ -49,7 +52,8 @@ func (s *imageService) UploadImage(context context.Context, file multipart.File,
 	newImage := model.Image{
 		EquipmentID:    nil,
 		IsPrimary:      isPrimary,
-		CloudinaryPath: filePath,
+		ImgPath:        fileName,
+		CloudinaryPath: cloudinaryPath,
 		State:          enum.Temp,
 	}
 
@@ -69,8 +73,40 @@ func (s *imageService) UploadImage(context context.Context, file multipart.File,
 	return newImage.ID.String(), nil
 }
 
-func generateFileName(fileHeader *multipart.FileHeader, folder string) string {
+func generateFileName(folder string) string {
 	timestamp := time.Now().Format("20060102150405") // e.g., "20250112094530"
-	extension := filepath.Ext(fileHeader.Filename)   // Get the file extension
-	return fmt.Sprintf("%s/%s_%s%s", folder, "img", timestamp, extension)
+	return fmt.Sprintf("%s/%s_%s", folder, "img", timestamp)
+}
+
+func (s *imageService) ArchiveImage(tx *gorm.DB, context context.Context, imgID uuid.UUID, eqpID uuid.UUID) error {
+	img, err := s.imageRepo.FindByIDTransaction(tx, imgID)
+
+	if err != nil {
+		logger.Log.WithError(err).Error("error finding image ID", imgID)
+		return err
+	}
+
+	if img.State == enum.Archive {
+		logger.Log.Warnf("img ID %v has already archive", imgID)
+		return nil
+	}
+
+	oldPublicID := img.ImgPath
+	newPublicID := strings.ReplaceAll(img.ImgPath, "/temp", fmt.Sprintf("/archive/%v", eqpID))
+
+	img.CloudinaryPath = strings.ReplaceAll(img.CloudinaryPath, "/temp", fmt.Sprintf("/archive/%v", eqpID))
+	img.ImgPath = newPublicID
+
+	if err = s.imageRepo.SaveImage(tx, img); err != nil {
+		logger.Log.WithError(err).Error("cannot save image in repo", img)
+		return err
+	}
+
+	err = s.cloudinaryService.MoveImage(context, oldPublicID, newPublicID)
+	if err != nil {
+		logger.Log.WithError(err).Error("error move image in cloudinary")
+		return err
+	}
+
+	return nil
 }

@@ -1,29 +1,32 @@
 package service
 
 import (
+	"context"
 	"github.com/E-cercise/E-cercise/src/data/request"
 	"github.com/E-cercise/E-cercise/src/data/response"
 	"github.com/E-cercise/E-cercise/src/helper"
 	"github.com/E-cercise/E-cercise/src/logger"
 	"github.com/E-cercise/E-cercise/src/model"
 	"github.com/E-cercise/E-cercise/src/repository"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"strings"
 )
 
 type EquipmentService interface {
 	GetEquipmentData(q request.EquipmentListRequest, paginatior *helper.Paginator) (*response.EquipmentsResponse, error)
-	AddEquipment(req request.EquipmentPostRequest) error
+	AddEquipment(req request.EquipmentPostRequest, context context.Context) error
 }
 
 type equipmentService struct {
 	db              *gorm.DB
 	equipmentRepo   repository.EquipmentRepository
 	muscleGroupRepo repository.MuscleGroupRepository
+	imageService    ImageService
 }
 
-func NewEquipmentService(db *gorm.DB, equipmentRepo repository.EquipmentRepository, muscleGroupRepo repository.MuscleGroupRepository) EquipmentService {
-	return &equipmentService{db: db, equipmentRepo: equipmentRepo, muscleGroupRepo: muscleGroupRepo}
+func NewEquipmentService(db *gorm.DB, equipmentRepo repository.EquipmentRepository, muscleGroupRepo repository.MuscleGroupRepository, imageService ImageService) EquipmentService {
+	return &equipmentService{db: db, equipmentRepo: equipmentRepo, muscleGroupRepo: muscleGroupRepo, imageService: imageService}
 }
 
 func (s *equipmentService) GetEquipmentData(q request.EquipmentListRequest, paginator *helper.Paginator) (*response.EquipmentsResponse, error) {
@@ -72,7 +75,7 @@ func findEquipmentMinimumPrice(equipment model.Equipment) float64 {
 	return minimumPrice
 }
 
-func (s *equipmentService) AddEquipment(req request.EquipmentPostRequest) error {
+func (s *equipmentService) AddEquipment(req request.EquipmentPostRequest, context context.Context) error {
 	tx := s.db.Begin()
 
 	defer func() {
@@ -127,9 +130,19 @@ func (s *equipmentService) AddEquipment(req request.EquipmentPostRequest) error 
 	}
 
 	//TODO: add images db (maybe archive image too)
+	for _, img := range req.Images {
+		imgID := uuid.MustParse(img.ID)
+		err = s.imageService.ArchiveImage(tx, context, imgID, newEquipment.ID)
+		if err != nil {
+			tx.Rollback()
+			logger.Log.WithError(err).Error("error archiving image", imgID)
+			return err
+		}
+	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
 		return err
 	}
+	return nil
 }

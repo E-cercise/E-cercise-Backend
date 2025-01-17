@@ -48,6 +48,5 @@ func (r *muscleGroupRepository) AddGroup(tx *gorm.DB, groupsID []string, eqID uu
 	if err := tx.Table("equipment_muscle_groups").Create(associations).Error; err != nil {
 		return fmt.Errorf("failed to associate muscle groups with equipment: %w", err)
 	}
-
 	return nil
 }

@@ -2,19 +2,19 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/E-cercise/E-cercise/src/config"
 	"github.com/E-cercise/E-cercise/src/logger"
 	"github.com/cloudinary/cloudinary-go/v2"
 	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
-	"github.com/google/uuid"
 	"mime/multipart"
 )
 
 type CloudinaryService interface {
-	UploadImage(ctx context.Context, file multipart.File, fileHeader *multipart.FileHeader, folder string) (string, error)
+	UploadImage(ctx context.Context, file multipart.File, fileHeader *multipart.FileHeader, fileName string) (string, error)
 	DeleteImage(ctx context.Context, publicID string) error
-	MoveImage(ctx context.Context, publicID, newFolder string) (string, error)
+	MoveImage(ctx context.Context, publicID, newFolder string) error
 }
 
 type cloudinaryService struct {
@@ -37,9 +37,9 @@ func NewCloudinaryService() (CloudinaryService, error) {
 }
 
 // UploadImage uploads an image file to Cloudinary and returns the URL
-func (s *cloudinaryService) UploadImage(ctx context.Context, file multipart.File, fileHeader *multipart.FileHeader, folder string) (string, error) {
+func (s *cloudinaryService) UploadImage(ctx context.Context, file multipart.File, fileHeader *multipart.FileHeader, fileName string) (string, error) {
 	// Validate file type
-	allowedTypes := []string{"image/jpeg", "image/png"}
+	allowedTypes := []string{"image/jpeg", "image/png", "image/heic"}
 	if err := validateFileType(fileHeader, allowedTypes); err != nil {
 		return "", fmt.Errorf("file validation failed: %v", err)
 	}
@@ -50,12 +50,9 @@ func (s *cloudinaryService) UploadImage(ctx context.Context, file multipart.File
 		return "", fmt.Errorf("file validation failed: %v", err)
 	}
 
-	// Generate file name
-	fileName := generateFileName(fileHeader, folder)
-
 	// Upload parameters
 	uploadParams := uploader.UploadParams{
-		PublicID: fileName, // Use the generated file name
+		PublicID: fileName,
 	}
 
 	// Log the file name
@@ -73,7 +70,7 @@ func (s *cloudinaryService) UploadImage(ctx context.Context, file multipart.File
 	}
 
 	if resp.SecureURL == "" {
-		return "", fmt.Errorf("Cloudinary response SecureURL is null")
+		return "", errors.New("cloudinary response SecureURL is null")
 	}
 
 	logger.Log.Infof("Cloudinary upload response: %+v", resp)
@@ -94,29 +91,17 @@ func (s *cloudinaryService) DeleteImage(ctx context.Context, publicID string) er
 }
 
 // MoveImage moves an image from one folder to another on Cloudinary
-func (s *cloudinaryService) MoveImage(ctx context.Context, publicID, newFolder string) (string, error) {
-	newPublicID := fmt.Sprintf("%s/%s", newFolder, publicID)
+func (s *cloudinaryService) MoveImage(ctx context.Context, fromPublicID, toPublicID string) error {
 
 	_, err := s.cloudinary.Upload.Rename(ctx, uploader.RenameParams{
-		FromPublicID: publicID,
-		ToPublicID:   newPublicID,
+		FromPublicID: fromPublicID,
+		ToPublicID:   toPublicID,
 	})
 	if err != nil {
-		return "", fmt.Errorf("failed to move image: %v", err)
+		return fmt.Errorf("failed to move image: %v", err)
 	}
 
-	return newPublicID, nil
-}
-
-func (s *cloudinaryService) SaveImage(ctx context.Context, imgPath string, equipmentID uuid.UUID) (string, error) {
-	// Move the image from temp to archive folder
-	newFolder := fmt.Sprintf("archive/%s", equipmentID)
-	newPublicID, err := s.MoveImage(ctx, imgPath, newFolder)
-	if err != nil {
-		return "", err
-	}
-
-	return newPublicID, nil
+	return nil
 }
 
 func validateFileType(fileHeader *multipart.FileHeader, allowedTypes []string) error {

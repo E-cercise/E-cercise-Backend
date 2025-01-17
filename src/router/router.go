@@ -20,6 +20,7 @@ func InitRouter(db *gorm.DB) *fiber.App {
 	userRepo := repository.NewUserRepository(db)
 	equipmentRepo := repository.NewEquipmentRepository(db)
 	imageRepo := repository.NewImageRepository(db)
+	muscleGroupRepo := repository.NewMuscleGroupRepository(db)
 
 	cloudinaryService, err := service.NewCloudinaryService()
 
@@ -28,8 +29,8 @@ func InitRouter(db *gorm.DB) *fiber.App {
 	}
 
 	userService := service.NewUserService(db, userRepo)
-	equipmentService := service.NewEquipmentService(db, equipmentRepo)
 	imageService := service.NewImageService(db, imageRepo, cloudinaryService)
+	equipmentService := service.NewEquipmentService(db, equipmentRepo, muscleGroupRepo, imageService)
 
 	authController := controller.NewAuthControllerImpl(userService)
 	equipmentController := controller.NewEquipmentControllerImpl(equipmentService)
