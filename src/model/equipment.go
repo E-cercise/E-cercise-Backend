@@ -13,4 +13,5 @@ type Equipment struct {
 	SpecialFeature   string            `gorm:"type:text" json:"special_feature"`
 	MuscleGroups     []MuscleGroup     `gorm:"many2many:equipment_muscle_groups" json:"muscle_groups"`
 	EquipmentOptions []EquipmentOption `gorm:"foreignKey:EquipmentID" json:"equipment_options"`
+	Attribute        []Attribute       `gorm:"foreignKey:EquipmentID" json:"attributes"`
 }

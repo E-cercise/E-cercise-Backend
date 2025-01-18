@@ -45,7 +45,7 @@ func DatabaseConnection() *gorm.DB {
 	}
 
 	err = db.AutoMigrate(&model.User{}, &model.Equipment{}, &model.EquipmentOption{}, &model.Image{},
-		&model.Cart{}, &model.LineEquipment{}, &model.Order{}, &model.MuscleGroup{})
+		&model.Attribute{}, &model.Cart{}, &model.LineEquipment{}, &model.Order{}, &model.MuscleGroup{})
 
 	if err != nil {
 		panic(err)

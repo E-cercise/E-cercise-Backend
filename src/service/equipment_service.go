@@ -117,6 +117,25 @@ func (s *equipmentService) AddEquipment(req request.EquipmentPostRequest, contex
 		}
 	}
 
+	if len(req.AdditionalField) > 0 {
+		var atts []model.Attribute
+
+		for _, field := range req.AdditionalField {
+			newAttribute := model.Attribute{
+				EquipmentID: equipmentID,
+				Key:         field.Key,
+				Value:       field.Value,
+			}
+			atts = append(atts, newAttribute)
+		}
+
+		if err := s.equipmentRepo.AddAAttributes(tx, atts); err != nil {
+			tx.Rollback()
+			logger.Log.WithError(err).Error("error cant add attribute into equipment", equipmentID)
+			return err
+		}
+	}
+
 	for _, groupID := range req.MuscleGroupUsed {
 		if _, err := s.muscleGroupRepo.FindByID(tx, groupID); err != nil {
 			tx.Rollback()

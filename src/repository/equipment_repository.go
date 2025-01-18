@@ -11,6 +11,7 @@ type EquipmentRepository interface {
 	FindEquipmentList(q string, muscleGroup []string, paginator *helper.Paginator) ([]model.Equipment, error)
 	CreateEquipment(tx *gorm.DB, eq model.Equipment) error
 	AddEquipmentOption(tx *gorm.DB, options model.EquipmentOption) error
+	AddAAttributes(tx *gorm.DB, attr []model.Attribute) error
 }
 
 type equipmentRepository struct {
@@ -59,4 +60,8 @@ func (r *equipmentRepository) CreateEquipment(tx *gorm.DB, eq model.Equipment) e
 
 func (r *equipmentRepository) AddEquipmentOption(tx *gorm.DB, options model.EquipmentOption) error {
 	return tx.Create(&options).Error
+}
+
+func (r *equipmentRepository) AddAAttributes(tx *gorm.DB, attr []model.Attribute) error {
+	return tx.Create(&attr).Error
 }
