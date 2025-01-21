@@ -37,15 +37,18 @@ type EquipmentDetailResponse struct {
 }
 
 type AdditionalField struct {
+	ID    string `json:"id"`
 	Key   string `json:"key"`
 	Value string `json:"value"`
 }
 type Image struct {
+	ID        string `json:"id"`
 	Url       string `json:"url"`
 	IsPrimary bool   `json:"is_primary"`
 }
 
 type Option struct {
+	ID        string  `json:"id"`
 	Available int     `json:"available"`
 	Price     float64 `json:"price"`
 	Weight    float64 `json:"weight"`
@@ -55,6 +58,7 @@ func FormatEquipmentDetailResponse(equipment *model.Equipment) *EquipmentDetailR
 	var imgs []Image
 	for _, img := range equipment.Images {
 		newImg := Image{
+			ID:        img.ID.String(),
 			Url:       img.CloudinaryPath,
 			IsPrimary: img.IsPrimary,
 		}
@@ -69,6 +73,7 @@ func FormatEquipmentDetailResponse(equipment *model.Equipment) *EquipmentDetailR
 	var opts []Option
 	for _, opt := range equipment.EquipmentOptions {
 		newOpt := Option{
+			ID:        opt.ID.String(),
 			Available: opt.RemainingProducts,
 			Price:     opt.Price,
 			Weight:    opt.Weight,
@@ -79,6 +84,7 @@ func FormatEquipmentDetailResponse(equipment *model.Equipment) *EquipmentDetailR
 	var attributes []AdditionalField
 	for _, field := range equipment.Attribute {
 		newField := AdditionalField{
+			ID:    field.ID.String(),
 			Key:   field.Key,
 			Value: field.Value,
 		}
