@@ -91,3 +91,8 @@ func (c *EquipmentController) GetEquipment(ctx *fiber.Ctx) error {
 
 	return ctx.Status(fiber.StatusOK).JSON(resp)
 }
+
+func (c *EquipmentController) UpdateEquipment(ctx *fiber.Ctx) error {
+	equipmentID := uuid.MustParse(ctx.Params("id"))
+
+}

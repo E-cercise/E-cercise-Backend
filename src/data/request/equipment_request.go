@@ -1,6 +1,9 @@
 package request
 
-import "regexp"
+import (
+	"errors"
+	"regexp"
+)
 
 type EquipmentListRequest struct {
 	Q           string `json:"q"`
@@ -119,4 +122,32 @@ type OptionUpdated struct {
 	ID        *string  `json:"id,omitempty"`
 	Price     *float64 `json:"price,omitempty"`
 	Weight    *float64 `json:"weight,omitempty"`
+}
+
+func ValidateImagePutReq(img Images) error {
+	hasPrimaryInDelete := false
+	hasPrimaryInUpload := false
+
+	for _, imgDelete := range img.DeletedID {
+		if *imgDelete.IsPrimary {
+			hasPrimaryInDelete = true
+		}
+	}
+
+	for _, imgUpload := range img.UploadID {
+		// case delete primary image and no primary image
+		if !hasPrimaryInDelete && *imgUpload.IsPrimary {
+			return errors.New("cannot has 2 primary image at the same time, you must delete one")
+		}
+
+		if *imgUpload.IsPrimary {
+			hasPrimaryInUpload = true
+		}
+	}
+
+	if !hasPrimaryInUpload && hasPrimaryInDelete {
+		return errors.New("cannot delete primary image while no new primary image is uploaded")
+	}
+
+	return nil
 }

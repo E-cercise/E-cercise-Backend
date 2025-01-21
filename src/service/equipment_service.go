@@ -17,6 +17,7 @@ type EquipmentService interface {
 	GetEquipmentData(q request.EquipmentListRequest, paginatior *helper.Paginator) (*response.EquipmentsResponse, error)
 	AddEquipment(req request.EquipmentPostRequest, context context.Context) error
 	GetEquipmentDetail(eqID uuid.UUID) (*response.EquipmentDetailResponse, error)
+	UpdateEquipment(eqID uuid.UUID, req request.EquipmentPutRequest) error
 }
 
 type equipmentService struct {
@@ -179,4 +180,8 @@ func (s *equipmentService) GetEquipmentDetail(eqID uuid.UUID) (*response.Equipme
 	resp := response.FormatEquipmentDetailResponse(equipment)
 
 	return resp, nil
+}
+
+func UpdateEquipment(eqID uuid.UUID, req request.EquipmentPutRequest) error {
+
 }

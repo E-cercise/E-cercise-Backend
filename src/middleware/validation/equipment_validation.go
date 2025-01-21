@@ -28,3 +28,33 @@ func ValidateAddEquipment() fiber.Handler {
 
 	}
 }
+
+func ValidateUpdateEquipment() fiber.Handler {
+	return func(ctx *fiber.Ctx) error {
+		var req request.EquipmentPutRequest
+
+		// Parse the request body into the struct
+		if err := ctx.BodyParser(&req); err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Invalid request format",
+			})
+		}
+
+		if req.MuscleGroupUsed != nil && !request.ValidateMuscleGroup(req.MuscleGroupUsed) {
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Invalid muscle group format. Allowed formats are 'ft_{int}' and 'bk_{int}'",
+			})
+		}
+
+		if req.Images != nil {
+			if err := request.ValidateImagePutReq(*req.Images); err != nil {
+				return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+					"error": "Invalid image, " + err.Error(),
+				})
+			}
+		}
+
+		return ctx.Next()
+	}
+
+}
