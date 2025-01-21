@@ -84,4 +84,10 @@ func (c *EquipmentController) AddEquipment(ctx *fiber.Ctx) error {
 func (c *EquipmentController) GetEquipment(ctx *fiber.Ctx) error {
 	equipmentID := uuid.MustParse(ctx.Params("id"))
 
+	resp, err := c.EquipmentService.GetEquipmentDetail(equipmentID)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(resp)
 }

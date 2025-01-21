@@ -17,7 +17,7 @@ import (
 type ImageService interface {
 	UploadImage(context context.Context, file multipart.File, fileHeader *multipart.FileHeader, isPrimary bool) (string, error)
 	//GetAllEquipmentData() (*response.EquipmentsResponse, error)
-	ArchiveImage(tx *gorm.DB, context context.Context, imgID uuid.UUID, eqpID uuid.UUID) error
+	ArchiveImage(tx *gorm.DB, context context.Context, imgID uuid.UUID, eqpID uuid.UUID, isPrimary bool) error
 }
 
 type imageService struct {
@@ -78,7 +78,7 @@ func generateFileName(folder string) string {
 	return fmt.Sprintf("%s/%s_%s", folder, "img", timestamp)
 }
 
-func (s *imageService) ArchiveImage(tx *gorm.DB, context context.Context, imgID uuid.UUID, eqpID uuid.UUID) error {
+func (s *imageService) ArchiveImage(tx *gorm.DB, context context.Context, imgID uuid.UUID, eqpID uuid.UUID, isPrimary bool) error {
 	img, err := s.imageRepo.FindByIDTransaction(tx, imgID)
 
 	if err != nil {
@@ -96,6 +96,8 @@ func (s *imageService) ArchiveImage(tx *gorm.DB, context context.Context, imgID 
 
 	img.CloudinaryPath = strings.ReplaceAll(img.CloudinaryPath, "temp/", fmt.Sprintf("archive/%v/", eqpID))
 	img.ImgPath = newPublicID
+	img.IsPrimary = isPrimary
+	img.EquipmentID = &eqpID
 
 	if err = s.imageRepo.SaveImage(tx, img); err != nil {
 		logger.Log.WithError(err).Error("cannot save image in repo", img)

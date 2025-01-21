@@ -153,7 +153,7 @@ func (s *equipmentService) AddEquipment(req request.EquipmentPostRequest, contex
 
 	for _, img := range req.Images {
 		imgID := uuid.MustParse(img.ID)
-		err = s.imageService.ArchiveImage(tx, context, imgID, equipmentID)
+		err = s.imageService.ArchiveImage(tx, context, imgID, equipmentID, img.IsPrimary)
 		if err != nil {
 			tx.Rollback()
 			logger.Log.WithError(err).Error("error archiving image", imgID)

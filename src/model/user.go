@@ -3,6 +3,7 @@ package model
 import (
 	"github.com/E-cercise/E-cercise/src/enum"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type User struct {
@@ -15,4 +16,15 @@ type User struct {
 	Address     string    `gorm:"type:text" json:"address"`
 	PhoneNumber string    `gorm:"type:varchar(20)" json:"phone_number"`
 	Orders      []Order   `gorm:"foreignKey:UserID" json:"orders"`
+	Cart        Cart      `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE" json:"cart"` // One-to-one relationship
+}
+
+func (u *User) AfterCreate(tx *gorm.DB) (err error) {
+	cart := Cart{
+		UserID: u.ID,
+	}
+	if err := tx.Create(&cart).Error; err != nil {
+		return err
+	}
+	return nil
 }
