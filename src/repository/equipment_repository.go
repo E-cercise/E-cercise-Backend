@@ -3,6 +3,7 @@ package repository
 import (
 	"github.com/E-cercise/E-cercise/src/helper"
 	"github.com/E-cercise/E-cercise/src/model"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"strings"
 )
@@ -12,6 +13,7 @@ type EquipmentRepository interface {
 	CreateEquipment(tx *gorm.DB, eq model.Equipment) error
 	AddEquipmentOption(tx *gorm.DB, options model.EquipmentOption) error
 	AddAAttributes(tx *gorm.DB, attr []model.Attribute) error
+	FindByID(eqID uuid.UUID) (*model.Equipment, error)
 }
 
 type equipmentRepository struct {
@@ -64,4 +66,19 @@ func (r *equipmentRepository) AddEquipmentOption(tx *gorm.DB, options model.Equi
 
 func (r *equipmentRepository) AddAAttributes(tx *gorm.DB, attr []model.Attribute) error {
 	return tx.Create(&attr).Error
+}
+
+func (r *equipmentRepository) FindByID(eqID uuid.UUID) (*model.Equipment, error) {
+	var equipment *model.Equipment
+
+	err := r.db.Preload("Images").
+		Preload("MuscleGroups").
+		Preload("EquipmentOptions").
+		Preload("Attribute").
+		First(&equipment, "id = ?", eqID).Error
+
+	if err != nil {
+		return nil, err
+	}
+	return equipment, nil
 }

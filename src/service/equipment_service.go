@@ -16,6 +16,7 @@ import (
 type EquipmentService interface {
 	GetEquipmentData(q request.EquipmentListRequest, paginatior *helper.Paginator) (*response.EquipmentsResponse, error)
 	AddEquipment(req request.EquipmentPostRequest, context context.Context) error
+	GetEquipmentDetail(eqID uuid.UUID) (*response.EquipmentDetailResponse, error)
 }
 
 type equipmentService struct {
@@ -165,4 +166,17 @@ func (s *equipmentService) AddEquipment(req request.EquipmentPostRequest, contex
 		return err
 	}
 	return nil
+}
+
+func (s *equipmentService) GetEquipmentDetail(eqID uuid.UUID) (*response.EquipmentDetailResponse, error) {
+
+	equipment, err := s.equipmentRepo.FindByID(eqID)
+	if err != nil {
+		logger.Log.WithError(err).Error("cant find equipment id:", eqID)
+		return nil, err
+	}
+
+	resp := response.FormatEquipmentDetailResponse(equipment)
+
+	return resp, nil
 }

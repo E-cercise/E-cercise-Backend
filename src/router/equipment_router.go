@@ -17,4 +17,7 @@ func EquipmentRouter(router fiber.Router, equipmentController *controller.Equipm
 
 	equipmentGroup.Post("", middleware.Authentication(userRepo), middleware.RoleAuthorization(enum.RoleAdmin),
 		validation.ValidateAddEquipment(), equipmentController.AddEquipment)
+
+	equipmentGroup.Get("/:id", middleware.Authentication(userRepo), middleware.RoleAuthorization(enum.RoleUser, enum.RoleAdmin),
+		validation.ValidateParam("id", "uuid"), equipmentController.GetEquipment)
 }

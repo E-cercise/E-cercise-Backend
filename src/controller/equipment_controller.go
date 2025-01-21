@@ -5,6 +5,7 @@ import (
 	"github.com/E-cercise/E-cercise/src/helper"
 	"github.com/E-cercise/E-cercise/src/service"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 )
 
 type EquipmentController struct {
@@ -77,5 +78,10 @@ func (c *EquipmentController) AddEquipment(ctx *fiber.Ctx) error {
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "equipment add successfully",
 	})
+
+}
+
+func (c *EquipmentController) GetEquipment(ctx *fiber.Ctx) error {
+	equipmentID := uuid.MustParse(ctx.Params("id"))
 
 }

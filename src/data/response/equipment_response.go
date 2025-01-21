@@ -1,6 +1,9 @@
 package response
 
-import "github.com/google/uuid"
+import (
+	"github.com/E-cercise/E-cercise/src/model"
+	"github.com/google/uuid"
+)
 
 type EquipmentsResponse struct {
 	Equipments []Equipment
@@ -19,3 +22,80 @@ type Equipment struct {
 //	Price            float64 `json:"price"`
 //	Weight           float64 `json:"weight"`
 //}
+
+type EquipmentDetailResponse struct {
+	Band            string            `json:"band"`
+	Color           string            `json:"color"`
+	Images          []Image           `json:"images"`
+	Material        string            `json:"material"`
+	Model           string            `json:"model"`
+	MuscleGroupUsed []string          `json:"muscle_group_used"`
+	Name            string            `json:"name"`
+	Option          []Option          `json:"option"`
+	SpecialFeature  string            `json:"special_feature"`
+	AdditionalField []AdditionalField `json:"additional_field"`
+}
+
+type AdditionalField struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+type Image struct {
+	Url       string `json:"url"`
+	IsPrimary bool   `json:"is_primary"`
+}
+
+type Option struct {
+	Available int     `json:"available"`
+	Price     float64 `json:"price"`
+	Weight    float64 `json:"weight"`
+}
+
+func FormatEquipmentDetailResponse(equipment *model.Equipment) *EquipmentDetailResponse {
+	var imgs []Image
+	for _, img := range equipment.Images {
+		newImg := Image{
+			Url:       img.CloudinaryPath,
+			IsPrimary: img.IsPrimary,
+		}
+		imgs = append(imgs, newImg)
+	}
+
+	var muscleGroupUsed []string
+	for _, msg := range equipment.MuscleGroups {
+		muscleGroupUsed = append(muscleGroupUsed, msg.ID)
+	}
+
+	var opts []Option
+	for _, opt := range equipment.EquipmentOptions {
+		newOpt := Option{
+			Available: opt.RemainingProducts,
+			Price:     opt.Price,
+			Weight:    opt.Weight,
+		}
+		opts = append(opts, newOpt)
+	}
+
+	var attributes []AdditionalField
+	for _, field := range equipment.Attribute {
+		newField := AdditionalField{
+			Key:   field.Key,
+			Value: field.Value,
+		}
+		attributes = append(attributes, newField)
+	}
+
+	resp := EquipmentDetailResponse{
+		Band:            equipment.Brand,
+		Color:           equipment.Color,
+		Images:          imgs,
+		Material:        equipment.Material,
+		Model:           equipment.Model,
+		MuscleGroupUsed: muscleGroupUsed,
+		Name:            equipment.Name,
+		Option:          opts,
+		SpecialFeature:  equipment.SpecialFeature,
+		AdditionalField: attributes,
+	}
+	return &resp
+}
