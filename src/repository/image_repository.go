@@ -13,6 +13,7 @@ type ImageRepository interface {
 	FindByEquipmentID(equipmentID uuid.UUID) ([]model.Image, error)
 	CreateImage(tx *gorm.DB, image *model.Image) error
 	SaveImage(tx *gorm.DB, img *model.Image) error
+	DeleteImage(tx *gorm.DB, imgID uuid.UUID) error
 }
 
 type imageRepository struct {
@@ -61,4 +62,8 @@ func (r *imageRepository) CreateImage(tx *gorm.DB, image *model.Image) error {
 
 func (r *imageRepository) SaveImage(tx *gorm.DB, img *model.Image) error {
 	return tx.Save(img).Error
+}
+
+func (r *imageRepository) DeleteImage(tx *gorm.DB, imgID uuid.UUID) error {
+	return tx.Delete(model.Image{}, imgID).Error
 }

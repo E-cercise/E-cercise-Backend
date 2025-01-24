@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/E-cercise/E-cercise/src/enum"
 	"github.com/E-cercise/E-cercise/src/logger"
@@ -16,8 +17,10 @@ import (
 
 type ImageService interface {
 	UploadImage(context context.Context, file multipart.File, fileHeader *multipart.FileHeader, isPrimary bool) (string, error)
-	//GetAllEquipmentData() (*response.EquipmentsResponse, error)
 	ArchiveImage(tx *gorm.DB, context context.Context, imgID uuid.UUID, eqpID uuid.UUID, isPrimary bool) error
+	DeleteImage(tx *gorm.DB, context context.Context, imgID uuid.UUID) error
+	//GetAllEquipmentData() (*response.EquipmentsResponse, error)
+
 }
 
 type imageService struct {
@@ -108,6 +111,27 @@ func (s *imageService) ArchiveImage(tx *gorm.DB, context context.Context, imgID 
 	if err != nil {
 		logger.Log.WithError(err).Error("error move image in cloudinary", "err", err.Error())
 		return err
+	}
+	return nil
+}
+
+func (s *imageService) DeleteImage(tx *gorm.DB, context context.Context, imgID uuid.UUID) error {
+
+	img, err := s.imageRepo.FindByIDTransaction(tx, imgID)
+	if err != nil {
+		return errors.New("error cant finding image in db: " + err.Error())
+	}
+
+	imgPath := img.ImgPath
+
+	err = s.imageRepo.DeleteImage(tx, imgID)
+	if err != nil {
+		return errors.New("error deleting image: " + err.Error())
+	}
+
+	err = s.cloudinaryService.DeleteImage(context, imgPath)
+	if err != nil {
+		return errors.New("error deleting image in cloudinary with imgID: " + imgID.String() + ", with error: " + err.Error())
 	}
 
 	return nil

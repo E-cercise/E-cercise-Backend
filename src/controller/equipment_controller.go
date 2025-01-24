@@ -94,5 +94,12 @@ func (c *EquipmentController) GetEquipment(ctx *fiber.Ctx) error {
 
 func (c *EquipmentController) UpdateEquipment(ctx *fiber.Ctx) error {
 	equipmentID := uuid.MustParse(ctx.Params("id"))
+	req := ctx.Locals("req").(request.EquipmentPutRequest)
 
+	err := c.EquipmentService.UpdateEquipment(equipmentID, ctx.Context(), req)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{"message": "equipment update successfully"})
 }

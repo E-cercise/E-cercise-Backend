@@ -72,14 +72,14 @@ type AdditionalFieldPut struct {
 }
 
 type AdditionalFieldCreated struct {
-	Key   *string `json:"key,omitempty"`
-	Value *string `json:"value,omitempty"`
+	Key   string `json:"key,omitempty"`
+	Value string `json:"value,omitempty"`
 }
 
 type AdditionalFieldUpdated struct {
-	ID    *string `json:"id,omitempty"`
-	Key   *string `json:"key,omitempty"`
-	Value *string `json:"value,omitempty"`
+	ID    string `json:"id,omitempty"`
+	Key   string `json:"key,omitempty"`
+	Value string `json:"value,omitempty"`
 }
 
 type Images struct {
@@ -88,40 +88,33 @@ type Images struct {
 }
 
 type DeletedID struct {
-	ID        *string `json:"id,omitempty"`
-	IsPrimary *bool   `json:"is_primary,omitempty"`
-	URL       *string `json:"url,omitempty"`
+	ID        string `json:"id,omitempty"`
+	IsPrimary bool   `json:"is_primary,omitempty"`
+	URL       string `json:"url,omitempty"`
 }
 
 type UploadID struct {
-	ID        *string `json:"id,omitempty"`
-	IsPrimary *bool   `json:"is_primary,omitempty"`
+	ID        string `json:"id,omitempty"`
+	IsPrimary bool   `json:"is_primary,omitempty"`
 }
 
 type OptionPut struct {
-	Added   []Added         `json:"added"`
 	Created []OptionCreated `json:"created"`
 	Deleted []string        `json:"deleted"`
 	Updated []OptionUpdated `json:"updated"`
 }
 
-type Added struct {
-	Available *int64   `json:"available,omitempty"`
-	Price     *float64 `json:"price,omitempty"`
-	Weight    *float64 `json:"weight,omitempty"`
-}
-
 type OptionCreated struct {
-	Available *int64   `json:"available,omitempty"`
-	Price     *float64 `json:"price,omitempty"`
-	Weight    *float64 `json:"weight,omitempty"`
+	Available int     `json:"available,omitempty"`
+	Price     float64 `json:"price,omitempty"`
+	Weight    float64 `json:"weight,omitempty"`
 }
 
 type OptionUpdated struct {
-	Available *int64   `json:"available,omitempty"`
-	ID        *string  `json:"id,omitempty"`
-	Price     *float64 `json:"price,omitempty"`
-	Weight    *float64 `json:"weight,omitempty"`
+	Available int     `json:"available,omitempty"`
+	ID        string  `json:"id,omitempty"`
+	Price     float64 `json:"price,omitempty"`
+	Weight    float64 `json:"weight,omitempty"`
 }
 
 func ValidateImagePutReq(img Images) error {
@@ -129,18 +122,18 @@ func ValidateImagePutReq(img Images) error {
 	hasPrimaryInUpload := false
 
 	for _, imgDelete := range img.DeletedID {
-		if *imgDelete.IsPrimary {
+		if imgDelete.IsPrimary {
 			hasPrimaryInDelete = true
 		}
 	}
 
 	for _, imgUpload := range img.UploadID {
 		// case delete primary image and no primary image
-		if !hasPrimaryInDelete && *imgUpload.IsPrimary {
+		if !hasPrimaryInDelete && imgUpload.IsPrimary {
 			return errors.New("cannot has 2 primary image at the same time, you must delete one")
 		}
 
-		if *imgUpload.IsPrimary {
+		if imgUpload.IsPrimary {
 			hasPrimaryInUpload = true
 		}
 	}

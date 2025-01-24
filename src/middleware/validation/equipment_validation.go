@@ -23,9 +23,7 @@ func ValidateAddEquipment() fiber.Handler {
 		}
 
 		ctx.Locals("req", req)
-
 		return ctx.Next()
-
 	}
 }
 
@@ -54,6 +52,7 @@ func ValidateUpdateEquipment() fiber.Handler {
 			}
 		}
 
+		ctx.Locals("req", req)
 		return ctx.Next()
 	}
 

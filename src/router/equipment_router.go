@@ -22,5 +22,6 @@ func EquipmentRouter(router fiber.Router, equipmentController *controller.Equipm
 		validation.ValidateParam("id", "uuid"), equipmentController.GetEquipment)
 
 	equipmentGroup.Put("/:id", middleware.Authentication(userRepo), middleware.RoleAuthorization(enum.RoleAdmin),
-		validation.ValidateParam("id", "uuid"), equipmentController.UpdateEquipment)
+		validation.ValidateParam("id", "uuid"), validation.ValidateUpdateEquipment(),
+		equipmentController.UpdateEquipment)
 }

@@ -17,7 +17,7 @@ type EquipmentService interface {
 	GetEquipmentData(q request.EquipmentListRequest, paginatior *helper.Paginator) (*response.EquipmentsResponse, error)
 	AddEquipment(req request.EquipmentPostRequest, context context.Context) error
 	GetEquipmentDetail(eqID uuid.UUID) (*response.EquipmentDetailResponse, error)
-	UpdateEquipment(eqID uuid.UUID, req request.EquipmentPutRequest) error
+	UpdateEquipment(eqID uuid.UUID, context context.Context, req request.EquipmentPutRequest) error
 }
 
 type equipmentService struct {
@@ -131,7 +131,7 @@ func (s *equipmentService) AddEquipment(req request.EquipmentPostRequest, contex
 			atts = append(atts, newAttribute)
 		}
 
-		if err := s.equipmentRepo.AddAAttributes(tx, atts); err != nil {
+		if err := s.equipmentRepo.AddAttributes(tx, atts); err != nil {
 			tx.Rollback()
 			logger.Log.WithError(err).Error("error cant add attribute into equipment", equipmentID)
 			return err
@@ -182,6 +182,154 @@ func (s *equipmentService) GetEquipmentDetail(eqID uuid.UUID) (*response.Equipme
 	return resp, nil
 }
 
-func UpdateEquipment(eqID uuid.UUID, req request.EquipmentPutRequest) error {
+func (s *equipmentService) UpdateEquipment(eqID uuid.UUID, context context.Context, req request.EquipmentPutRequest) error {
+	tx := s.db.Begin()
 
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	equipment, err := s.equipmentRepo.FindByIDTransaction(tx, eqID)
+	if err != nil {
+		tx.Rollback()
+		logger.Log.WithError(err).Error("error during find equipment by ID")
+		return err
+	}
+
+	if req.Images != nil {
+		for _, deletedID := range req.Images.DeletedID {
+			deletedUUID := uuid.MustParse(deletedID.ID)
+			if err := s.imageService.DeleteImage(tx, context, deletedUUID); err != nil {
+				logger.Log.WithError(err).Error("error deleting image", "imgID", deletedUUID)
+				return err
+			}
+		}
+
+		for _, uploadID := range req.Images.UploadID {
+			imgID := uuid.MustParse(uploadID.ID)
+			err = s.imageService.ArchiveImage(tx, context, imgID, equipment.ID, uploadID.IsPrimary)
+			if err != nil {
+				tx.Rollback()
+				logger.Log.WithError(err).Error("error archiving image", imgID)
+				return err
+			}
+		}
+	}
+
+	if req.MuscleGroupUsed != nil {
+		if err := s.muscleGroupRepo.UpdateGroups(tx, req.MuscleGroupUsed, equipment.ID); err != nil {
+			tx.Rollback()
+			logger.Log.WithError(err).Error("error updated muscle Group to equipment")
+			return err
+		}
+	}
+
+	if req.Option != nil {
+		// created option
+		for _, optCreated := range req.Option.Created {
+			newOption := model.EquipmentOption{
+				EquipmentID:       equipment.ID,
+				Weight:            optCreated.Weight,
+				Price:             optCreated.Price,
+				RemainingProducts: optCreated.Available,
+			}
+
+			if err := s.equipmentRepo.AddEquipmentOption(tx, newOption); err != nil {
+				tx.Rollback()
+				logger.Log.WithError(err).Error("error adding equipment options", newOption)
+				return err
+			}
+		}
+
+		//deleted option
+		if req.Option.Deleted != nil {
+			var opts []uuid.UUID
+
+			for _, opt := range req.Option.Deleted {
+				opts = append(opts, uuid.MustParse(opt))
+			}
+
+			if err := s.equipmentRepo.DeleteEquipmentOption(tx, opts); err != nil {
+				tx.Rollback()
+				logger.Log.WithError(err).Error("error deleting equipment options")
+				return err
+			}
+		}
+
+		// updated option
+		for _, updateOption := range req.Option.Updated {
+			toUpdatedID := uuid.MustParse(updateOption.ID)
+			toUpdatedGroup := model.EquipmentOption{
+				ID:                toUpdatedID,
+				EquipmentID:       equipment.ID,
+				Weight:            updateOption.Weight,
+				Price:             updateOption.Price,
+				RemainingProducts: updateOption.Available,
+			}
+
+			if err := s.equipmentRepo.SaveEquipmentOption(tx, toUpdatedGroup); err != nil {
+				tx.Rollback()
+				logger.Log.WithError(err).Error("error saving equipment options")
+				return err
+			}
+
+		}
+	}
+
+	if req.AdditionalField != nil {
+
+		var toCreateAtts []model.Attribute
+		for _, field := range req.AdditionalField.Created {
+			newAttribute := model.Attribute{
+				EquipmentID: equipment.ID,
+				Key:         field.Key,
+				Value:       field.Value,
+			}
+			toCreateAtts = append(toCreateAtts, newAttribute)
+		}
+
+		if err := s.equipmentRepo.AddAttributes(tx, toCreateAtts); err != nil {
+			tx.Rollback()
+			logger.Log.WithError(err).Error("error cant add attribute into equipment", equipment.ID)
+			return err
+		}
+
+		for _, field := range req.AdditionalField.Updated {
+			toUpdateAttribute := model.Attribute{
+				ID:          equipment.ID,
+				EquipmentID: equipment.ID,
+				Key:         field.Key,
+				Value:       field.Value,
+			}
+
+			if err := s.equipmentRepo.SaveAttributes(tx, &toUpdateAttribute); err != nil {
+				tx.Rollback()
+				logger.Log.WithError(err).Error("cannot save attribute into equipment")
+				return err
+			}
+		}
+
+		var toDeletedAttributesID []uuid.UUID
+		for _, attrID := range req.AdditionalField.Deleted {
+			toDeletedAttributesID = append(toDeletedAttributesID, uuid.MustParse(attrID))
+		}
+
+		if err = s.equipmentRepo.DeletesAttributes(tx, toDeletedAttributesID); err != nil {
+			tx.Rollback()
+			logger.Log.WithError(err).Error("error deleting equipment attribute")
+			return err
+		}
+
+	}
+
+	//TODO: update everything first then update main attribute of equipment
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return nil
 }
