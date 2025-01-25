@@ -2,7 +2,10 @@ package router
 
 import (
 	"github.com/E-cercise/E-cercise/src/config"
+	"github.com/E-cercise/E-cercise/src/controller"
 	logger2 "github.com/E-cercise/E-cercise/src/logger"
+	"github.com/E-cercise/E-cercise/src/repository"
+	"github.com/E-cercise/E-cercise/src/service"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/helmet"
@@ -13,6 +16,25 @@ import (
 )
 
 func InitRouter(db *gorm.DB) *fiber.App {
+
+	userRepo := repository.NewUserRepository(db)
+	equipmentRepo := repository.NewEquipmentRepository(db)
+	imageRepo := repository.NewImageRepository(db)
+	muscleGroupRepo := repository.NewMuscleGroupRepository(db)
+
+	cloudinaryService, err := service.NewCloudinaryService()
+
+	if err != nil {
+		panic(err)
+	}
+
+	userService := service.NewUserService(db, userRepo)
+	imageService := service.NewImageService(db, imageRepo, cloudinaryService)
+	equipmentService := service.NewEquipmentService(db, equipmentRepo, muscleGroupRepo, imageService)
+
+	authController := controller.NewAuthControllerImpl(userService)
+	equipmentController := controller.NewEquipmentControllerImpl(equipmentService)
+	imageController := controller.NewImageControllerImpl(imageService)
 
 	app := fiber.New()
 
@@ -38,6 +60,10 @@ func InitRouter(db *gorm.DB) *fiber.App {
 	apiGroup.Get("", func(c *fiber.Ctx) error {
 		return c.Status(http.StatusOK).JSON(fiber.Map{"message": "Hello E-cercise"})
 	})
+
+	AuthRouter(apiGroup, authController)
+	EquipmentRouter(apiGroup, equipmentController, userRepo)
+	ImageRouter(apiGroup, imageController, userRepo)
 
 	logger2.Log.Info("Router initialized")
 
