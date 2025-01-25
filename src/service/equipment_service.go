@@ -324,7 +324,35 @@ func (s *equipmentService) UpdateEquipment(eqID uuid.UUID, context context.Conte
 
 	}
 
-	//TODO: update everything first then update main attribute of equipment
+	if req.Band != nil {
+		equipment.Brand = *req.Band
+	}
+
+	if req.Color != nil {
+		equipment.Color = *req.Color
+	}
+
+	if req.Material != nil {
+		equipment.Material = *req.Material
+	}
+
+	if req.Model != nil {
+		equipment.Model = *req.Model
+	}
+
+	if req.Name != nil {
+		equipment.Name = *req.Name
+	}
+
+	if req.SpecialFeature != nil {
+		equipment.SpecialFeature = *req.SpecialFeature
+	}
+
+	if err := s.equipmentRepo.SaveEquipment(tx, equipment); err != nil {
+		tx.Rollback()
+		logger.Log.WithError(err).Error("error update equipment ID: ", equipment.ID)
+		return err
+	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
