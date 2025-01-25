@@ -74,7 +74,7 @@ func (r *equipmentRepository) DeleteEquipmentOption(tx *gorm.DB, optID []uuid.UU
 	return tx.Where("id IN ?", optID).Delete(&model.MuscleGroup{}).Error
 }
 
-func (r *equipmentRepository) AddAAttributes(tx *gorm.DB, attr []model.Attribute) error {
+func (r *equipmentRepository) AddAttributes(tx *gorm.DB, attr []model.Attribute) error {
 	return tx.Create(&attr).Error
 }
 

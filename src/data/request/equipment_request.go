@@ -54,7 +54,7 @@ func ValidateMuscleGroup(muscleGroups []string) bool {
 
 type EquipmentPutRequest struct {
 	AdditionalField *AdditionalFieldPut `json:"additional_field,omitempty"`
-	Band            *string             `json:"band,omitempty"`
+	Brand           *string             `json:"band,omitempty"`
 	Color           *string             `json:"color,omitempty"`
 	Images          *Images             `json:"images,omitempty"`
 	Material        *string             `json:"material,omitempty"`
@@ -90,7 +90,6 @@ type Images struct {
 type DeletedID struct {
 	ID        string `json:"id,omitempty"`
 	IsPrimary bool   `json:"is_primary,omitempty"`
-	URL       string `json:"url,omitempty"`
 }
 
 type UploadID struct {
