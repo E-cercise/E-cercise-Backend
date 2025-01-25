@@ -1,11 +1,15 @@
 package model
 
-import "github.com/google/uuid"
+import (
+	"github.com/E-cercise/E-cercise/src/enum"
+	"github.com/google/uuid"
+)
 
 type Image struct {
-	ID          uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
-	Name        string    `gorm:"type:varchar(255);not null" json:"name"`
-	EquipmentID uuid.UUID `gorm:"type:uuid;not null" json:"equipment_id"`
-	IsPrimary   bool      `gorm:"type:boolean;default:false" json:"is_primary"`
-	S3Path      string    `gorm:"type:varchar(255)" json:"s3_path"`
+	ID             uuid.UUID       `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
+	EquipmentID    *uuid.UUID      `gorm:"type:uuid;null" json:"equipment_id"`
+	IsPrimary      bool            `gorm:"type:boolean;default:false" json:"is_primary"`
+	ImgPath        string          `gorm:"type:varchar(255)" json:"img_path"`
+	CloudinaryPath string          `gorm:"type:varchar(255)" json:"cloudinary_path"`
+	State          enum.ImageState `gorm:"type:varchar(50);default:'temp'" json:"state"`
 }

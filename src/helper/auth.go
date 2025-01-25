@@ -3,6 +3,7 @@ package helper
 import (
 	"fmt"
 	"github.com/E-cercise/E-cercise/src/config"
+	"github.com/E-cercise/E-cercise/src/enum"
 	"github.com/E-cercise/E-cercise/src/logger"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -51,4 +52,13 @@ func GetClaimFromToken(jwtToken string) (jwt.MapClaims, error) {
 	}
 
 	return claims, nil
+}
+
+func ContainsRole(roles []enum.Role, role enum.Role) bool {
+	for _, r := range roles {
+		if r == role {
+			return true
+		}
+	}
+	return false
 }
