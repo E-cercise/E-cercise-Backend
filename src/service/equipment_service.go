@@ -119,6 +119,22 @@ func (s *equipmentService) AddEquipment(req request.EquipmentPostRequest, contex
 		}
 	}
 
+	var feats []model.EquipmentFeature
+
+	for _, featStr := range req.Feature {
+		feat := model.EquipmentFeature{
+			EquipmentID: equipmentID,
+			Description: featStr,
+		}
+		feats = append(feats, feat)
+	}
+
+	if err = s.equipmentRepo.CreateEquipmentFeatures(tx, feats); err != nil {
+		tx.Rollback()
+		logger.Log.WithError(err).Error("error adding equipment feature")
+		return err
+	}
+
 	if len(req.AdditionalField) > 0 {
 		var atts []model.Attribute
 
@@ -278,6 +294,53 @@ func (s *equipmentService) UpdateEquipment(eqID uuid.UUID, context context.Conte
 		}
 	}
 
+	if req.Feature != nil {
+		var feats []model.EquipmentFeature
+
+		for _, description := range req.Feature.Created {
+			feat := model.EquipmentFeature{
+				EquipmentID: equipment.ID,
+				Description: description,
+			}
+			feats = append(feats, feat)
+		}
+
+		if err = s.equipmentRepo.CreateEquipmentFeatures(tx, feats); err != nil {
+			tx.Rollback()
+			logger.Log.WithError(err).Error("error adding equipment feature")
+			return err
+		}
+
+		if req.Feature.Deleted != nil {
+			var feats []uuid.UUID
+
+			for _, feat := range req.Feature.Deleted {
+				feats = append(feats, uuid.MustParse(feat))
+			}
+
+			if err := s.equipmentRepo.DeleteEquipmentFeature(tx, feats); err != nil {
+				tx.Rollback()
+				logger.Log.WithError(err).Error("error deleting equipment Feature")
+				return err
+			}
+		}
+
+		for _, updateFeature := range req.Feature.Updated {
+			toUpdatedID := uuid.MustParse(updateFeature.ID)
+			toUpdatedFeat := model.EquipmentFeature{
+				ID:          toUpdatedID,
+				EquipmentID: equipment.ID,
+				Description: updateFeature.Description,
+			}
+
+			if err := s.equipmentRepo.SaveEquipmentFeature(tx, toUpdatedFeat); err != nil {
+				tx.Rollback()
+				logger.Log.WithError(err).Error("error saving equipment feature")
+				return err
+			}
+		}
+	}
+
 	if req.AdditionalField != nil {
 
 		var toCreateAtts []model.Attribute
@@ -324,8 +387,8 @@ func (s *equipmentService) UpdateEquipment(eqID uuid.UUID, context context.Conte
 
 	}
 
-	if req.Band != nil {
-		equipment.Brand = *req.Band
+	if req.Brand != nil {
+		equipment.Brand = *req.Brand
 	}
 
 	if req.Color != nil {

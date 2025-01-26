@@ -19,6 +19,7 @@ type EquipmentPostRequest struct {
 	MuscleGroupUsed []string          `json:"muscle_group_used"`
 	Name            string            `json:"name"`
 	Option          []Option          `json:"option"`
+	Feature         []string          `json:"feature"`
 	SpecialFeature  string            `json:"special_feature"`
 	AdditionalField []AdditionalField `json:"additional_field"`
 }
@@ -62,6 +63,7 @@ type EquipmentPutRequest struct {
 	MuscleGroupUsed []string            `json:"muscle_group_used,omitempty"`
 	Name            *string             `json:"name,omitempty"`
 	Option          *OptionPut          `json:"option,omitempty"`
+	Feature         *FeaturePut         `json:"feature,omitempty"`
 	SpecialFeature  *string             `json:"special_feature,omitempty"`
 }
 
@@ -114,6 +116,17 @@ type OptionUpdated struct {
 	ID        string  `json:"id,omitempty"`
 	Price     float64 `json:"price,omitempty"`
 	Weight    float64 `json:"weight,omitempty"`
+}
+
+type FeaturePut struct {
+	Created []string         `json:"created"` // string of description
+	Deleted []string         `json:"deleted"` // string of uuid
+	Updated []FeatureUpdated `json:"updated"`
+}
+
+type FeatureUpdated struct {
+	ID          string `json:"id,omitempty"`
+	Description string `json:"description,omitempty"`
 }
 
 func ValidateImagePutReq(img Images) error {

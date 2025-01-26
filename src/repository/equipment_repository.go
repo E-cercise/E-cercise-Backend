@@ -16,10 +16,13 @@ type EquipmentRepository interface {
 	FindByIDTransaction(tx *gorm.DB, eqID uuid.UUID) (*model.Equipment, error)
 	AddEquipmentOption(tx *gorm.DB, options model.EquipmentOption) error
 	SaveEquipmentOption(tx *gorm.DB, option model.EquipmentOption) error
+	SaveEquipmentFeature(tx *gorm.DB, option model.EquipmentFeature) error
 	DeleteEquipmentOption(tx *gorm.DB, optID []uuid.UUID) error
+	DeleteEquipmentFeature(tx *gorm.DB, optID []uuid.UUID) error
 	SaveAttributes(tx *gorm.DB, attr *model.Attribute) error
 	DeletesAttributes(tx *gorm.DB, attrID []uuid.UUID) error
 	SaveEquipment(tx *gorm.DB, equipment *model.Equipment) error
+	CreateEquipmentFeatures(tx *gorm.DB, features []model.EquipmentFeature) error
 }
 
 type equipmentRepository struct {
@@ -71,7 +74,11 @@ func (r *equipmentRepository) AddEquipmentOption(tx *gorm.DB, options model.Equi
 }
 
 func (r *equipmentRepository) DeleteEquipmentOption(tx *gorm.DB, optID []uuid.UUID) error {
-	return tx.Where("id IN ?", optID).Delete(&model.MuscleGroup{}).Error
+	return tx.Where("id IN ?", optID).Delete(&model.EquipmentOption{}).Error
+}
+
+func (r *equipmentRepository) DeleteEquipmentFeature(tx *gorm.DB, optID []uuid.UUID) error {
+	return tx.Where("id IN ?", optID).Delete(&model.EquipmentFeature{}).Error
 }
 
 func (r *equipmentRepository) AddAttributes(tx *gorm.DB, attr []model.Attribute) error {
@@ -84,6 +91,7 @@ func (r *equipmentRepository) FindByID(eqID uuid.UUID) (*model.Equipment, error)
 	err := r.db.Preload("Images").
 		Preload("MuscleGroups").
 		Preload("EquipmentOptions").
+		Preload("EquipmentFeatures").
 		Preload("Attribute").
 		First(&equipment, "id = ?", eqID).Error
 
@@ -112,6 +120,10 @@ func (r *equipmentRepository) SaveEquipmentOption(tx *gorm.DB, option model.Equi
 	return tx.Save(&option).Error
 }
 
+func (r *equipmentRepository) SaveEquipmentFeature(tx *gorm.DB, feature model.EquipmentFeature) error {
+	return tx.Save(&feature).Error
+}
+
 func (r *equipmentRepository) SaveAttributes(tx *gorm.DB, attr *model.Attribute) error {
 	return tx.Save(&attr).Error
 }
@@ -122,4 +134,8 @@ func (r *equipmentRepository) DeletesAttributes(tx *gorm.DB, attrID []uuid.UUID)
 
 func (r *equipmentRepository) SaveEquipment(tx *gorm.DB, equipment *model.Equipment) error {
 	return tx.Save(&equipment).Error
+}
+
+func (r *equipmentRepository) CreateEquipmentFeatures(tx *gorm.DB, features []model.EquipmentFeature) error {
+	return tx.Create(features).Error
 }

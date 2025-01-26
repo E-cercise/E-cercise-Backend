@@ -11,7 +11,7 @@ type EquipmentsResponse struct {
 
 type Equipment struct {
 	ID        uuid.UUID `json:"ID"`
-	Name      string    `json:"name"`
+	Name      string    `json:"Description"`
 	Price     float64   `json:"price"`
 	ImagePath string    `json:"image_path"`
 	//Rating float64 `json:"rating"`
@@ -30,10 +30,11 @@ type EquipmentDetailResponse struct {
 	Material        string            `json:"material"`
 	Model           string            `json:"model"`
 	MuscleGroupUsed []string          `json:"muscle_group_used"`
-	Name            string            `json:"name"`
+	Name            string            `json:"Description"`
 	Option          []Option          `json:"option"`
 	SpecialFeature  string            `json:"special_feature"`
 	AdditionalField []AdditionalField `json:"additional_field"`
+	Feature         []Feature         `json:"feature"`
 }
 
 type AdditionalField struct {
@@ -52,6 +53,11 @@ type Option struct {
 	Available int     `json:"available"`
 	Price     float64 `json:"price"`
 	Weight    float64 `json:"weight"`
+}
+
+type Feature struct {
+	ID          string `json:"id"`
+	Description string `json:"Description"`
 }
 
 func FormatEquipmentDetailResponse(equipment *model.Equipment) *EquipmentDetailResponse {
@@ -81,6 +87,15 @@ func FormatEquipmentDetailResponse(equipment *model.Equipment) *EquipmentDetailR
 		opts = append(opts, newOpt)
 	}
 
+	var feats []Feature
+	for _, feat := range equipment.EquipmentFeature {
+		newFeat := Feature{
+			ID:          feat.ID.String(),
+			Description: feat.Description,
+		}
+		feats = append(feats, newFeat)
+	}
+
 	var attributes []AdditionalField
 	for _, field := range equipment.Attribute {
 		newField := AdditionalField{
@@ -102,6 +117,8 @@ func FormatEquipmentDetailResponse(equipment *model.Equipment) *EquipmentDetailR
 		Option:          opts,
 		SpecialFeature:  equipment.SpecialFeature,
 		AdditionalField: attributes,
+		Feature:         feats,
 	}
+
 	return &resp
 }
