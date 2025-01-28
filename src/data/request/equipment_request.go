@@ -20,7 +20,6 @@ type EquipmentPostRequest struct {
 	Name            string            `json:"name"`
 	Option          []Option          `json:"option"`
 	Feature         []string          `json:"feature"`
-	SpecialFeature  string            `json:"special_feature"`
 	AdditionalField []AdditionalField `json:"additional_field"`
 }
 
@@ -64,7 +63,6 @@ type EquipmentPutRequest struct {
 	Name            *string             `json:"name,omitempty"`
 	Option          *OptionPut          `json:"option,omitempty"`
 	Feature         *FeaturePut         `json:"feature,omitempty"`
-	SpecialFeature  *string             `json:"special_feature,omitempty"`
 }
 
 type AdditionalFieldPut struct {

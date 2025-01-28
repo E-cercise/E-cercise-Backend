@@ -32,7 +32,6 @@ type EquipmentDetailResponse struct {
 	MuscleGroupUsed []string          `json:"muscle_group_used"`
 	Name            string            `json:"Description"`
 	Option          []Option          `json:"option"`
-	SpecialFeature  string            `json:"special_feature"`
 	AdditionalField []AdditionalField `json:"additional_field"`
 	Feature         []Feature         `json:"feature"`
 }
@@ -115,7 +114,6 @@ func FormatEquipmentDetailResponse(equipment *model.Equipment) *EquipmentDetailR
 		MuscleGroupUsed: muscleGroupUsed,
 		Name:            equipment.Name,
 		Option:          opts,
-		SpecialFeature:  equipment.SpecialFeature,
 		AdditionalField: attributes,
 		Feature:         feats,
 	}

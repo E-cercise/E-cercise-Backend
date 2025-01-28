@@ -10,7 +10,6 @@ type Equipment struct {
 	Model            string             `gorm:"type:varchar(100)" json:"model"`
 	Color            string             `gorm:"type:varchar(50)" json:"color"`
 	Material         string             `gorm:"type:varchar(100)" json:"material"`
-	SpecialFeature   string             `gorm:"type:text" json:"special_feature"`
 	MuscleGroups     []MuscleGroup      `gorm:"many2many:equipment_muscle_groups" json:"muscle_groups"`
 	EquipmentFeature []EquipmentFeature `gorm:"foreignKey:EquipmentID" json:"equipment_feature"`
 	EquipmentOptions []EquipmentOption  `gorm:"foreignKey:EquipmentID" json:"equipment_options"`
