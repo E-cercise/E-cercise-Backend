@@ -5,6 +5,7 @@ import "github.com/google/uuid"
 type Equipment struct {
 	ID               uuid.UUID          `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
 	Name             string             `gorm:"type:varchar(255);not null" json:"name"`
+	Description      string             `gorm:"type:varchar(255);not null" json:"description"`
 	Images           []Image            `gorm:"foreignKey:EquipmentID" json:"images"`
 	Brand            string             `gorm:"type:varchar(100)" json:"brand"`
 	Model            string             `gorm:"type:varchar(100)" json:"model"`

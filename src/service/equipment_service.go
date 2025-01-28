@@ -88,12 +88,13 @@ func (s *equipmentService) AddEquipment(req request.EquipmentPostRequest, contex
 	equipmentID := uuid.New()
 
 	newEquipment := model.Equipment{
-		ID:       equipmentID,
-		Name:     req.Name,
-		Brand:    req.Band,
-		Model:    req.Model,
-		Color:    req.Color,
-		Material: req.Material,
+		ID:          equipmentID,
+		Name:        req.Name,
+		Brand:       req.Band,
+		Description: req.Description,
+		Model:       req.Model,
+		Color:       req.Color,
+		Material:    req.Material,
 	}
 
 	err := s.equipmentRepo.CreateEquipment(tx, newEquipment)
@@ -404,6 +405,10 @@ func (s *equipmentService) UpdateEquipment(eqID uuid.UUID, context context.Conte
 
 	if req.Name != nil {
 		equipment.Name = *req.Name
+	}
+
+	if req.Description != nil {
+		equipment.Description = *req.Description
 	}
 
 	if err := s.equipmentRepo.SaveEquipment(tx, equipment); err != nil {
