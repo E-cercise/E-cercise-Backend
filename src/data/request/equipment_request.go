@@ -34,6 +34,7 @@ type Image struct {
 }
 
 type Option struct {
+	Name      string  `json:"name"`
 	Available int     `json:"available"`
 	Price     float64 `json:"price"`
 	Weight    float64 `json:"weight"`
@@ -106,6 +107,7 @@ type OptionPut struct {
 }
 
 type OptionCreated struct {
+	Name      string  `json:"name,omitempty"`
 	Available int     `json:"available,omitempty"`
 	Price     float64 `json:"price,omitempty"`
 	Weight    float64 `json:"weight,omitempty"`
@@ -114,6 +116,7 @@ type OptionCreated struct {
 type OptionUpdated struct {
 	Available int     `json:"available,omitempty"`
 	ID        string  `json:"id,omitempty"`
+	Name      string  `json:"name,omitempty"`
 	Price     float64 `json:"price,omitempty"`
 	Weight    float64 `json:"weight,omitempty"`
 }

@@ -107,6 +107,7 @@ func (s *equipmentService) AddEquipment(req request.EquipmentPostRequest, contex
 	for _, option := range req.Option {
 		newOption := model.EquipmentOption{
 			EquipmentID:       equipmentID,
+			Name:              option.Name,
 			Weight:            option.Weight,
 			Price:             option.Price,
 			RemainingProducts: option.Available,
@@ -247,6 +248,7 @@ func (s *equipmentService) UpdateEquipment(eqID uuid.UUID, context context.Conte
 		for _, optCreated := range req.Option.Created {
 			newOption := model.EquipmentOption{
 				EquipmentID:       equipment.ID,
+				Name:              optCreated.Name,
 				Weight:            optCreated.Weight,
 				Price:             optCreated.Price,
 				RemainingProducts: optCreated.Available,
@@ -280,6 +282,7 @@ func (s *equipmentService) UpdateEquipment(eqID uuid.UUID, context context.Conte
 			toUpdatedGroup := model.EquipmentOption{
 				ID:                toUpdatedID,
 				EquipmentID:       equipment.ID,
+				Name:              updateOption.Name,
 				Weight:            updateOption.Weight,
 				Price:             updateOption.Price,
 				RemainingProducts: updateOption.Available,

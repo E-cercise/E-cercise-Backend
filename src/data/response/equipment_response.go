@@ -50,6 +50,7 @@ type Image struct {
 
 type Option struct {
 	ID        string  `json:"id"`
+	Name      string  `json:"name"`
 	Available int     `json:"available"`
 	Price     float64 `json:"price"`
 	Weight    float64 `json:"weight"`
@@ -80,6 +81,7 @@ func FormatEquipmentDetailResponse(equipment *model.Equipment) *EquipmentDetailR
 	for _, opt := range equipment.EquipmentOptions {
 		newOpt := Option{
 			ID:        opt.ID.String(),
+			Name:      opt.Name,
 			Available: opt.RemainingProducts,
 			Price:     opt.Price,
 			Weight:    opt.Weight,
