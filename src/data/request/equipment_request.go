@@ -14,7 +14,6 @@ type EquipmentPostRequest struct {
 	Band            string            `json:"band"`
 	Color           string            `json:"color"`
 	Description     string            `json:"description"`
-	Images          []Image           `json:"images"`
 	Material        string            `json:"material"`
 	Model           string            `json:"model"`
 	MuscleGroupUsed []string          `json:"muscle_group_used"`
@@ -38,6 +37,7 @@ type Option struct {
 	Available int     `json:"available"`
 	Price     float64 `json:"price"`
 	Weight    float64 `json:"weight"`
+	Images    []Image `json:"images"`
 }
 
 func ValidateMuscleGroup(muscleGroups []string) bool {
@@ -59,7 +59,6 @@ type EquipmentPutRequest struct {
 	Brand           *string             `json:"band,omitempty"`
 	Description     *string             `json:"description,omitempty"`
 	Color           *string             `json:"color,omitempty"`
-	Images          *Images             `json:"images,omitempty"`
 	Material        *string             `json:"material,omitempty"`
 	Model           *string             `json:"model,omitempty"`
 	MuscleGroupUsed []string            `json:"muscle_group_used,omitempty"`
@@ -111,6 +110,7 @@ type OptionCreated struct {
 	Available int     `json:"available,omitempty"`
 	Price     float64 `json:"price,omitempty"`
 	Weight    float64 `json:"weight,omitempty"`
+	Images    []Image `json:"images"`
 }
 
 type OptionUpdated struct {
@@ -119,6 +119,7 @@ type OptionUpdated struct {
 	Name      string  `json:"name,omitempty"`
 	Price     float64 `json:"price,omitempty"`
 	Weight    float64 `json:"weight,omitempty"`
+	Images    *Images `json:"images,omitempty"`
 }
 
 type FeaturePut struct {

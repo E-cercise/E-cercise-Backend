@@ -44,11 +44,13 @@ func ValidateUpdateEquipment() fiber.Handler {
 			})
 		}
 
-		if req.Images != nil {
-			if err := request.ValidateImagePutReq(*req.Images); err != nil {
-				return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-					"error": "Invalid image, " + err.Error(),
-				})
+		for _, opt := range req.Option.Updated {
+			if opt.Images != nil {
+				if err := request.ValidateImagePutReq(*opt.Images); err != nil {
+					return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+						"error": "Invalid image, " + err.Error(),
+					})
+				}
 			}
 		}
 

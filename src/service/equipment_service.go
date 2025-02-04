@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"github.com/E-cercise/E-cercise/src/data/request"
 	"github.com/E-cercise/E-cercise/src/data/response"
 	"github.com/E-cercise/E-cercise/src/helper"
@@ -46,7 +47,8 @@ func (s *equipmentService) GetEquipmentData(q request.EquipmentListRequest, pagi
 		primaryImage := helper.FindPrimaryImageFromEquipment(equipment)
 		var imagePath string
 		if primaryImage == nil {
-			imagePath = "https://res.cloudinary.com/drwodnunx/image/upload/v1736740947/temp/img_20250113110225.jpg.jpg"
+			newName := strings.ReplaceAll(equipment.Name, " ", "+")
+			imagePath = fmt.Sprintf("https://placehold.co/600x400?text=%v/png", newName)
 		} else {
 			imagePath = primaryImage.CloudinaryPath
 		}
@@ -105,6 +107,7 @@ func (s *equipmentService) AddEquipment(req request.EquipmentPostRequest, contex
 	}
 
 	for _, option := range req.Option {
+
 		newOption := model.EquipmentOption{
 			EquipmentID:       equipmentID,
 			Name:              option.Name,
@@ -117,6 +120,16 @@ func (s *equipmentService) AddEquipment(req request.EquipmentPostRequest, contex
 			tx.Rollback()
 			logger.Log.WithError(err).Error("error adding equipment options", newOption)
 			return err
+		}
+
+		for _, img := range option.Images {
+			imgID := uuid.MustParse(img.ID)
+			err = s.imageService.ArchiveImage(tx, context, imgID, equipmentID, newOption.ID, img.IsPrimary)
+			if err != nil {
+				tx.Rollback()
+				logger.Log.WithError(err).Error("error archiving image", imgID)
+				return err
+			}
 		}
 	}
 
@@ -169,16 +182,6 @@ func (s *equipmentService) AddEquipment(req request.EquipmentPostRequest, contex
 		return err
 	}
 
-	for _, img := range req.Images {
-		imgID := uuid.MustParse(img.ID)
-		err = s.imageService.ArchiveImage(tx, context, imgID, equipmentID, img.IsPrimary)
-		if err != nil {
-			tx.Rollback()
-			logger.Log.WithError(err).Error("error archiving image", imgID)
-			return err
-		}
-	}
-
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
 		return err
@@ -215,26 +218,6 @@ func (s *equipmentService) UpdateEquipment(eqID uuid.UUID, context context.Conte
 		return err
 	}
 
-	if req.Images != nil {
-		for _, deletedID := range req.Images.DeletedID {
-			deletedUUID := uuid.MustParse(deletedID.ID)
-			if err := s.imageService.DeleteImage(tx, context, deletedUUID); err != nil {
-				logger.Log.WithError(err).Error("error deleting image", "imgID", deletedUUID)
-				return err
-			}
-		}
-
-		for _, uploadID := range req.Images.UploadID {
-			imgID := uuid.MustParse(uploadID.ID)
-			err = s.imageService.ArchiveImage(tx, context, imgID, equipment.ID, uploadID.IsPrimary)
-			if err != nil {
-				tx.Rollback()
-				logger.Log.WithError(err).Error("error archiving image", imgID)
-				return err
-			}
-		}
-	}
-
 	if req.MuscleGroupUsed != nil {
 		if err := s.muscleGroupRepo.UpdateGroups(tx, req.MuscleGroupUsed, equipment.ID); err != nil {
 			tx.Rollback()
@@ -259,6 +242,17 @@ func (s *equipmentService) UpdateEquipment(eqID uuid.UUID, context context.Conte
 				logger.Log.WithError(err).Error("error adding equipment options", newOption)
 				return err
 			}
+
+			for _, img := range optCreated.Images {
+				imgID := uuid.MustParse(img.ID)
+				err = s.imageService.ArchiveImage(tx, context, imgID, equipment.ID, newOption.ID, img.IsPrimary)
+				if err != nil {
+					tx.Rollback()
+					logger.Log.WithError(err).Error("error archiving image", imgID)
+					return err
+				}
+			}
+
 		}
 
 		//deleted option
@@ -292,6 +286,27 @@ func (s *equipmentService) UpdateEquipment(eqID uuid.UUID, context context.Conte
 				tx.Rollback()
 				logger.Log.WithError(err).Error("error saving equipment options")
 				return err
+			}
+
+			if updateOption.Images != nil {
+				for _, deletedID := range updateOption.Images.DeletedID {
+					deletedUUID := uuid.MustParse(deletedID.ID)
+					if err := s.imageService.DeleteImage(tx, context, deletedUUID); err != nil {
+						logger.Log.WithError(err).Error("error deleting image", "imgID", deletedUUID)
+						return err
+					}
+				}
+
+				for _, uploadID := range updateOption.Images.UploadID {
+					imgID := uuid.MustParse(uploadID.ID)
+					optID := uuid.MustParse(updateOption.ID)
+					err = s.imageService.ArchiveImage(tx, context, imgID, equipment.ID, optID, uploadID.IsPrimary)
+					if err != nil {
+						tx.Rollback()
+						logger.Log.WithError(err).Error("error archiving image", imgID)
+						return err
+					}
+				}
 			}
 
 		}
