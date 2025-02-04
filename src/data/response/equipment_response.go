@@ -17,7 +17,7 @@ type Equipment struct {
 	//Rating float64 `json:"rating"`
 }
 
-//type Option struct {
+//type Options struct {
 //	RemainingProduct int64   `json:"remaining_product"`
 //	Price            float64 `json:"price"`
 //	Weight           float64 `json:"weight"`

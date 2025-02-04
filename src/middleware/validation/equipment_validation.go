@@ -12,7 +12,8 @@ func ValidateAddEquipment() fiber.Handler {
 		// Parse the request body into the struct
 		if err := ctx.BodyParser(&req); err != nil {
 			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error": "Invalid request format",
+				"error":   "Invalid request format",
+				"message": err.Error(),
 			})
 		}
 

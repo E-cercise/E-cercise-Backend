@@ -59,7 +59,7 @@ func (r *equipmentRepository) FindEquipmentList(q string, muscleGroup []string, 
 	}
 	paginator.CalculateTotalPages()
 
-	err := query.Preload("EquipmentOptions").Offset(paginator.Offset()).
+	err := query.Preload("EquipmentOptions.Images").Offset(paginator.Offset()).
 		Limit(paginator.Limit).Find(&equipments).Error
 
 	return equipments, err

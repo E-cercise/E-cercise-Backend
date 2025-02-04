@@ -106,9 +106,11 @@ func (s *equipmentService) AddEquipment(req request.EquipmentPostRequest, contex
 		return err
 	}
 
-	for _, option := range req.Option {
+	for _, option := range req.Options {
+		optID := uuid.New()
 
 		newOption := model.EquipmentOption{
+			ID:                optID,
 			EquipmentID:       equipmentID,
 			Name:              option.Name,
 			Weight:            option.Weight,
@@ -124,7 +126,7 @@ func (s *equipmentService) AddEquipment(req request.EquipmentPostRequest, contex
 
 		for _, img := range option.Images {
 			imgID := uuid.MustParse(img.ID)
-			err = s.imageService.ArchiveImage(tx, context, imgID, equipmentID, newOption.ID, img.IsPrimary)
+			err = s.imageService.ArchiveImage(tx, context, imgID, equipmentID, optID, img.IsPrimary)
 			if err != nil {
 				tx.Rollback()
 				logger.Log.WithError(err).Error("error archiving image", imgID)
@@ -135,7 +137,7 @@ func (s *equipmentService) AddEquipment(req request.EquipmentPostRequest, contex
 
 	var feats []model.EquipmentFeature
 
-	for _, featStr := range req.Feature {
+	for _, featStr := range req.Features {
 		feat := model.EquipmentFeature{
 			EquipmentID: equipmentID,
 			Description: featStr,
@@ -149,10 +151,10 @@ func (s *equipmentService) AddEquipment(req request.EquipmentPostRequest, contex
 		return err
 	}
 
-	if len(req.AdditionalField) > 0 {
+	if len(req.AdditionalFields) > 0 {
 		var atts []model.Attribute
 
-		for _, field := range req.AdditionalField {
+		for _, field := range req.AdditionalFields {
 			newAttribute := model.Attribute{
 				EquipmentID: equipmentID,
 				Key:         field.Key,
@@ -338,7 +340,7 @@ func (s *equipmentService) UpdateEquipment(eqID uuid.UUID, context context.Conte
 
 			if err := s.equipmentRepo.DeleteEquipmentFeature(tx, feats); err != nil {
 				tx.Rollback()
-				logger.Log.WithError(err).Error("error deleting equipment Feature")
+				logger.Log.WithError(err).Error("error deleting equipment Features")
 				return err
 			}
 		}

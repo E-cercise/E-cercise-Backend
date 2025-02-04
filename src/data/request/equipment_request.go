@@ -11,16 +11,16 @@ type EquipmentListRequest struct {
 }
 
 type EquipmentPostRequest struct {
-	Band            string            `json:"band"`
-	Color           string            `json:"color"`
-	Description     string            `json:"description"`
-	Material        string            `json:"material"`
-	Model           string            `json:"model"`
-	MuscleGroupUsed []string          `json:"muscle_group_used"`
-	Name            string            `json:"name"`
-	Option          []Option          `json:"option"`
-	Feature         []string          `json:"feature"`
-	AdditionalField []AdditionalField `json:"additional_field"`
+	Band             string            `json:"band"`
+	Color            string            `json:"color"`
+	Description      string            `json:"description"`
+	Material         string            `json:"material"`
+	Model            string            `json:"model"`
+	MuscleGroupUsed  []string          `json:"muscle_group_used"`
+	Name             string            `json:"name"`
+	Options          []Option          `json:"options"`
+	Features         []string          `json:"features"`
+	AdditionalFields []AdditionalField `json:"additional_fields"`
 }
 
 type AdditionalField struct {

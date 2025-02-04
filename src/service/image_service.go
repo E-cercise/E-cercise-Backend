@@ -95,9 +95,9 @@ func (s *imageService) ArchiveImage(tx *gorm.DB, context context.Context, imgID 
 	}
 
 	oldPublicID := img.ImgPath
-	newPublicID := strings.ReplaceAll(img.ImgPath, "temp/", fmt.Sprintf("archive/%v/%v", eqpID, eqOptID))
+	newPublicID := strings.ReplaceAll(img.ImgPath, "temp/", fmt.Sprintf("archive/%v/%v/", eqpID, eqOptID))
 
-	img.CloudinaryPath = strings.ReplaceAll(img.CloudinaryPath, "temp/", fmt.Sprintf("archive/%v/", eqpID))
+	img.CloudinaryPath = strings.ReplaceAll(img.CloudinaryPath, "temp/", fmt.Sprintf("archive/%v/%v", eqpID, eqOptID))
 	img.ImgPath = newPublicID
 	img.IsPrimary = isPrimary
 	img.EquipmentOptionID = &eqOptID
