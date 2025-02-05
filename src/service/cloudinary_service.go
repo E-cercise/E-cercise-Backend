@@ -73,8 +73,6 @@ func (s *cloudinaryService) UploadImage(ctx context.Context, file multipart.File
 		return "", errors.New("cloudinary response SecureURL is null")
 	}
 
-	logger.Log.Infof("Cloudinary upload response: %+v", resp)
-
 	return resp.SecureURL, nil
 }
 
