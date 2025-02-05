@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/E-cercise/E-cercise/src/enum"
+	"github.com/E-cercise/E-cercise/src/helper"
 	"github.com/E-cercise/E-cercise/src/logger"
 	"github.com/E-cercise/E-cercise/src/model"
 	"github.com/E-cercise/E-cercise/src/repository"
@@ -78,7 +79,8 @@ func (s *imageService) UploadImage(context context.Context, file multipart.File,
 
 func generateFileName(folder string) string {
 	timestamp := time.Now().Format("20060102150405") // e.g., "20250112094530"
-	return fmt.Sprintf("%s/%s_%s", folder, "img", timestamp)
+	someRandString := helper.RandomString(5)
+	return fmt.Sprintf("%s/%s_%s%s", folder, "img", someRandString, timestamp)
 }
 
 func (s *imageService) ArchiveImage(tx *gorm.DB, context context.Context, imgID uuid.UUID, eqpID uuid.UUID, eqOptID uuid.UUID, isPrimary bool) error {
