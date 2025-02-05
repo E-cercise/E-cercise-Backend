@@ -135,20 +135,22 @@ func (s *equipmentService) AddEquipment(req request.EquipmentPostRequest, contex
 		}
 	}
 
-	var feats []model.EquipmentFeature
+	if req.Features != nil {
+		var feats []model.EquipmentFeature
 
-	for _, featStr := range req.Features {
-		feat := model.EquipmentFeature{
-			EquipmentID: equipmentID,
-			Description: featStr,
+		for _, featStr := range req.Features {
+			feat := model.EquipmentFeature{
+				EquipmentID: equipmentID,
+				Description: featStr,
+			}
+			feats = append(feats, feat)
 		}
-		feats = append(feats, feat)
-	}
 
-	if err = s.equipmentRepo.CreateEquipmentFeatures(tx, feats); err != nil {
-		tx.Rollback()
-		logger.Log.WithError(err).Error("error adding equipment feature")
-		return err
+		if err = s.equipmentRepo.CreateEquipmentFeatures(tx, feats); err != nil {
+			tx.Rollback()
+			logger.Log.WithError(err).Error("error adding equipment feature")
+			return err
+		}
 	}
 
 	if len(req.AdditionalFields) > 0 {
