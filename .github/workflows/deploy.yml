@@ -39,6 +39,6 @@ jobs:
           gcloud run deploy e-cercise-backend \
             --image=gcr.io/${{ secrets.GCP_PROJECT_ID }}/e-cercise-backend:$GITHUB_SHA \
             --platform=managed \
-            --region=us-central1 \
+            --region=asia-southeast1 \
             --allow-unauthenticated \
-            --set-secrets "DATABASE_PORT=${{ secrets.DATABASE_PORT }},DATABASE_HOST=${{ secrets.DATABASE_HOST }},DATABASE_USERNAME=${{ secrets.DATABASE_USERNAME }},DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }},DATABASE_NAME=${{ secrets.DATABASE_NAME }},JWT_SECRET=${{ secrets.JWT_SECRET }},FRONTEND_BASE_URL=${{ secrets.FRONTEND_BASE_URL }},CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }},CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }},CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }}"
+            --set-env-vars "DATABASE_PORT=${{ secrets.DATABASE_PORT }},DATABASE_HOST=${{ secrets.DATABASE_HOST }},DATABASE_USERNAME=${{ secrets.DATABASE_USERNAME }},DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }},DATABASE_NAME=${{ secrets.DATABASE_NAME }},JWT_SECRET=${{ secrets.JWT_SECRET }},FRONTEND_BASE_URL=${{ secrets.FRONTEND_BASE_URL }},CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }},CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }},CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }}"
