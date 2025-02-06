@@ -17,7 +17,7 @@ type Equipment struct {
 	//Rating float64 `json:"rating"`
 }
 
-//type Option struct {
+//type Options struct {
 //	RemainingProduct int64   `json:"remaining_product"`
 //	Price            float64 `json:"price"`
 //	Weight           float64 `json:"weight"`
@@ -27,7 +27,6 @@ type EquipmentDetailResponse struct {
 	Band            string            `json:"band"`
 	Color           string            `json:"color"`
 	Description     string            `json:"description"`
-	Images          []Image           `json:"images"`
 	Material        string            `json:"material"`
 	Model           string            `json:"model"`
 	MuscleGroupUsed []string          `json:"muscle_group_used"`
@@ -54,6 +53,7 @@ type Option struct {
 	Available int     `json:"available"`
 	Price     float64 `json:"price"`
 	Weight    float64 `json:"weight"`
+	Images    []Image `json:"images"`
 }
 
 type Feature struct {
@@ -62,15 +62,6 @@ type Feature struct {
 }
 
 func FormatEquipmentDetailResponse(equipment *model.Equipment) *EquipmentDetailResponse {
-	var imgs []Image
-	for _, img := range equipment.Images {
-		newImg := Image{
-			ID:        img.ID.String(),
-			Url:       img.CloudinaryPath,
-			IsPrimary: img.IsPrimary,
-		}
-		imgs = append(imgs, newImg)
-	}
 
 	var muscleGroupUsed []string
 	for _, msg := range equipment.MuscleGroups {
@@ -79,12 +70,24 @@ func FormatEquipmentDetailResponse(equipment *model.Equipment) *EquipmentDetailR
 
 	var opts []Option
 	for _, opt := range equipment.EquipmentOptions {
+
+		var imgs []Image
+		for _, img := range opt.Images {
+			newImg := Image{
+				ID:        img.ID.String(),
+				Url:       img.CloudinaryPath,
+				IsPrimary: img.IsPrimary,
+			}
+			imgs = append(imgs, newImg)
+		}
+
 		newOpt := Option{
 			ID:        opt.ID.String(),
 			Name:      opt.Name,
 			Available: opt.RemainingProducts,
 			Price:     opt.Price,
 			Weight:    opt.Weight,
+			Images:    imgs,
 		}
 		opts = append(opts, newOpt)
 	}
@@ -112,7 +115,6 @@ func FormatEquipmentDetailResponse(equipment *model.Equipment) *EquipmentDetailR
 		Band:            equipment.Brand,
 		Color:           equipment.Color,
 		Description:     equipment.Description,
-		Images:          imgs,
 		Material:        equipment.Material,
 		Model:           equipment.Model,
 		MuscleGroupUsed: muscleGroupUsed,
