@@ -3,7 +3,7 @@ ARG GO_VERSION=1.23
 
 # Stage 1: Build the Go application
 FROM golang:${GO_VERSION}-alpine AS builder
-ARG SERVICE_PORT="80"
+ARG SERVICE_PORT="8888"
 ARG TARGETARCH=amd64
 
 RUN apk add --no-cache tzdata
