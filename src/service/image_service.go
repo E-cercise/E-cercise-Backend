@@ -121,7 +121,7 @@ func (s *imageService) DeleteImage(tx *gorm.DB, context context.Context, imgID u
 
 	img, err := s.imageRepo.FindByIDTransaction(tx, imgID)
 	if err != nil {
-		return errors.New("error cant finding image in db: " + err.Error())
+		return errors.New("error cant finding image in data: " + err.Error())
 	}
 
 	imgPath := img.ImgPath
