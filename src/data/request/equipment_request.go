@@ -6,8 +6,8 @@ import (
 )
 
 type EquipmentListRequest struct {
-	Q           string `json:"q"`
-	MuscleGroup string `json:"muscle_group"`
+	Q           string `query:"q"`
+	MuscleGroup string `query:"muscle_group"`
 }
 
 type EquipmentPostRequest struct {

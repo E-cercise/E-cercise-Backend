@@ -6,14 +6,15 @@ import (
 )
 
 type EquipmentsResponse struct {
-	Equipments []Equipment
+	Equipments []Equipment `json:"equipments"`
 }
 
 type Equipment struct {
-	ID        uuid.UUID `json:"ID"`
-	Name      string    `json:"Description"`
-	Price     float64   `json:"price"`
-	ImagePath string    `json:"image_path"`
+	ID              uuid.UUID `json:"ID"`
+	Name            string    `json:"Description"`
+	Price           float64   `json:"price"`
+	ImagePath       string    `json:"image_path"`
+	MuscleGroupUsed []string  `json:"muscle_group_used"`
 	//Rating float64 `json:"rating"`
 }
 
