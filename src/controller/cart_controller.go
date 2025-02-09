@@ -3,7 +3,7 @@ package controller
 import (
 	"fmt"
 	"github.com/E-cercise/E-cercise/src/data/request"
-	"github.com/E-cercise/E-cercise/src/model"
+	"github.com/E-cercise/E-cercise/src/helper"
 	"github.com/E-cercise/E-cercise/src/service"
 	"github.com/gofiber/fiber/v2"
 )
@@ -27,9 +27,13 @@ func (c *CartController) AddEquipmentToCart(ctx *fiber.Ctx) error {
 		})
 	}
 
-	user, _ := ctx.Locals("currentUser").(model.User)
+	user, err := helper.GetCurrentUser(ctx)
 
-	err := c.CartService.AddEquipmentToCart(req, user.ID)
+	if err != nil {
+		return err
+	}
+
+	err = c.CartService.AddEquipmentToCart(req, user.ID)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
