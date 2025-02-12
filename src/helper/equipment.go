@@ -12,3 +12,11 @@ func FindPrimaryImageFromEquipment(equipment model.Equipment) *model.Image {
 	}
 	return nil
 }
+
+func GetMuscleGroupIDFromEquipment(equipment model.Equipment) []string {
+	var muscleGroups []string
+	for _, musGroup := range equipment.MuscleGroups {
+		muscleGroups = append(muscleGroups, musGroup.ID)
+	}
+	return muscleGroups
+}

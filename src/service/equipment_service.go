@@ -33,7 +33,10 @@ func NewEquipmentService(db *gorm.DB, equipmentRepo repository.EquipmentReposito
 }
 
 func (s *equipmentService) GetEquipmentData(q request.EquipmentListRequest, paginator *helper.Paginator) (*response.EquipmentsResponse, error) {
-	muscleGroup := strings.Split(q.MuscleGroup, ",")
+	var muscleGroup []string
+	if q.MuscleGroup != "" {
+		muscleGroup = strings.Split(q.MuscleGroup, ",")
+	}
 	equipments, err := s.equipmentRepo.FindEquipmentList(q.Q, muscleGroup, paginator)
 
 	if err != nil {
@@ -56,10 +59,11 @@ func (s *equipmentService) GetEquipmentData(q request.EquipmentListRequest, pagi
 		price := findEquipmentMinimumPrice(equipment)
 
 		eq := response.Equipment{
-			ID:        equipment.ID,
-			Name:      equipment.Name,
-			Price:     price,
-			ImagePath: imagePath,
+			ID:              equipment.ID,
+			Name:            equipment.Name,
+			Price:           price,
+			ImagePath:       imagePath,
+			MuscleGroupUsed: helper.GetMuscleGroupIDFromEquipment(equipment),
 		}
 		resp.Equipments = append(resp.Equipments, eq)
 

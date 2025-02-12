@@ -4,8 +4,8 @@ import (
 	"github.com/E-cercise/E-cercise/src/helper"
 	"github.com/E-cercise/E-cercise/src/model"
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"gorm.io/gorm"
-	"strings"
 )
 
 type EquipmentRepository interface {
@@ -39,19 +39,15 @@ func (r *equipmentRepository) FindEquipmentList(q string, muscleGroup []string, 
 	query := r.db.Model(&model.Equipment{})
 
 	if q != "" {
-		query = query.Where("name ILIKE ? OR description ILIKE ?", "%"+q+"%", "%"+q+"%")
+		query = query.Where("equipment.name ILIKE ? OR equipment.description ILIKE ?", "%"+q+"%", "%"+q+"%")
 	}
 
 	if len(muscleGroup) > 0 {
-		nameConditions := make([]string, len(muscleGroup))
-		args := make([]interface{}, len(muscleGroup))
-
-		for i, group := range muscleGroup {
-			nameConditions[i] = "name ILIKE ?"
-			args[i] = "%" + group + "%"
-		}
-
-		query = query.Where(strings.Join(nameConditions, " OR "), args...)
+		query = query.
+			Joins("JOIN equipment_muscle_groups emg ON emg.equipment_id = equipment.id").
+			Where("emg.muscle_group_id ILIKE ANY (?)", pq.Array(muscleGroup)).
+			Group("equipment.id").
+			Having("COUNT(DISTINCT emg.muscle_group_id) = ?", len(muscleGroup))
 	}
 
 	if err := query.Count(&paginator.TotalRows).Error; err != nil {
@@ -59,7 +55,7 @@ func (r *equipmentRepository) FindEquipmentList(q string, muscleGroup []string, 
 	}
 	paginator.CalculateTotalPages()
 
-	err := query.Preload("EquipmentOptions.Images").Offset(paginator.Offset()).
+	err := query.Debug().Preload("EquipmentOptions.Images").Preload("MuscleGroups").Offset(paginator.Offset()).
 		Limit(paginator.Limit).Find(&equipments).Error
 
 	return equipments, err
