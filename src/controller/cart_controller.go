@@ -47,6 +47,7 @@ func (c *CartController) AddEquipmentToCart(ctx *fiber.Ctx) error {
 }
 
 func (c *CartController) DeleteItemInCart(ctx *fiber.Ctx) error {
+	//TODO more: validate that another user cant delete item of another user cart
 	lineEquipmentID := uuid.MustParse(ctx.Params("line_equipment_id"))
 
 	status, err := c.CartService.DeleteLineEquipmentInCart(lineEquipmentID)
@@ -61,4 +62,20 @@ func (c *CartController) DeleteItemInCart(ctx *fiber.Ctx) error {
 
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{"message": fmt.Sprintf("line equipment id %v has been deleted successfully", lineEquipmentID)})
 
+}
+
+func (c *CartController) GetCartItems(ctx *fiber.Ctx) error {
+	user, err := helper.GetCurrentUser(ctx)
+
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.CartService.GetAllLineEquipmentInCart(user.ID)
+
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": fmt.Sprintf("can't get equipment in cart: %v", err.Error())})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(resp)
 }

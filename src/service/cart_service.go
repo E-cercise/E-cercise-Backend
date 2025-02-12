@@ -1,7 +1,9 @@
 package service
 
 import (
+	"fmt"
 	"github.com/E-cercise/E-cercise/src/data/request"
+	"github.com/E-cercise/E-cercise/src/data/response"
 	"github.com/E-cercise/E-cercise/src/logger"
 	"github.com/E-cercise/E-cercise/src/model"
 	"github.com/E-cercise/E-cercise/src/repository"
@@ -12,15 +14,17 @@ import (
 type CartService interface {
 	AddEquipmentToCart(req request.CartItemPostRequest, userID uuid.UUID) error
 	DeleteLineEquipmentInCart(lineEquipmentID uuid.UUID) (string, error)
+	GetAllLineEquipmentInCart(userID uuid.UUID) (*response.GetCartItemResponse, error)
 }
 
 type cartService struct {
-	db       *gorm.DB
-	cartRepo repository.CartRepository
+	db            *gorm.DB
+	cartRepo      repository.CartRepository
+	equipmentRepo repository.EquipmentRepository
 }
 
-func NewCartService(db *gorm.DB, cartRepo repository.CartRepository) CartService {
-	return &cartService{db: db, cartRepo: cartRepo}
+func NewCartService(db *gorm.DB, cartRepo repository.CartRepository, equipmentRepo repository.EquipmentRepository) CartService {
+	return &cartService{db: db, cartRepo: cartRepo, equipmentRepo: equipmentRepo}
 }
 
 func (s *cartService) AddEquipmentToCart(req request.CartItemPostRequest, userID uuid.UUID) error {
@@ -35,6 +39,18 @@ func (s *cartService) AddEquipmentToCart(req request.CartItemPostRequest, userID
 	if err != nil {
 		logger.Log.WithError(err).Error("error parsing equipmentID ")
 		return err
+	}
+
+	_, err = s.equipmentRepo.FindByID(equipmentID)
+	if err != nil {
+		logger.Log.WithError(err).Error("cant find equipment ID:", equipmentID)
+		return fmt.Errorf("equipment ID: %v not found", equipmentID)
+	}
+
+	_, err = s.equipmentRepo.FindOptionByID(eqpOptID)
+	if err != nil {
+		logger.Log.WithError(err).Error("cant find equipment Option ID:", eqpOptID)
+		return fmt.Errorf("equipmentOptionID: %v not found", eqpOptID)
 	}
 
 	newLineEquipment := model.LineEquipment{
@@ -66,4 +82,46 @@ func (s *cartService) DeleteLineEquipmentInCart(lineEquipmentID uuid.UUID) (stri
 	}
 
 	return "success", nil
+}
+
+func (s *cartService) GetAllLineEquipmentInCart(userID uuid.UUID) (*response.GetCartItemResponse, error) {
+
+	cart, err := s.cartRepo.GetCart(userID)
+
+	if err != nil {
+		logger.Log.WithError(err).Error("error finding cart in db with userID: ", userID)
+		return nil, err
+	}
+
+	var resp response.GetCartItemResponse
+	total := 0.0
+	for _, line := range cart.LineEquipments {
+
+		equipment, err := s.equipmentRepo.FindByID(line.EquipmentID)
+		if err != nil {
+			logger.Log.WithError(err).Error("error during find equipment ID", equipment.ID)
+			return nil, err
+		}
+
+		equipmentOption, err := s.equipmentRepo.FindOptionByID(line.EquipmentOptionID)
+		if err != nil {
+			logger.Log.WithError(err).Error("error during find equipmentOpyion ID", equipmentOption.ID)
+			return nil, err
+		}
+
+		lineTotal := float64(line.Quantity) * equipmentOption.Price
+		total += lineTotal
+
+		resp.LineEquipments = append(resp.LineEquipments, response.LineEquipment{
+			EquipmentName:   fmt.Sprintf("%v: %v", equipment.Name, equipmentOption.Name),
+			LineEquipmentID: line.ID.String(),
+			Quantity:        line.Quantity,
+			Total:           lineTotal,
+		})
+
+	}
+
+	resp.TotalPrice = total
+
+	return &resp, nil
 }

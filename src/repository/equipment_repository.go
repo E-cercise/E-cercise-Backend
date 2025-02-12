@@ -23,6 +23,7 @@ type EquipmentRepository interface {
 	DeletesAttributes(tx *gorm.DB, attrID []uuid.UUID) error
 	SaveEquipment(tx *gorm.DB, equipment *model.Equipment) error
 	CreateEquipmentFeatures(tx *gorm.DB, features []model.EquipmentFeature) error
+	FindOptionByID(optionID uuid.UUID) (*model.EquipmentOption, error)
 }
 
 type equipmentRepository struct {
@@ -94,6 +95,12 @@ func (r *equipmentRepository) FindByID(eqID uuid.UUID) (*model.Equipment, error)
 		return nil, err
 	}
 	return equipment, nil
+}
+
+func (r *equipmentRepository) FindOptionByID(optionID uuid.UUID) (*model.EquipmentOption, error) {
+	var opt *model.EquipmentOption
+	err := r.db.Find(&opt, "id = ?", optionID).Error
+	return opt, err
 }
 
 func (r *equipmentRepository) FindByIDTransaction(tx *gorm.DB, eqID uuid.UUID) (*model.Equipment, error) {
