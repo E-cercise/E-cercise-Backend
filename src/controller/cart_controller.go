@@ -79,3 +79,19 @@ func (c *CartController) GetCartItems(ctx *fiber.Ctx) error {
 
 	return ctx.Status(fiber.StatusOK).JSON(resp)
 }
+
+func (c * CartController) ClearAllItemsInCart(ctx *fiber.Ctx) error {
+	user, err := helper.GetCurrentUser(ctx)
+
+	if err != nil {
+		return err
+	}
+
+	err = c.CartService.ClearAllLineEquipmentInCart(user.ID)
+
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": fmt.Sprintf("can't clear equipments in cart: %v", err.Error())})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{"message": fmt.Sprintf("All Line equipments have been deleted successfully")})
+}
