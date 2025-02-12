@@ -21,6 +21,7 @@ func InitRouter(db *gorm.DB) *fiber.App {
 	equipmentRepo := repository.NewEquipmentRepository(db)
 	imageRepo := repository.NewImageRepository(db)
 	muscleGroupRepo := repository.NewMuscleGroupRepository(db)
+	cartRepo := repository.NewCartRepository(db)
 
 	cloudinaryService, err := service.NewCloudinaryService()
 
@@ -31,10 +32,12 @@ func InitRouter(db *gorm.DB) *fiber.App {
 	userService := service.NewUserService(db, userRepo)
 	imageService := service.NewImageService(db, imageRepo, cloudinaryService)
 	equipmentService := service.NewEquipmentService(db, equipmentRepo, muscleGroupRepo, imageService)
+	cartService := service.NewCartService(db, cartRepo, equipmentRepo)
 
 	authController := controller.NewAuthControllerImpl(userService)
 	equipmentController := controller.NewEquipmentControllerImpl(equipmentService)
 	imageController := controller.NewImageControllerImpl(imageService)
+	cartController := controller.NewCartControllerImpl(cartService)
 
 	app := fiber.New()
 
@@ -64,8 +67,16 @@ func InitRouter(db *gorm.DB) *fiber.App {
 	AuthRouter(apiGroup, authController)
 	EquipmentRouter(apiGroup, equipmentController, userRepo)
 	ImageRouter(apiGroup, imageController, userRepo)
+	CartRouter(apiGroup, cartController, userRepo)
 
 	logger2.Log.Info("Router initialized")
+	for _, route := range app.GetRoutes() {
+		// You can format the output however you like
+		if route.Method == "HEAD" || route.Method == "CONNECT" || route.Method == "OPTIONS" || route.Method == "TRACE" || route.Method == "PATCH" {
+			continue
+		}
+		logger2.Log.Infof("Method: %s \t Path: %s\n", route.Method, route.Path)
+	}
 
 	return app
 }

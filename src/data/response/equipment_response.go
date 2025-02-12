@@ -6,18 +6,19 @@ import (
 )
 
 type EquipmentsResponse struct {
-	Equipments []Equipment
+	Equipments []Equipment `json:"equipments"`
 }
 
 type Equipment struct {
-	ID        uuid.UUID `json:"ID"`
-	Name      string    `json:"name"`
-	Price     float64   `json:"price"`
-	ImagePath string    `json:"image_path"`
+	ID              uuid.UUID `json:"ID"`
+	Name            string    `json:"Description"`
+	Price           float64   `json:"price"`
+	ImagePath       string    `json:"image_path"`
+	MuscleGroupUsed []string  `json:"muscle_group_used"`
 	//Rating float64 `json:"rating"`
 }
 
-//type Option struct {
+//type Options struct {
 //	RemainingProduct int64   `json:"remaining_product"`
 //	Price            float64 `json:"price"`
 //	Weight           float64 `json:"weight"`
@@ -26,14 +27,14 @@ type Equipment struct {
 type EquipmentDetailResponse struct {
 	Band            string            `json:"band"`
 	Color           string            `json:"color"`
-	Images          []Image           `json:"images"`
+	Description     string            `json:"description"`
 	Material        string            `json:"material"`
 	Model           string            `json:"model"`
 	MuscleGroupUsed []string          `json:"muscle_group_used"`
-	Name            string            `json:"name"`
+	Name            string            `json:"Description"`
 	Option          []Option          `json:"option"`
-	SpecialFeature  string            `json:"special_feature"`
 	AdditionalField []AdditionalField `json:"additional_field"`
+	Feature         []Feature         `json:"feature"`
 }
 
 type AdditionalField struct {
@@ -49,21 +50,19 @@ type Image struct {
 
 type Option struct {
 	ID        string  `json:"id"`
+	Name      string  `json:"name"`
 	Available int     `json:"available"`
 	Price     float64 `json:"price"`
 	Weight    float64 `json:"weight"`
+	Images    []Image `json:"images"`
+}
+
+type Feature struct {
+	ID          string `json:"id"`
+	Description string `json:"Description"`
 }
 
 func FormatEquipmentDetailResponse(equipment *model.Equipment) *EquipmentDetailResponse {
-	var imgs []Image
-	for _, img := range equipment.Images {
-		newImg := Image{
-			ID:        img.ID.String(),
-			Url:       img.CloudinaryPath,
-			IsPrimary: img.IsPrimary,
-		}
-		imgs = append(imgs, newImg)
-	}
 
 	var muscleGroupUsed []string
 	for _, msg := range equipment.MuscleGroups {
@@ -72,13 +71,35 @@ func FormatEquipmentDetailResponse(equipment *model.Equipment) *EquipmentDetailR
 
 	var opts []Option
 	for _, opt := range equipment.EquipmentOptions {
+
+		var imgs []Image
+		for _, img := range opt.Images {
+			newImg := Image{
+				ID:        img.ID.String(),
+				Url:       img.CloudinaryPath,
+				IsPrimary: img.IsPrimary,
+			}
+			imgs = append(imgs, newImg)
+		}
+
 		newOpt := Option{
 			ID:        opt.ID.String(),
+			Name:      opt.Name,
 			Available: opt.RemainingProducts,
 			Price:     opt.Price,
 			Weight:    opt.Weight,
+			Images:    imgs,
 		}
 		opts = append(opts, newOpt)
+	}
+
+	var feats []Feature
+	for _, feat := range equipment.EquipmentFeature {
+		newFeat := Feature{
+			ID:          feat.ID.String(),
+			Description: feat.Description,
+		}
+		feats = append(feats, newFeat)
 	}
 
 	var attributes []AdditionalField
@@ -94,14 +115,15 @@ func FormatEquipmentDetailResponse(equipment *model.Equipment) *EquipmentDetailR
 	resp := EquipmentDetailResponse{
 		Band:            equipment.Brand,
 		Color:           equipment.Color,
-		Images:          imgs,
+		Description:     equipment.Description,
 		Material:        equipment.Material,
 		Model:           equipment.Model,
 		MuscleGroupUsed: muscleGroupUsed,
 		Name:            equipment.Name,
 		Option:          opts,
-		SpecialFeature:  equipment.SpecialFeature,
 		AdditionalField: attributes,
+		Feature:         feats,
 	}
+
 	return &resp
 }

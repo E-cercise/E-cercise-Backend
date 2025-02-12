@@ -6,21 +6,21 @@ import (
 )
 
 type EquipmentListRequest struct {
-	Q           string `json:"q"`
-	MuscleGroup string `json:"muscle_group"`
+	Q           string `query:"q"`
+	MuscleGroup string `query:"muscle_group"`
 }
 
 type EquipmentPostRequest struct {
-	Band            string            `json:"band"`
-	Color           string            `json:"color"`
-	Images          []Image           `json:"images"`
-	Material        string            `json:"material"`
-	Model           string            `json:"model"`
-	MuscleGroupUsed []string          `json:"muscle_group_used"`
-	Name            string            `json:"name"`
-	Option          []Option          `json:"option"`
-	SpecialFeature  string            `json:"special_feature"`
-	AdditionalField []AdditionalField `json:"additional_field"`
+	Band             string            `json:"band"`
+	Color            string            `json:"color"`
+	Description      string            `json:"description"`
+	Material         string            `json:"material"`
+	Model            string            `json:"model"`
+	MuscleGroupUsed  []string          `json:"muscle_group_used"`
+	Name             string            `json:"name"`
+	Options          []Option          `json:"options"`
+	Features         []string          `json:"features"`
+	AdditionalFields []AdditionalField `json:"additional_fields"`
 }
 
 type AdditionalField struct {
@@ -33,9 +33,11 @@ type Image struct {
 }
 
 type Option struct {
+	Name      string  `json:"name"`
 	Available int     `json:"available"`
 	Price     float64 `json:"price"`
 	Weight    float64 `json:"weight"`
+	Images    []Image `json:"images"`
 }
 
 func ValidateMuscleGroup(muscleGroups []string) bool {
@@ -55,14 +57,14 @@ func ValidateMuscleGroup(muscleGroups []string) bool {
 type EquipmentPutRequest struct {
 	AdditionalField *AdditionalFieldPut `json:"additional_field,omitempty"`
 	Brand           *string             `json:"band,omitempty"`
+	Description     *string             `json:"description,omitempty"`
 	Color           *string             `json:"color,omitempty"`
-	Images          *Images             `json:"images,omitempty"`
 	Material        *string             `json:"material,omitempty"`
 	Model           *string             `json:"model,omitempty"`
 	MuscleGroupUsed []string            `json:"muscle_group_used,omitempty"`
 	Name            *string             `json:"name,omitempty"`
 	Option          *OptionPut          `json:"option,omitempty"`
-	SpecialFeature  *string             `json:"special_feature,omitempty"`
+	Feature         *FeaturePut         `json:"feature,omitempty"`
 }
 
 type AdditionalFieldPut struct {
@@ -104,16 +106,31 @@ type OptionPut struct {
 }
 
 type OptionCreated struct {
+	Name      string  `json:"name,omitempty"`
 	Available int     `json:"available,omitempty"`
 	Price     float64 `json:"price,omitempty"`
 	Weight    float64 `json:"weight,omitempty"`
+	Images    []Image `json:"images"`
 }
 
 type OptionUpdated struct {
 	Available int     `json:"available,omitempty"`
 	ID        string  `json:"id,omitempty"`
+	Name      string  `json:"name,omitempty"`
 	Price     float64 `json:"price,omitempty"`
 	Weight    float64 `json:"weight,omitempty"`
+	Images    *Images `json:"images,omitempty"`
+}
+
+type FeaturePut struct {
+	Created []string         `json:"created"` // string of description
+	Deleted []string         `json:"deleted"` // string of uuid
+	Updated []FeatureUpdated `json:"updated"`
+}
+
+type FeatureUpdated struct {
+	ID          string `json:"id,omitempty"`
+	Description string `json:"description,omitempty"`
 }
 
 func ValidateImagePutReq(img Images) error {

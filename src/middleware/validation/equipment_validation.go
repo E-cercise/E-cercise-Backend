@@ -12,7 +12,8 @@ func ValidateAddEquipment() fiber.Handler {
 		// Parse the request body into the struct
 		if err := ctx.BodyParser(&req); err != nil {
 			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error": "Invalid request format",
+				"error":   "Invalid request format",
+				"message": err.Error(),
 			})
 		}
 
@@ -44,11 +45,13 @@ func ValidateUpdateEquipment() fiber.Handler {
 			})
 		}
 
-		if req.Images != nil {
-			if err := request.ValidateImagePutReq(*req.Images); err != nil {
-				return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-					"error": "Invalid image, " + err.Error(),
-				})
+		for _, opt := range req.Option.Updated {
+			if opt.Images != nil {
+				if err := request.ValidateImagePutReq(*opt.Images); err != nil {
+					return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+						"error": "Invalid image, " + err.Error(),
+					})
+				}
 			}
 		}
 

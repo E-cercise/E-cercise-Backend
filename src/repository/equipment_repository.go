@@ -4,8 +4,8 @@ import (
 	"github.com/E-cercise/E-cercise/src/helper"
 	"github.com/E-cercise/E-cercise/src/model"
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"gorm.io/gorm"
-	"strings"
 )
 
 type EquipmentRepository interface {
@@ -16,10 +16,14 @@ type EquipmentRepository interface {
 	FindByIDTransaction(tx *gorm.DB, eqID uuid.UUID) (*model.Equipment, error)
 	AddEquipmentOption(tx *gorm.DB, options model.EquipmentOption) error
 	SaveEquipmentOption(tx *gorm.DB, option model.EquipmentOption) error
+	SaveEquipmentFeature(tx *gorm.DB, option model.EquipmentFeature) error
 	DeleteEquipmentOption(tx *gorm.DB, optID []uuid.UUID) error
+	DeleteEquipmentFeature(tx *gorm.DB, optID []uuid.UUID) error
 	SaveAttributes(tx *gorm.DB, attr *model.Attribute) error
 	DeletesAttributes(tx *gorm.DB, attrID []uuid.UUID) error
 	SaveEquipment(tx *gorm.DB, equipment *model.Equipment) error
+	CreateEquipmentFeatures(tx *gorm.DB, features []model.EquipmentFeature) error
+	FindOptionByID(optionID uuid.UUID) (*model.EquipmentOption, error)
 }
 
 type equipmentRepository struct {
@@ -36,19 +40,15 @@ func (r *equipmentRepository) FindEquipmentList(q string, muscleGroup []string, 
 	query := r.db.Model(&model.Equipment{})
 
 	if q != "" {
-		query = query.Where("name ILIKE ? OR description ILIKE ?", "%"+q+"%", "%"+q+"%")
+		query = query.Where("equipment.name ILIKE ? OR equipment.description ILIKE ?", "%"+q+"%", "%"+q+"%")
 	}
 
 	if len(muscleGroup) > 0 {
-		nameConditions := make([]string, len(muscleGroup))
-		args := make([]interface{}, len(muscleGroup))
-
-		for i, group := range muscleGroup {
-			nameConditions[i] = "name ILIKE ?"
-			args[i] = "%" + group + "%"
-		}
-
-		query = query.Where(strings.Join(nameConditions, " OR "), args...)
+		query = query.
+			Joins("JOIN equipment_muscle_groups emg ON emg.equipment_id = equipment.id").
+			Where("emg.muscle_group_id ILIKE ANY (?)", pq.Array(muscleGroup)).
+			Group("equipment.id").
+			Having("COUNT(DISTINCT emg.muscle_group_id) = ?", len(muscleGroup))
 	}
 
 	if err := query.Count(&paginator.TotalRows).Error; err != nil {
@@ -56,7 +56,7 @@ func (r *equipmentRepository) FindEquipmentList(q string, muscleGroup []string, 
 	}
 	paginator.CalculateTotalPages()
 
-	err := query.Preload("EquipmentOptions").Offset(paginator.Offset()).
+	err := query.Preload("EquipmentOptions.Images").Preload("MuscleGroups").Offset(paginator.Offset()).
 		Limit(paginator.Limit).Find(&equipments).Error
 
 	return equipments, err
@@ -71,7 +71,11 @@ func (r *equipmentRepository) AddEquipmentOption(tx *gorm.DB, options model.Equi
 }
 
 func (r *equipmentRepository) DeleteEquipmentOption(tx *gorm.DB, optID []uuid.UUID) error {
-	return tx.Where("id IN ?", optID).Delete(&model.MuscleGroup{}).Error
+	return tx.Where("id IN ?", optID).Delete(&model.EquipmentOption{}).Error
+}
+
+func (r *equipmentRepository) DeleteEquipmentFeature(tx *gorm.DB, optID []uuid.UUID) error {
+	return tx.Where("id IN ?", optID).Delete(&model.EquipmentFeature{}).Error
 }
 
 func (r *equipmentRepository) AddAttributes(tx *gorm.DB, attr []model.Attribute) error {
@@ -81,9 +85,9 @@ func (r *equipmentRepository) AddAttributes(tx *gorm.DB, attr []model.Attribute)
 func (r *equipmentRepository) FindByID(eqID uuid.UUID) (*model.Equipment, error) {
 	var equipment *model.Equipment
 
-	err := r.db.Preload("Images").
-		Preload("MuscleGroups").
+	err := r.db.Preload("MuscleGroups").
 		Preload("EquipmentOptions").
+		Preload("EquipmentFeature").
 		Preload("Attribute").
 		First(&equipment, "id = ?", eqID).Error
 
@@ -91,6 +95,12 @@ func (r *equipmentRepository) FindByID(eqID uuid.UUID) (*model.Equipment, error)
 		return nil, err
 	}
 	return equipment, nil
+}
+
+func (r *equipmentRepository) FindOptionByID(optionID uuid.UUID) (*model.EquipmentOption, error) {
+	var opt *model.EquipmentOption
+	err := r.db.Find(&opt, "id = ?", optionID).Error
+	return opt, err
 }
 
 func (r *equipmentRepository) FindByIDTransaction(tx *gorm.DB, eqID uuid.UUID) (*model.Equipment, error) {
@@ -112,6 +122,10 @@ func (r *equipmentRepository) SaveEquipmentOption(tx *gorm.DB, option model.Equi
 	return tx.Save(&option).Error
 }
 
+func (r *equipmentRepository) SaveEquipmentFeature(tx *gorm.DB, feature model.EquipmentFeature) error {
+	return tx.Save(&feature).Error
+}
+
 func (r *equipmentRepository) SaveAttributes(tx *gorm.DB, attr *model.Attribute) error {
 	return tx.Save(&attr).Error
 }
@@ -122,4 +136,8 @@ func (r *equipmentRepository) DeletesAttributes(tx *gorm.DB, attrID []uuid.UUID)
 
 func (r *equipmentRepository) SaveEquipment(tx *gorm.DB, equipment *model.Equipment) error {
 	return tx.Save(&equipment).Error
+}
+
+func (r *equipmentRepository) CreateEquipmentFeatures(tx *gorm.DB, features []model.EquipmentFeature) error {
+	return tx.Create(features).Error
 }

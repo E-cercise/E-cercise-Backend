@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"github.com/E-cercise/E-cercise/src/data/request"
 	"github.com/E-cercise/E-cercise/src/data/response"
 	"github.com/E-cercise/E-cercise/src/helper"
@@ -32,7 +33,10 @@ func NewEquipmentService(db *gorm.DB, equipmentRepo repository.EquipmentReposito
 }
 
 func (s *equipmentService) GetEquipmentData(q request.EquipmentListRequest, paginator *helper.Paginator) (*response.EquipmentsResponse, error) {
-	muscleGroup := strings.Split(q.MuscleGroup, ",")
+	var muscleGroup []string
+	if q.MuscleGroup != "" {
+		muscleGroup = strings.Split(q.MuscleGroup, ",")
+	}
 	equipments, err := s.equipmentRepo.FindEquipmentList(q.Q, muscleGroup, paginator)
 
 	if err != nil {
@@ -46,7 +50,8 @@ func (s *equipmentService) GetEquipmentData(q request.EquipmentListRequest, pagi
 		primaryImage := helper.FindPrimaryImageFromEquipment(equipment)
 		var imagePath string
 		if primaryImage == nil {
-			imagePath = "https://res.cloudinary.com/drwodnunx/image/upload/v1736740947/temp/img_20250113110225.jpg.jpg"
+			newName := strings.ReplaceAll(equipment.Name, " ", "+")
+			imagePath = fmt.Sprintf("https://placehold.co/600x400?text=%v/png", newName)
 		} else {
 			imagePath = primaryImage.CloudinaryPath
 		}
@@ -54,10 +59,11 @@ func (s *equipmentService) GetEquipmentData(q request.EquipmentListRequest, pagi
 		price := findEquipmentMinimumPrice(equipment)
 
 		eq := response.Equipment{
-			ID:        equipment.ID,
-			Name:      equipment.Name,
-			Price:     price,
-			ImagePath: imagePath,
+			ID:              equipment.ID,
+			Name:            equipment.Name,
+			Price:           price,
+			ImagePath:       imagePath,
+			MuscleGroupUsed: helper.GetMuscleGroupIDFromEquipment(equipment),
 		}
 		resp.Equipments = append(resp.Equipments, eq)
 
@@ -88,13 +94,13 @@ func (s *equipmentService) AddEquipment(req request.EquipmentPostRequest, contex
 	equipmentID := uuid.New()
 
 	newEquipment := model.Equipment{
-		ID:             equipmentID,
-		Name:           req.Name,
-		Brand:          req.Band,
-		Model:          req.Model,
-		Color:          req.Color,
-		Material:       req.Material,
-		SpecialFeature: req.SpecialFeature,
+		ID:          equipmentID,
+		Name:        req.Name,
+		Brand:       req.Band,
+		Description: req.Description,
+		Model:       req.Model,
+		Color:       req.Color,
+		Material:    req.Material,
 	}
 
 	err := s.equipmentRepo.CreateEquipment(tx, newEquipment)
@@ -104,9 +110,13 @@ func (s *equipmentService) AddEquipment(req request.EquipmentPostRequest, contex
 		return err
 	}
 
-	for _, option := range req.Option {
+	for _, option := range req.Options {
+		optID := uuid.New()
+
 		newOption := model.EquipmentOption{
+			ID:                optID,
 			EquipmentID:       equipmentID,
+			Name:              option.Name,
 			Weight:            option.Weight,
 			Price:             option.Price,
 			RemainingProducts: option.Available,
@@ -117,12 +127,40 @@ func (s *equipmentService) AddEquipment(req request.EquipmentPostRequest, contex
 			logger.Log.WithError(err).Error("error adding equipment options", newOption)
 			return err
 		}
+
+		for _, img := range option.Images {
+			imgID := uuid.MustParse(img.ID)
+			err = s.imageService.ArchiveImage(tx, context, imgID, equipmentID, optID, img.IsPrimary)
+			if err != nil {
+				tx.Rollback()
+				logger.Log.WithError(err).Error("error archiving image", imgID)
+				return err
+			}
+		}
 	}
 
-	if len(req.AdditionalField) > 0 {
+	if req.Features != nil {
+		var feats []model.EquipmentFeature
+
+		for _, featStr := range req.Features {
+			feat := model.EquipmentFeature{
+				EquipmentID: equipmentID,
+				Description: featStr,
+			}
+			feats = append(feats, feat)
+		}
+
+		if err = s.equipmentRepo.CreateEquipmentFeatures(tx, feats); err != nil {
+			tx.Rollback()
+			logger.Log.WithError(err).Error("error adding equipment feature")
+			return err
+		}
+	}
+
+	if len(req.AdditionalFields) > 0 {
 		var atts []model.Attribute
 
-		for _, field := range req.AdditionalField {
+		for _, field := range req.AdditionalFields {
 			newAttribute := model.Attribute{
 				EquipmentID: equipmentID,
 				Key:         field.Key,
@@ -150,16 +188,6 @@ func (s *equipmentService) AddEquipment(req request.EquipmentPostRequest, contex
 		tx.Rollback()
 		logger.Log.WithError(err).Error("error adding muscle Group to equipment")
 		return err
-	}
-
-	for _, img := range req.Images {
-		imgID := uuid.MustParse(img.ID)
-		err = s.imageService.ArchiveImage(tx, context, imgID, equipmentID, img.IsPrimary)
-		if err != nil {
-			tx.Rollback()
-			logger.Log.WithError(err).Error("error archiving image", imgID)
-			return err
-		}
 	}
 
 	if err := tx.Commit().Error; err != nil {
@@ -198,26 +226,6 @@ func (s *equipmentService) UpdateEquipment(eqID uuid.UUID, context context.Conte
 		return err
 	}
 
-	if req.Images != nil {
-		for _, deletedID := range req.Images.DeletedID {
-			deletedUUID := uuid.MustParse(deletedID.ID)
-			if err := s.imageService.DeleteImage(tx, context, deletedUUID); err != nil {
-				logger.Log.WithError(err).Error("error deleting image", "imgID", deletedUUID)
-				return err
-			}
-		}
-
-		for _, uploadID := range req.Images.UploadID {
-			imgID := uuid.MustParse(uploadID.ID)
-			err = s.imageService.ArchiveImage(tx, context, imgID, equipment.ID, uploadID.IsPrimary)
-			if err != nil {
-				tx.Rollback()
-				logger.Log.WithError(err).Error("error archiving image", imgID)
-				return err
-			}
-		}
-	}
-
 	if req.MuscleGroupUsed != nil {
 		if err := s.muscleGroupRepo.UpdateGroups(tx, req.MuscleGroupUsed, equipment.ID); err != nil {
 			tx.Rollback()
@@ -231,6 +239,7 @@ func (s *equipmentService) UpdateEquipment(eqID uuid.UUID, context context.Conte
 		for _, optCreated := range req.Option.Created {
 			newOption := model.EquipmentOption{
 				EquipmentID:       equipment.ID,
+				Name:              optCreated.Name,
 				Weight:            optCreated.Weight,
 				Price:             optCreated.Price,
 				RemainingProducts: optCreated.Available,
@@ -241,6 +250,17 @@ func (s *equipmentService) UpdateEquipment(eqID uuid.UUID, context context.Conte
 				logger.Log.WithError(err).Error("error adding equipment options", newOption)
 				return err
 			}
+
+			for _, img := range optCreated.Images {
+				imgID := uuid.MustParse(img.ID)
+				err = s.imageService.ArchiveImage(tx, context, imgID, equipment.ID, newOption.ID, img.IsPrimary)
+				if err != nil {
+					tx.Rollback()
+					logger.Log.WithError(err).Error("error archiving image", imgID)
+					return err
+				}
+			}
+
 		}
 
 		//deleted option
@@ -264,6 +284,7 @@ func (s *equipmentService) UpdateEquipment(eqID uuid.UUID, context context.Conte
 			toUpdatedGroup := model.EquipmentOption{
 				ID:                toUpdatedID,
 				EquipmentID:       equipment.ID,
+				Name:              updateOption.Name,
 				Weight:            updateOption.Weight,
 				Price:             updateOption.Price,
 				RemainingProducts: updateOption.Available,
@@ -275,6 +296,74 @@ func (s *equipmentService) UpdateEquipment(eqID uuid.UUID, context context.Conte
 				return err
 			}
 
+			if updateOption.Images != nil {
+				for _, deletedID := range updateOption.Images.DeletedID {
+					deletedUUID := uuid.MustParse(deletedID.ID)
+					if err := s.imageService.DeleteImage(tx, context, deletedUUID); err != nil {
+						logger.Log.WithError(err).Error("error deleting image", "imgID", deletedUUID)
+						return err
+					}
+				}
+
+				for _, uploadID := range updateOption.Images.UploadID {
+					imgID := uuid.MustParse(uploadID.ID)
+					optID := uuid.MustParse(updateOption.ID)
+					err = s.imageService.ArchiveImage(tx, context, imgID, equipment.ID, optID, uploadID.IsPrimary)
+					if err != nil {
+						tx.Rollback()
+						logger.Log.WithError(err).Error("error archiving image", imgID)
+						return err
+					}
+				}
+			}
+
+		}
+	}
+
+	if req.Feature != nil {
+		var feats []model.EquipmentFeature
+
+		for _, description := range req.Feature.Created {
+			feat := model.EquipmentFeature{
+				EquipmentID: equipment.ID,
+				Description: description,
+			}
+			feats = append(feats, feat)
+		}
+
+		if err = s.equipmentRepo.CreateEquipmentFeatures(tx, feats); err != nil {
+			tx.Rollback()
+			logger.Log.WithError(err).Error("error adding equipment feature")
+			return err
+		}
+
+		if req.Feature.Deleted != nil {
+			var feats []uuid.UUID
+
+			for _, feat := range req.Feature.Deleted {
+				feats = append(feats, uuid.MustParse(feat))
+			}
+
+			if err := s.equipmentRepo.DeleteEquipmentFeature(tx, feats); err != nil {
+				tx.Rollback()
+				logger.Log.WithError(err).Error("error deleting equipment Features")
+				return err
+			}
+		}
+
+		for _, updateFeature := range req.Feature.Updated {
+			toUpdatedID := uuid.MustParse(updateFeature.ID)
+			toUpdatedFeat := model.EquipmentFeature{
+				ID:          toUpdatedID,
+				EquipmentID: equipment.ID,
+				Description: updateFeature.Description,
+			}
+
+			if err := s.equipmentRepo.SaveEquipmentFeature(tx, toUpdatedFeat); err != nil {
+				tx.Rollback()
+				logger.Log.WithError(err).Error("error saving equipment feature")
+				return err
+			}
 		}
 	}
 
@@ -324,8 +413,8 @@ func (s *equipmentService) UpdateEquipment(eqID uuid.UUID, context context.Conte
 
 	}
 
-	if req.Band != nil {
-		equipment.Brand = *req.Band
+	if req.Brand != nil {
+		equipment.Brand = *req.Brand
 	}
 
 	if req.Color != nil {
@@ -344,8 +433,8 @@ func (s *equipmentService) UpdateEquipment(eqID uuid.UUID, context context.Conte
 		equipment.Name = *req.Name
 	}
 
-	if req.SpecialFeature != nil {
-		equipment.SpecialFeature = *req.SpecialFeature
+	if req.Description != nil {
+		equipment.Description = *req.Description
 	}
 
 	if err := s.equipmentRepo.SaveEquipment(tx, equipment); err != nil {

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/E-cercise/E-cercise/src/enum"
+	"github.com/E-cercise/E-cercise/src/helper"
 	"github.com/E-cercise/E-cercise/src/logger"
 	"github.com/E-cercise/E-cercise/src/model"
 	"github.com/E-cercise/E-cercise/src/repository"
@@ -17,7 +18,7 @@ import (
 
 type ImageService interface {
 	UploadImage(context context.Context, file multipart.File, fileHeader *multipart.FileHeader, isPrimary bool) (string, error)
-	ArchiveImage(tx *gorm.DB, context context.Context, imgID uuid.UUID, eqpID uuid.UUID, isPrimary bool) error
+	ArchiveImage(tx *gorm.DB, context context.Context, imgID uuid.UUID, eqpID uuid.UUID, eqOptID uuid.UUID, isPrimary bool) error
 	DeleteImage(tx *gorm.DB, context context.Context, imgID uuid.UUID) error
 	//GetAllEquipmentData() (*response.EquipmentsResponse, error)
 
@@ -53,11 +54,11 @@ func (s *imageService) UploadImage(context context.Context, file multipart.File,
 	}
 
 	newImage := model.Image{
-		EquipmentID:    nil,
-		IsPrimary:      isPrimary,
-		ImgPath:        fileName,
-		CloudinaryPath: cloudinaryPath,
-		State:          enum.Temp,
+		EquipmentOptionID: nil,
+		IsPrimary:         isPrimary,
+		ImgPath:           fileName,
+		CloudinaryPath:    cloudinaryPath,
+		State:             enum.Temp,
 	}
 
 	err = s.imageRepo.CreateImage(tx, &newImage)
@@ -78,10 +79,11 @@ func (s *imageService) UploadImage(context context.Context, file multipart.File,
 
 func generateFileName(folder string) string {
 	timestamp := time.Now().Format("20060102150405") // e.g., "20250112094530"
-	return fmt.Sprintf("%s/%s_%s", folder, "img", timestamp)
+	someRandString := helper.RandomString(5)
+	return fmt.Sprintf("%s/%s_%s%s", folder, "img", someRandString, timestamp)
 }
 
-func (s *imageService) ArchiveImage(tx *gorm.DB, context context.Context, imgID uuid.UUID, eqpID uuid.UUID, isPrimary bool) error {
+func (s *imageService) ArchiveImage(tx *gorm.DB, context context.Context, imgID uuid.UUID, eqpID uuid.UUID, eqOptID uuid.UUID, isPrimary bool) error {
 	img, err := s.imageRepo.FindByIDTransaction(tx, imgID)
 
 	if err != nil {
@@ -95,12 +97,12 @@ func (s *imageService) ArchiveImage(tx *gorm.DB, context context.Context, imgID 
 	}
 
 	oldPublicID := img.ImgPath
-	newPublicID := strings.ReplaceAll(img.ImgPath, "temp/", fmt.Sprintf("archive/%v/", eqpID))
+	newPublicID := strings.ReplaceAll(img.ImgPath, "temp/", fmt.Sprintf("archive/%v/%v/", eqpID, eqOptID))
 
-	img.CloudinaryPath = strings.ReplaceAll(img.CloudinaryPath, "temp/", fmt.Sprintf("archive/%v/", eqpID))
+	img.CloudinaryPath = strings.ReplaceAll(img.CloudinaryPath, "temp/", fmt.Sprintf("archive/%v/%v", eqpID, eqOptID))
 	img.ImgPath = newPublicID
 	img.IsPrimary = isPrimary
-	img.EquipmentID = &eqpID
+	img.EquipmentOptionID = &eqOptID
 
 	if err = s.imageRepo.SaveImage(tx, img); err != nil {
 		logger.Log.WithError(err).Error("cannot save image in repo", img)
@@ -119,7 +121,7 @@ func (s *imageService) DeleteImage(tx *gorm.DB, context context.Context, imgID u
 
 	img, err := s.imageRepo.FindByIDTransaction(tx, imgID)
 	if err != nil {
-		return errors.New("error cant finding image in db: " + err.Error())
+		return errors.New("error cant finding image in data: " + err.Error())
 	}
 
 	imgPath := img.ImgPath

@@ -5,8 +5,11 @@ import (
 	"github.com/E-cercise/E-cercise/src/config"
 	"github.com/E-cercise/E-cercise/src/enum"
 	"github.com/E-cercise/E-cercise/src/logger"
+	"github.com/E-cercise/E-cercise/src/model"
+	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"log/slog"
 	"time"
 )
 
@@ -23,7 +26,7 @@ func CreateToken(userId uuid.UUID, name string, lastName string) (string, error)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id": userId,
 		"name":    name + " " + lastName,
-		"exp":     time.Now().Add(time.Hour * 3).In(location).Unix(),
+		"exp":     time.Now().Add(time.Hour * 3).In(location).Unix(), // TODO: Need to change
 	})
 	tokenString, err := token.SignedString(secretKey)
 
@@ -61,4 +64,23 @@ func ContainsRole(roles []enum.Role, role enum.Role) bool {
 		}
 	}
 	return false
+}
+
+func GetCurrentUser(c *fiber.Ctx) (*model.User, error) {
+	currentUser := c.Locals("currentUser")
+	if currentUser == nil {
+		slog.Error("Unauthorized User: User doesn't exist")
+		return nil, c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Unauthorized",
+		})
+	}
+
+	user, ok := currentUser.(*model.User)
+	if !ok {
+		return nil, c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Unauthorized",
+		})
+	}
+
+	return user, nil
 }
