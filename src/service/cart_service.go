@@ -16,6 +16,7 @@ type CartService interface {
 	DeleteLineEquipmentInCart(lineEquipmentID uuid.UUID) (string, error)
 	GetAllLineEquipmentInCart(userID uuid.UUID) (*response.GetCartItemResponse, error)
 	ModifyLineEquipmentInCart(req request.CartItemPutRequest) error
+	ClearAllLineEquipmentInCart(userID uuid.UUID) error
 }
 
 type cartService struct {
@@ -147,6 +148,17 @@ func (s *cartService) ModifyLineEquipmentInCart(req request.CartItemPutRequest) 
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
+	
+   return err
+	}
+	return nil
+}
+
+    
+ func (s *cartService) ClearAllLineEquipmentInCart(userID uuid.UUID) error {
+	err := s.cartRepo.ClearAllLineItems(userID)
+	if err != nil {
+		logger.Log.WithError(err).Error("error clearing all line items")
 		return err
 	}
 	return nil

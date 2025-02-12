@@ -13,6 +13,7 @@ type CartRepository interface {
 	DeleteLineItem(lineEquipmentID uuid.UUID) (int64, error)
 	GetCart(userID uuid.UUID) (*model.Cart, error)
 	ModifyLineItem(tx *gorm.DB, lineEquipmentID uuid.UUID, quantity int) error
+	ClearAllLineItems(userID uuid.UUID) error
 }
 
 type cartRepository struct {
@@ -63,4 +64,20 @@ func (r *cartRepository) GetCart(userID uuid.UUID) (*model.Cart, error) {
 
 func (r *cartRepository) ModifyLineItem(tx *gorm.DB, lineEquipmentID uuid.UUID, quantity int) error {
 	return tx.Model(&model.LineEquipment{}).Where("id = ?", lineEquipmentID).Update("quantity", quantity).Error
+}
+func (r *cartRepository) ClearAllLineItems(userID uuid.UUID) error {
+	var cart model.Cart
+
+	if err := r.db.Preload("LineEquipments").Where("user_id = ?", userID).First(&cart).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("cart not found for user ID: %s", userID)
+		}
+		return err
+	}
+
+	if err := r.db.Delete(cart.LineEquipments).Error; err != nil {
+		return fmt.Errorf("failed to clear all line equipments in cart: %v", err)
+	}
+
+	return nil
 }
