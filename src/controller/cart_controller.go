@@ -79,3 +79,25 @@ func (c *CartController) GetCartItems(ctx *fiber.Ctx) error {
 
 	return ctx.Status(fiber.StatusOK).JSON(resp)
 }
+
+func (c *CartController) ModifyItemInCart(ctx *fiber.Ctx) error {
+	req, ok := ctx.Locals("req").(request.CartItemPutRequest)
+	if !ok {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "failed to parse request body (Controller)",
+		})
+	}
+
+	user, err := helper.GetCurrentUser(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := c.CartService.ModifyLineEquipmentInCart(req, user.ID); err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": fmt.Sprintf("error cant modify item in cart with error: %v", err.Error()),
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON("cart modified successfully")
+}
