@@ -128,22 +128,9 @@ func (s *cartService) GetAllLineEquipmentInCart(userID uuid.UUID) (*response.Get
 }
 
 func (s *cartService) ClearAllLineEquipmentInCart(userID uuid.UUID) error {
-	tx := s.db.Begin()
-
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-		}
-	}()
-
 	err := s.cartRepo.ClearAllLineItems(userID)
 	if err != nil {
 		logger.Log.WithError(err).Error("error clearing all line items")
-		return err
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
 		return err
 	}
 	return nil
