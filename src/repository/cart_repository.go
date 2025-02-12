@@ -62,5 +62,5 @@ func (r *cartRepository) GetCart(userID uuid.UUID) (*model.Cart, error) {
 }
 
 func (r *cartRepository) ModifyLineItem(tx *gorm.DB, lineEquipmentID uuid.UUID, quantity int) error {
-	return tx.Model(&model.LineEquipment{}).Update("id = ?", lineEquipmentID).Update("quantity", quantity).Error
+	return tx.Model(&model.LineEquipment{}).Where("id = ?", lineEquipmentID).Update("quantity", quantity).Error
 }

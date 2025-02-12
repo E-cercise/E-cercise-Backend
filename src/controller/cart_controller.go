@@ -88,16 +88,11 @@ func (c *CartController) ModifyItemInCart(ctx *fiber.Ctx) error {
 		})
 	}
 
-	user, err := helper.GetCurrentUser(ctx)
-	if err != nil {
-		return err
-	}
-
-	if err := c.CartService.ModifyLineEquipmentInCart(req, user.ID); err != nil {
+	if err := c.CartService.ModifyLineEquipmentInCart(req); err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": fmt.Sprintf("error cant modify item in cart with error: %v", err.Error()),
 		})
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON("cart modified successfully")
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{"message": "cart modified successfully"})
 }
