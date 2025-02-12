@@ -11,6 +11,7 @@ import (
 
 type CartService interface {
 	AddEquipmentToCart(req request.CartItemPostRequest, userID uuid.UUID) error
+	DeleteLineEquipmentInCart(lineEquipmentID uuid.UUID) (string, error)
 }
 
 type cartService struct {
@@ -49,4 +50,20 @@ func (s *cartService) AddEquipmentToCart(req request.CartItemPostRequest, userID
 	}
 
 	return nil
+}
+
+func (s *cartService) DeleteLineEquipmentInCart(lineEquipmentID uuid.UUID) (string, error) {
+
+	recordCount, err := s.cartRepo.DeleteLineItem(lineEquipmentID)
+	if err != nil {
+		logger.Log.WithError(err).Error("error deleting line item ID: ", lineEquipmentID)
+		return "error", err
+	}
+
+	if recordCount == 0 {
+		logger.Log.Warning("user trying to delete line item that doesnt exists")
+		return "204", nil
+	}
+
+	return "success", nil
 }

@@ -9,8 +9,8 @@ import (
 )
 
 type CartRepository interface {
-	//FindByID(tx *gorm.DB, mID string) (*model.MuscleGroup, error)
 	AddLineItem(userID uuid.UUID, lineEquipment *model.LineEquipment) error
+	DeleteLineItem(lineEquipmentID uuid.UUID) (int64, error)
 }
 
 type cartRepository struct {
@@ -38,4 +38,10 @@ func (r *cartRepository) AddLineItem(userID uuid.UUID, lineEquipment *model.Line
 	}
 
 	return nil
+}
+
+func (r *cartRepository) DeleteLineItem(lineEquipmentID uuid.UUID) (int64, error) {
+	res := r.db.Delete(model.LineEquipment{}, lineEquipmentID)
+
+	return res.RowsAffected, res.Error
 }
