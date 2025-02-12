@@ -44,13 +44,13 @@ func (s *cartService) AddEquipmentToCart(req request.CartItemPostRequest, userID
 	_, err = s.equipmentRepo.FindByID(equipmentID)
 	if err != nil {
 		logger.Log.WithError(err).Error("cant find equipment ID:", equipmentID)
-		return err
+		return fmt.Errorf("equipment ID: %v not found", equipmentID)
 	}
 
 	_, err = s.equipmentRepo.FindOptionByID(eqpOptID)
 	if err != nil {
-		logger.Log.WithError(err).Error("cant find equipment Option ID:", equipmentID)
-		return err
+		logger.Log.WithError(err).Error("cant find equipment Option ID:", eqpOptID)
+		return fmt.Errorf("equipmentOptionID: %v not found", eqpOptID)
 	}
 
 	newLineEquipment := model.LineEquipment{
