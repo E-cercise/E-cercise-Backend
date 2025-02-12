@@ -16,6 +16,6 @@ func CartRouter(router fiber.Router, cartController *controller.CartController, 
 	cartGroup.Delete("/:line_equipment_id", middleware.Authentication(userRepo), middleware.RoleAuthorization(enum.RoleUser, enum.RoleAdmin), validation.ValidateParam("line_equipment_id", "uuid"),
 		cartController.DeleteItemInCart)
 
-	//imageGroup.Post("/upload", middleware.Authentication(userRepo), middleware.RoleAuthorization(enum.RoleAdmin))
+	cartGroup.Get("/items", middleware.Authentication(userRepo), middleware.RoleAuthorization(enum.RoleUser, enum.RoleAdmin), cartController.GetCartItems)
 
 }

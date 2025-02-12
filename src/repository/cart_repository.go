@@ -11,6 +11,7 @@ import (
 type CartRepository interface {
 	AddLineItem(userID uuid.UUID, lineEquipment *model.LineEquipment) error
 	DeleteLineItem(lineEquipmentID uuid.UUID) (int64, error)
+	GetCart(userID uuid.UUID) (*model.Cart, error)
 }
 
 type cartRepository struct {
@@ -44,4 +45,17 @@ func (r *cartRepository) DeleteLineItem(lineEquipmentID uuid.UUID) (int64, error
 	res := r.db.Delete(model.LineEquipment{}, lineEquipmentID)
 
 	return res.RowsAffected, res.Error
+}
+
+func (r *cartRepository) GetCart(userID uuid.UUID) (*model.Cart, error) {
+	var cart model.Cart
+
+	if err := r.db.Preload("LineEquipments").Where("user_id = ?", userID).First(&cart).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("cart not found for user ID: %s", userID)
+		}
+		return nil, err
+	}
+
+	return &cart, nil
 }
