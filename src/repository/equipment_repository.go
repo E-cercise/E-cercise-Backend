@@ -84,10 +84,9 @@ func (r *equipmentRepository) AddAttributes(tx *gorm.DB, attr []model.Attribute)
 func (r *equipmentRepository) FindByID(eqID uuid.UUID) (*model.Equipment, error) {
 	var equipment *model.Equipment
 
-	err := r.db.Preload("Images").
-		Preload("MuscleGroups").
+	err := r.db.Preload("MuscleGroups").
 		Preload("EquipmentOptions").
-		Preload("EquipmentFeatures").
+		Preload("EquipmentFeature").
 		Preload("Attribute").
 		First(&equipment, "id = ?", eqID).Error
 
