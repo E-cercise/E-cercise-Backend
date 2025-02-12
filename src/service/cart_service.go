@@ -15,6 +15,7 @@ type CartService interface {
 	AddEquipmentToCart(req request.CartItemPostRequest, userID uuid.UUID) error
 	DeleteLineEquipmentInCart(lineEquipmentID uuid.UUID) (string, error)
 	GetAllLineEquipmentInCart(userID uuid.UUID) (*response.GetCartItemResponse, error)
+	ModifyLineEquipmentInCart(req request.CartItemPutRequest) error
 	ClearAllLineEquipmentInCart(userID uuid.UUID) error
 }
 
@@ -127,7 +128,34 @@ func (s *cartService) GetAllLineEquipmentInCart(userID uuid.UUID) (*response.Get
 	return &resp, nil
 }
 
-func (s *cartService) ClearAllLineEquipmentInCart(userID uuid.UUID) error {
+func (s *cartService) ModifyLineEquipmentInCart(req request.CartItemPutRequest) error {
+	tx := s.db.Begin()
+
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	for _, item := range req.Items {
+		err := s.cartRepo.ModifyLineItem(tx, uuid.MustParse(item.LineEquipmentID), item.Quantity)
+		if err != nil {
+			tx.Rollback()
+			logger.Log.WithError(err).Error("cant modify line equipment with ID:", item.LineEquipmentID)
+			return err
+		}
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+	
+   return err
+	}
+	return nil
+}
+
+    
+ func (s *cartService) ClearAllLineEquipmentInCart(userID uuid.UUID) error {
 	err := s.cartRepo.ClearAllLineItems(userID)
 	if err != nil {
 		logger.Log.WithError(err).Error("error clearing all line items")

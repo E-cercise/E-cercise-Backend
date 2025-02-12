@@ -72,6 +72,9 @@ func InitRouter(db *gorm.DB) *fiber.App {
 	logger2.Log.Info("Router initialized")
 	for _, route := range app.GetRoutes() {
 		// You can format the output however you like
+		if route.Method == "HEAD" || route.Method == "CONNECT" || route.Method == "OPTIONS" || route.Method == "TRACE" || route.Method == "PATCH" {
+			continue
+		}
 		logger2.Log.Infof("Method: %s \t Path: %s\n", route.Method, route.Path)
 	}
 

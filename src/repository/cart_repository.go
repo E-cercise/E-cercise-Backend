@@ -12,6 +12,7 @@ type CartRepository interface {
 	AddLineItem(userID uuid.UUID, lineEquipment *model.LineEquipment) error
 	DeleteLineItem(lineEquipmentID uuid.UUID) (int64, error)
 	GetCart(userID uuid.UUID) (*model.Cart, error)
+	ModifyLineItem(tx *gorm.DB, lineEquipmentID uuid.UUID, quantity int) error
 	ClearAllLineItems(userID uuid.UUID) error
 }
 
@@ -61,6 +62,9 @@ func (r *cartRepository) GetCart(userID uuid.UUID) (*model.Cart, error) {
 	return &cart, nil
 }
 
+func (r *cartRepository) ModifyLineItem(tx *gorm.DB, lineEquipmentID uuid.UUID, quantity int) error {
+	return tx.Model(&model.LineEquipment{}).Where("id = ?", lineEquipmentID).Update("quantity", quantity).Error
+}
 func (r *cartRepository) ClearAllLineItems(userID uuid.UUID) error {
 	var cart model.Cart
 
