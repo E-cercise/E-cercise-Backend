@@ -15,7 +15,7 @@ import (
 
 var secretKey = []byte(config.JwtSecret)
 
-func CreateToken(userId uuid.UUID, name string, lastName string) (string, error) {
+func CreateToken(userId uuid.UUID, name string, lastName string, role enum.Role) (string, error) {
 
 	location, err := time.LoadLocation("Asia/Bangkok")
 	if err != nil {
@@ -26,6 +26,7 @@ func CreateToken(userId uuid.UUID, name string, lastName string) (string, error)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id": userId,
 		"name":    name + " " + lastName,
+		"role":    role,
 		"exp":     time.Now().Add(time.Hour * 3).In(location).Unix(), // TODO: Need to change
 	})
 	tokenString, err := token.SignedString(secretKey)
