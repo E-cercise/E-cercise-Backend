@@ -1,8 +1,11 @@
 package validation
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/E-cercise/E-cercise/src/config"
 	"github.com/E-cercise/E-cercise/src/data/request"
+	"github.com/E-cercise/E-cercise/src/helper"
 	"github.com/E-cercise/E-cercise/src/logger"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -33,10 +36,32 @@ func ValidateUserRegister() fiber.Handler {
 
 func ValidateLoginRequest() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		var loginBody request.LoginRequest
-		if err := c.BodyParser(&loginBody); err != nil {
+
+		type payloadStruct struct {
+			IV        string `json:"iv"`
+			LoginBody string `json:"login_body"`
+		}
+
+		var loginPayload payloadStruct
+		if err := c.BodyParser(&loginPayload); err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"error": "Invalid request data",
+			})
+		}
+
+		decryptedJSON, err := helper.DecryptPayload(loginPayload.LoginBody, loginPayload.IV, config.SecretKey)
+		if err != nil {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error":   "Decryption failed",
+				"message": err.Error(),
+			})
+		}
+
+		var loginBody request.LoginRequest
+		if err := json.Unmarshal([]byte(decryptedJSON), &loginBody); err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"err":     "Invalid decrypted JSON",
+				"message": err.Error(),
 			})
 		}
 

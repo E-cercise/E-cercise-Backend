@@ -70,7 +70,7 @@ func (s *userService) LoginUser(reqBody request.LoginRequest) (*string, error) {
 		return nil, errors.New("invalid password")
 	}
 
-	token, err := helper.CreateToken(user.ID, user.FirstName, user.LastName)
+	token, err := helper.CreateToken(user.ID, user.FirstName, user.LastName, user.Role)
 
 	if err != nil {
 		return nil, errors.New("failed to create token, JWT Error")

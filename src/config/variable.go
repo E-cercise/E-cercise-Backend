@@ -16,6 +16,7 @@ var (
 	DatabaseName        string
 	JwtSecret           string
 	FrontendBaseURL     string
+	SecretKey           string
 	CloudinaryCloudName string
 	CloudinaryApiKey    string
 	CloudinaryApiSecret string
@@ -34,6 +35,7 @@ func Init() {
 	DatabaseName = getEnv("DATABASE_NAME", "crud")
 	JwtSecret = getEnv("JWT_SECRET", "secret")
 	FrontendBaseURL = getEnv("FRONTEND_BASE_URL", "localhost:5173")
+	SecretKey = getEnv("SECRET_KEY", "")
 	CloudinaryCloudName = getEnv("CLOUDINARY_CLOUD_NAME", "")
 	CloudinaryApiKey = getEnv("CLOUDINARY_API_KEY", "")
 	CloudinaryApiSecret = getEnv("CLOUDINARY_API_SECRET", "")
