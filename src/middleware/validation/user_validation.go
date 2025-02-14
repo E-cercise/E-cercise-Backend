@@ -3,7 +3,6 @@ package validation
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/E-cercise/E-cercise/src/config"
 	"github.com/E-cercise/E-cercise/src/data/request"
 	"github.com/E-cercise/E-cercise/src/helper"
 	"github.com/E-cercise/E-cercise/src/logger"
@@ -38,7 +37,6 @@ func ValidateLoginRequest() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
 		type payloadStruct struct {
-			IV        string `json:"iv"`
 			LoginBody string `json:"login_body"`
 		}
 
@@ -49,7 +47,7 @@ func ValidateLoginRequest() fiber.Handler {
 			})
 		}
 
-		decryptedJSON, err := helper.DecryptPayload(loginPayload.LoginBody, loginPayload.IV, config.SecretKey)
+		decryptedJSON, err := helper.DecryptPayload(loginPayload.LoginBody)
 		if err != nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error":   "Decryption failed",
