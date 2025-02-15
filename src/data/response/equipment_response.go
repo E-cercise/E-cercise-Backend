@@ -11,7 +11,7 @@ type EquipmentsResponse struct {
 
 type Equipment struct {
 	ID              uuid.UUID `json:"ID"`
-	Name            string    `json:"Description"`
+	Name            string    `json:"name"`
 	Price           float64   `json:"price"`
 	ImagePath       string    `json:"image_path"`
 	MuscleGroupUsed []string  `json:"muscle_group_used"`
