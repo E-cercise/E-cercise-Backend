@@ -31,7 +31,7 @@ type EquipmentDetailResponse struct {
 	Material        string            `json:"material"`
 	Model           string            `json:"model"`
 	MuscleGroupUsed []string          `json:"muscle_group_used"`
-	Name            string            `json:"Description"`
+	Name            string            `json:"name"`
 	Option          []Option          `json:"option"`
 	AdditionalField []AdditionalField `json:"additional_field"`
 	Feature         []Feature         `json:"feature"`
@@ -59,7 +59,7 @@ type Option struct {
 
 type Feature struct {
 	ID          string `json:"id"`
-	Description string `json:"Description"`
+	Description string `json:"description"`
 }
 
 func FormatEquipmentDetailResponse(equipment *model.Equipment) *EquipmentDetailResponse {
