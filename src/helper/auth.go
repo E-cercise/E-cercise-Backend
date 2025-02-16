@@ -27,7 +27,7 @@ func CreateToken(userId uuid.UUID, name string, lastName string, role enum.Role)
 		"user_id": userId,
 		"name":    name + " " + lastName,
 		"role":    role,
-		"exp":     time.Now().Add(time.Hour * 20).In(location).Unix(), // TODO: Need to change
+		"exp":     time.Now().Add(time.Hour * 3).In(location).Unix(), // TODO: Need to change
 	})
 	tokenString, err := token.SignedString(secretKey)
 
