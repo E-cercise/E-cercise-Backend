@@ -87,6 +87,7 @@ func (r *equipmentRepository) FindByID(eqID uuid.UUID) (*model.Equipment, error)
 
 	err := r.db.Preload("MuscleGroups").
 		Preload("EquipmentOptions").
+		Preload("EquipmentOptions.Images").
 		Preload("EquipmentFeature").
 		Preload("Attribute").
 		First(&equipment, "id = ?", eqID).Error

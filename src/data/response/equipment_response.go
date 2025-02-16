@@ -25,7 +25,7 @@ type Equipment struct {
 //}
 
 type EquipmentDetailResponse struct {
-	Band            string            `json:"band"`
+	Brand           string            `json:"brand"`
 	Color           string            `json:"color"`
 	Description     string            `json:"description"`
 	Material        string            `json:"material"`
@@ -113,7 +113,7 @@ func FormatEquipmentDetailResponse(equipment *model.Equipment) *EquipmentDetailR
 	}
 
 	resp := EquipmentDetailResponse{
-		Band:            equipment.Brand,
+		Brand:           equipment.Brand,
 		Color:           equipment.Color,
 		Description:     equipment.Description,
 		Material:        equipment.Material,

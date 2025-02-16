@@ -11,7 +11,7 @@ type EquipmentListRequest struct {
 }
 
 type EquipmentPostRequest struct {
-	Band             string            `json:"band"`
+	Brand            string            `json:"brand"`
 	Color            string            `json:"color"`
 	Description      string            `json:"description"`
 	Material         string            `json:"material"`
@@ -56,7 +56,7 @@ func ValidateMuscleGroup(muscleGroups []string) bool {
 
 type EquipmentPutRequest struct {
 	AdditionalField *AdditionalFieldPut `json:"additional_field,omitempty"`
-	Brand           *string             `json:"band,omitempty"`
+	Brand           *string             `json:"brand,omitempty"`
 	Description     *string             `json:"description,omitempty"`
 	Color           *string             `json:"color,omitempty"`
 	Material        *string             `json:"material,omitempty"`

@@ -96,7 +96,7 @@ func (s *equipmentService) AddEquipment(req request.EquipmentPostRequest, contex
 	newEquipment := model.Equipment{
 		ID:          equipmentID,
 		Name:        req.Name,
-		Brand:       req.Band,
+		Brand:       req.Brand,
 		Description: req.Description,
 		Model:       req.Model,
 		Color:       req.Color,
