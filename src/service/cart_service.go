@@ -121,7 +121,7 @@ func (s *cartService) GetAllLineEquipmentInCart(userID uuid.UUID) (*response.Get
 			EquipmentName:   fmt.Sprintf("%v: %v", equipment.Name, equipmentOption.Name),
 			LineEquipmentID: line.ID.String(),
 			PerUnitPrice:    equipmentOption.Price,
-			ImgUrl:          img.ImgPath,
+			ImgUrl:          img.CloudinaryPath,
 			Quantity:        line.Quantity,
 			Total:           lineTotal,
 		})
