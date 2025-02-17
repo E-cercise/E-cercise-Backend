@@ -100,7 +100,7 @@ func (r *equipmentRepository) FindByID(eqID uuid.UUID) (*model.Equipment, error)
 
 func (r *equipmentRepository) FindOptionByID(optionID uuid.UUID) (*model.EquipmentOption, error) {
 	var opt *model.EquipmentOption
-	err := r.db.Find(&opt, "id = ?", optionID).Error
+	err := r.db.Preload("Images").Find(&opt, "id = ?", optionID).Error
 	return opt, err
 }
 
