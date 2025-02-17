@@ -13,6 +13,15 @@ func FindPrimaryImageFromEquipment(equipment model.Equipment) *model.Image {
 	return nil
 }
 
+func FindPrimaryImage(equipmentOption model.EquipmentOption) *model.Image {
+	for _, image := range equipmentOption.Images {
+		if image.IsPrimary {
+			return &image
+		}
+	}
+	return nil
+}
+
 func GetMuscleGroupIDFromEquipment(equipment model.Equipment) []string {
 	var muscleGroups []string
 	for _, musGroup := range equipment.MuscleGroups {

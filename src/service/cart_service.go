@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/E-cercise/E-cercise/src/data/request"
 	"github.com/E-cercise/E-cercise/src/data/response"
+	"github.com/E-cercise/E-cercise/src/helper"
 	"github.com/E-cercise/E-cercise/src/logger"
 	"github.com/E-cercise/E-cercise/src/model"
 	"github.com/E-cercise/E-cercise/src/repository"
@@ -111,12 +112,16 @@ func (s *cartService) GetAllLineEquipmentInCart(userID uuid.UUID) (*response.Get
 			return nil, err
 		}
 
+		img := helper.FindPrimaryImage(*equipmentOption)
+
 		lineTotal := float64(line.Quantity) * equipmentOption.Price
 		total += lineTotal
 
 		resp.LineEquipments = append(resp.LineEquipments, response.LineEquipment{
 			EquipmentName:   fmt.Sprintf("%v: %v", equipment.Name, equipmentOption.Name),
 			LineEquipmentID: line.ID.String(),
+			PerUnitPrice:    equipmentOption.Price,
+			ImgUrl:          img.ImgPath,
 			Quantity:        line.Quantity,
 			Total:           lineTotal,
 		})
@@ -148,14 +153,13 @@ func (s *cartService) ModifyLineEquipmentInCart(req request.CartItemPutRequest) 
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-	
-   return err
+
+		return err
 	}
 	return nil
 }
 
-    
- func (s *cartService) ClearAllLineEquipmentInCart(userID uuid.UUID) error {
+func (s *cartService) ClearAllLineEquipmentInCart(userID uuid.UUID) error {
 	err := s.cartRepo.ClearAllLineItems(userID)
 	if err != nil {
 		logger.Log.WithError(err).Error("error clearing all line items")
