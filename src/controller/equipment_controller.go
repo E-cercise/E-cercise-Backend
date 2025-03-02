@@ -2,7 +2,9 @@ package controller
 
 import (
 	"github.com/E-cercise/E-cercise/src/data/request"
+	"github.com/E-cercise/E-cercise/src/data/response"
 	"github.com/E-cercise/E-cercise/src/helper"
+	"github.com/E-cercise/E-cercise/src/model"
 	"github.com/E-cercise/E-cercise/src/service"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -43,7 +45,21 @@ func (c *EquipmentController) GetAllEquipment(ctx *fiber.Ctx) error {
 		})
 	}
 
-	equipments, err := c.EquipmentService.GetEquipmentData(req, paginator)
+	currentUser := ctx.Locals("currentUser")
+	var equipments *response.EquipmentsResponse
+	var err error
+	if currentUser != nil {
+		user, ok := currentUser.(*model.User)
+		if !ok {
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"message": "cant convert user into model.user in context",
+			})
+		}
+		equipments, err = c.EquipmentService.GetRecommendEquipmentData(req, paginator, user.ID)
+	} else {
+		equipments, err = c.EquipmentService.GetEquipmentData(req, paginator)
+	}
+
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),

@@ -16,6 +16,7 @@ import (
 
 type EquipmentService interface {
 	GetEquipmentData(q request.EquipmentListRequest, paginatior *helper.Paginator) (*response.EquipmentsResponse, error)
+	GetRecommendEquipmentData(q request.EquipmentListRequest, paginatior *helper.Paginator, userID uuid.UUID) (*response.EquipmentsResponse, error)
 	AddEquipment(req request.EquipmentPostRequest, context context.Context) error
 	GetEquipmentDetail(eqID uuid.UUID) (*response.EquipmentDetailResponse, error)
 	UpdateEquipment(eqID uuid.UUID, context context.Context, req request.EquipmentPutRequest) error
@@ -70,6 +71,11 @@ func (s *equipmentService) GetEquipmentData(q request.EquipmentListRequest, pagi
 	}
 	return &resp, nil
 
+}
+
+func (s *equipmentService) GetRecommendEquipmentData(q request.EquipmentListRequest, paginatior *helper.Paginator, userID uuid.UUID) (*response.EquipmentsResponse, error) {
+	logger.Log.Infof("recommending equipment to userID: %v", userID)
+	return s.GetEquipmentData(q, paginatior)
 }
 
 func findEquipmentMinimumPrice(equipment model.Equipment) float64 {
