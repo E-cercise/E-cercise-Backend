@@ -119,3 +119,14 @@ func (c *EquipmentController) UpdateEquipment(ctx *fiber.Ctx) error {
 
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{"message": "equipment update successfully"})
 }
+
+func (c *EquipmentController) DeleteEquipment(ctx *fiber.Ctx) error {
+	equipmentID := uuid.MustParse(ctx.Params("id"))
+
+	err := c.EquipmentService.DeleteEquipment(equipmentID, ctx.Context())
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{"message": "equipment has been deleted"})
+}

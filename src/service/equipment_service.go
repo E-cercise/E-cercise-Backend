@@ -20,6 +20,7 @@ type EquipmentService interface {
 	AddEquipment(req request.EquipmentPostRequest, context context.Context) error
 	GetEquipmentDetail(eqID uuid.UUID) (*response.EquipmentDetailResponse, error)
 	UpdateEquipment(eqID uuid.UUID, context context.Context, req request.EquipmentPutRequest) error
+	DeleteEquipment(eqID uuid.UUID, context context.Context) error
 }
 
 type equipmentService struct {
@@ -455,4 +456,37 @@ func (s *equipmentService) UpdateEquipment(eqID uuid.UUID, context context.Conte
 	}
 
 	return nil
+}
+
+func (s *equipmentService) DeleteEquipment(eqID uuid.UUID, context context.Context) error {
+	tx := s.db.Begin()
+
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	equipment, err := s.equipmentRepo.FindByIDTransaction(tx, eqID)
+
+	if err != nil {
+		logger.Log.WithError(err).Error("error finding equipment by id", "equipmentID", eqID)
+		tx.Rollback()
+		return err
+	}
+
+	for _, opt := range equipment.EquipmentOptions {
+		for _, img := range opt.Images {
+			if err := s.imageService.DeleteImage(tx, context, img.ID); err != nil {
+				logger.Log.WithError(err).Error("cant delete image", "imgID", img)
+				tx.Rollback()
+				return err
+			}
+		}
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return err
+	}
 }
