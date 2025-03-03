@@ -104,6 +104,7 @@ func (s *equipmentService) AddEquipment(req request.EquipmentPostRequest, contex
 		ID:          equipmentID,
 		Name:        req.Name,
 		Brand:       req.Brand,
+		Category:    req.Category,
 		Description: req.Description,
 		Model:       req.Model,
 		Color:       req.Color,

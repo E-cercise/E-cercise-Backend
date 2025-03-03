@@ -13,6 +13,7 @@ type EquipmentListRequest struct {
 type EquipmentPostRequest struct {
 	Brand            string            `json:"brand"`
 	Color            string            `json:"color"`
+	Category         string            `json:"category"`
 	Description      string            `json:"description"`
 	Material         string            `json:"material"`
 	Model            string            `json:"model"`

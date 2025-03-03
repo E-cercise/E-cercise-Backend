@@ -8,6 +8,7 @@ import (
 type Equipment struct {
 	ID               uuid.UUID          `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
 	Name             string             `gorm:"type:text;not null" json:"name"`
+	Category         string             `gorm:"type:varchar(50);not null" json:"category"`
 	Description      string             `gorm:"type:text;not null" json:"description"`
 	Brand            string             `gorm:"type:text" json:"brand"`
 	Model            string             `gorm:"type:text" json:"model"`
