@@ -485,8 +485,16 @@ func (s *equipmentService) DeleteEquipment(eqID uuid.UUID, context context.Conte
 		}
 	}
 
+	if err := s.equipmentRepo.DeleteEquipment(tx, eqID); err != nil {
+		tx.Rollback()
+		logger.Log.WithError(err).Error("error deleting equipment ID: ", equipment.ID)
+		return err
+	}
+
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
 		return err
 	}
+
+	return nil
 }

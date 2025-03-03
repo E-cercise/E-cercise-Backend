@@ -24,6 +24,7 @@ type EquipmentRepository interface {
 	SaveEquipment(tx *gorm.DB, equipment *model.Equipment) error
 	CreateEquipmentFeatures(tx *gorm.DB, features []model.EquipmentFeature) error
 	FindOptionByID(optionID uuid.UUID) (*model.EquipmentOption, error)
+	DeleteEquipment(tx *gorm.DB, eqID uuid.UUID) error
 }
 
 type equipmentRepository struct {
@@ -141,4 +142,8 @@ func (r *equipmentRepository) SaveEquipment(tx *gorm.DB, equipment *model.Equipm
 
 func (r *equipmentRepository) CreateEquipmentFeatures(tx *gorm.DB, features []model.EquipmentFeature) error {
 	return tx.Create(features).Error
+}
+
+func (r *equipmentRepository) DeleteEquipment(tx *gorm.DB, eqID uuid.UUID) error {
+	return tx.Delete(model.Equipment{}, eqID).Error
 }
