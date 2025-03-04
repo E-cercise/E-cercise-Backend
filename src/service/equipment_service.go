@@ -471,7 +471,7 @@ func (s *equipmentService) DeleteEquipment(eqID uuid.UUID, context context.Conte
 	equipment, err := s.equipmentRepo.FindByIDTransaction(tx, eqID)
 
 	if err != nil {
-		logger.Log.WithError(err).Error("error finding equipment by id", "equipmentID", eqID)
+		logger.Log.WithError(err).Error("error finding equipment by id, ", "equipmentID", eqID)
 		tx.Rollback()
 		return err
 	}

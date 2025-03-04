@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type EquipmentRepository interface {
@@ -108,9 +109,10 @@ func (r *equipmentRepository) FindOptionByID(optionID uuid.UUID) (*model.Equipme
 func (r *equipmentRepository) FindByIDTransaction(tx *gorm.DB, eqID uuid.UUID) (*model.Equipment, error) {
 	var equipment *model.Equipment
 
-	err := tx.Preload("Images").
-		Preload("MuscleGroups").
+	err := tx.Preload("MuscleGroups").
 		Preload("EquipmentOptions").
+		Preload("EquipmentOptions.Images").
+		Preload("EquipmentFeature").
 		Preload("Attribute").
 		First(&equipment, "id = ?", eqID).Error
 
@@ -145,5 +147,5 @@ func (r *equipmentRepository) CreateEquipmentFeatures(tx *gorm.DB, features []mo
 }
 
 func (r *equipmentRepository) DeleteEquipment(tx *gorm.DB, eqID uuid.UUID) error {
-	return tx.Delete(model.Equipment{}, eqID).Error
+	return tx.Select(clause.Associations).Delete(&model.Equipment{ID: eqID}).Error
 }
