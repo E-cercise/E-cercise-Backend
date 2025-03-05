@@ -68,3 +68,51 @@ func RoleAuthorization(allowedRoles ...enum.Role) fiber.Handler {
 		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Access denied"})
 	}
 }
+
+func OptionalAuthentication(userRepo repository.UserRepository) fiber.Handler {
+	return func(ctx *fiber.Ctx) error {
+		// 1) Check the Authorization header
+		authHeader := ctx.Get("Authorization")
+		if authHeader == "" {
+			// No token is provided, skip the user check
+			// Let the request continue without a user
+			return ctx.Next()
+		}
+
+		// 2) Split out "Bearer" and the token
+		authToken := strings.Split(authHeader, " ")
+		if len(authToken) != 2 || authToken[0] != "Bearer" {
+			// If token is malformed, still skip *failing*
+			// so we do not block unauthenticated usage
+			return ctx.Next()
+		}
+
+		tokenString := authToken[1]
+
+		// 3) Attempt to parse the token
+		claims, err := helper.GetClaimFromToken(tokenString)
+		if err != nil {
+			// Token is invalid, but we do not throw an error
+			return ctx.Next()
+		}
+
+		// 4) Extract user info from the token
+		userID, ok := claims["user_id"].(string)
+		if !ok {
+			// If userID is missing or incorrectly typed,
+			// we skip setting user and proceed
+			return ctx.Next()
+		}
+
+		// 5) Fetch the user from the DB
+		user, err := userRepo.FindByID(userID)
+		if err != nil || user == nil {
+			// If user does not exist, skip
+			return ctx.Next()
+		}
+
+		// 6) If everything is valid, store user in context
+		ctx.Locals("currentUser", user)
+		return ctx.Next()
+	}
+}

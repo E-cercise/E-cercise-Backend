@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type EquipmentRepository interface {
@@ -24,6 +25,7 @@ type EquipmentRepository interface {
 	SaveEquipment(tx *gorm.DB, equipment *model.Equipment) error
 	CreateEquipmentFeatures(tx *gorm.DB, features []model.EquipmentFeature) error
 	FindOptionByID(optionID uuid.UUID) (*model.EquipmentOption, error)
+	DeleteEquipment(tx *gorm.DB, eqID uuid.UUID) error
 }
 
 type equipmentRepository struct {
@@ -107,9 +109,10 @@ func (r *equipmentRepository) FindOptionByID(optionID uuid.UUID) (*model.Equipme
 func (r *equipmentRepository) FindByIDTransaction(tx *gorm.DB, eqID uuid.UUID) (*model.Equipment, error) {
 	var equipment *model.Equipment
 
-	err := tx.Preload("Images").
-		Preload("MuscleGroups").
+	err := tx.Preload("MuscleGroups").
 		Preload("EquipmentOptions").
+		Preload("EquipmentOptions.Images").
+		Preload("EquipmentFeature").
 		Preload("Attribute").
 		First(&equipment, "id = ?", eqID).Error
 
@@ -141,4 +144,8 @@ func (r *equipmentRepository) SaveEquipment(tx *gorm.DB, equipment *model.Equipm
 
 func (r *equipmentRepository) CreateEquipmentFeatures(tx *gorm.DB, features []model.EquipmentFeature) error {
 	return tx.Create(features).Error
+}
+
+func (r *equipmentRepository) DeleteEquipment(tx *gorm.DB, eqID uuid.UUID) error {
+	return tx.Select(clause.Associations).Delete(&model.Equipment{ID: eqID}).Error
 }

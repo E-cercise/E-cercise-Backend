@@ -12,16 +12,18 @@ import (
 func EquipmentRouter(router fiber.Router, equipmentController *controller.EquipmentController, userRepo repository.UserRepository) {
 	equipmentGroup := router.Group("/equipment")
 
-	equipmentGroup.Get("/list", middleware.Authentication(userRepo),
-		middleware.RoleAuthorization(enum.RoleUser, enum.RoleAdmin), middleware.PreparePagination("1", "10"), equipmentController.GetAllEquipment) //group by collaborative filtering later
+	equipmentGroup.Get("/list", middleware.OptionalAuthentication(userRepo),
+		middleware.PreparePagination("1", "10"), equipmentController.GetAllEquipment) //group by collaborative filtering later
 
 	equipmentGroup.Post("", middleware.Authentication(userRepo), middleware.RoleAuthorization(enum.RoleAdmin),
 		validation.ValidateAddEquipment(), equipmentController.AddEquipment)
 
-	equipmentGroup.Get("/:id", middleware.Authentication(userRepo), middleware.RoleAuthorization(enum.RoleUser, enum.RoleAdmin),
+	equipmentGroup.Get("/:id", middleware.OptionalAuthentication(userRepo),
 		validation.ValidateParam("id", "uuid"), equipmentController.GetEquipment)
 
 	equipmentGroup.Put("/:id", middleware.Authentication(userRepo), middleware.RoleAuthorization(enum.RoleAdmin),
 		validation.ValidateParam("id", "uuid"), validation.ValidateUpdateEquipment(),
 		equipmentController.UpdateEquipment)
+
+	equipmentGroup.Delete("/:id", middleware.Authentication(userRepo), middleware.RoleAuthorization(enum.RoleAdmin), validation.ValidateParam("id", "uuid"), equipmentController.DeleteEquipment)
 }

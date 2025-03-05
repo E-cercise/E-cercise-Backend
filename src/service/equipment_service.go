@@ -16,9 +16,11 @@ import (
 
 type EquipmentService interface {
 	GetEquipmentData(q request.EquipmentListRequest, paginatior *helper.Paginator) (*response.EquipmentsResponse, error)
+	GetRecommendEquipmentData(q request.EquipmentListRequest, paginatior *helper.Paginator, userID uuid.UUID) (*response.EquipmentsResponse, error)
 	AddEquipment(req request.EquipmentPostRequest, context context.Context) error
 	GetEquipmentDetail(eqID uuid.UUID) (*response.EquipmentDetailResponse, error)
 	UpdateEquipment(eqID uuid.UUID, context context.Context, req request.EquipmentPutRequest) error
+	DeleteEquipment(eqID uuid.UUID, context context.Context) error
 }
 
 type equipmentService struct {
@@ -72,6 +74,11 @@ func (s *equipmentService) GetEquipmentData(q request.EquipmentListRequest, pagi
 
 }
 
+func (s *equipmentService) GetRecommendEquipmentData(q request.EquipmentListRequest, paginatior *helper.Paginator, userID uuid.UUID) (*response.EquipmentsResponse, error) {
+	logger.Log.Infof("recommending equipment to userID: %v", userID)
+	return s.GetEquipmentData(q, paginatior)
+}
+
 func findEquipmentMinimumPrice(equipment model.Equipment) float64 {
 	minimumPrice := equipment.EquipmentOptions[0].Price
 	for _, option := range equipment.EquipmentOptions {
@@ -97,6 +104,7 @@ func (s *equipmentService) AddEquipment(req request.EquipmentPostRequest, contex
 		ID:          equipmentID,
 		Name:        req.Name,
 		Brand:       req.Brand,
+		Category:    req.Category,
 		Description: req.Description,
 		Model:       req.Model,
 		Color:       req.Color,
@@ -440,6 +448,47 @@ func (s *equipmentService) UpdateEquipment(eqID uuid.UUID, context context.Conte
 	if err := s.equipmentRepo.SaveEquipment(tx, equipment); err != nil {
 		tx.Rollback()
 		logger.Log.WithError(err).Error("error update equipment ID: ", equipment.ID)
+		return err
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return nil
+}
+
+func (s *equipmentService) DeleteEquipment(eqID uuid.UUID, context context.Context) error {
+	tx := s.db.Begin()
+
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	equipment, err := s.equipmentRepo.FindByIDTransaction(tx, eqID)
+
+	if err != nil {
+		logger.Log.WithError(err).Error("error finding equipment by id, ", "equipmentID", eqID)
+		tx.Rollback()
+		return err
+	}
+
+	for _, opt := range equipment.EquipmentOptions {
+		for _, img := range opt.Images {
+			if err := s.imageService.DeleteImage(tx, context, img.ID); err != nil {
+				logger.Log.WithError(err).Error("cant delete image", "imgID", img)
+				tx.Rollback()
+				return err
+			}
+		}
+	}
+
+	if err := s.equipmentRepo.DeleteEquipment(tx, eqID); err != nil {
+		tx.Rollback()
+		logger.Log.WithError(err).Error("error deleting equipment ID: ", equipment.ID)
 		return err
 	}
 
