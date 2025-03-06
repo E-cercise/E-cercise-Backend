@@ -152,8 +152,8 @@ func (s *cartService) ModifyLineEquipmentInCart(req request.CartItemPutRequest) 
 	}
 
 	if err := tx.Commit().Error; err != nil {
+		logger.Log.WithError(err).Error("error committing transaction")
 		tx.Rollback()
-
 		return err
 	}
 	return nil

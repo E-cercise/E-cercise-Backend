@@ -2,8 +2,9 @@ package controller
 
 import (
 	"github.com/E-cercise/E-cercise/src/data/request"
+	"github.com/E-cercise/E-cercise/src/helper"
 	"github.com/E-cercise/E-cercise/src/service"
-	"github.com/google/uuid"
+	"github.com/gofiber/fiber/v2"
 )
 
 type OrderController struct {
@@ -16,6 +17,26 @@ func NewOrderControllerImpl(orderService service.OrderService) *OrderController 
 	}
 }
 
-func (c *OrderController) CreateOrder(req request.CartItemPostRequest, userID uuid.UUID) error {
+func (c *OrderController) CreateOrder(ctx *fiber.Ctx) error {
+	req, ok := ctx.Locals("req").(request.CheckoutCartRequest)
 
+	if !ok {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "failed to parse request body (Controller)",
+		})
+	}
+
+	user, err := helper.GetCurrentUser(ctx)
+
+	if err != nil {
+		return err
+	}
+
+	if err = c.OrderService.CreateOrder(req, user.ID); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{})
+	}
+
+	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"message": "Order created successfully",
+	})
 }

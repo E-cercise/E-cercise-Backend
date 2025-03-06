@@ -9,9 +9,9 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func OrderRouter(router fiber.Router, cartController *controller.CartController, userRepo repository.UserRepository) {
+func OrderRouter(router fiber.Router, orderController *controller.OrderController, userRepo repository.UserRepository) {
 	orderGroup := router.Group("/order")
 
-	orderGroup.Post("", middleware.Authentication(userRepo), middleware.RoleAuthorization(enum.RoleUser, enum.RoleAdmin), validation.ValidateAddLineEquipment(), cartController.AddEquipmentToCart)
+	orderGroup.Post("", middleware.Authentication(userRepo), middleware.RoleAuthorization(enum.RoleUser, enum.RoleAdmin), validation.ValidateCheckoutOrder(), orderController.CreateOrder)
 
 }
