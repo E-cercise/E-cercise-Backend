@@ -34,7 +34,7 @@ func (r *cartRepository) AddLineItem(userID uuid.UUID, lineEquipment *model.Line
 		return err
 	}
 
-	lineEquipment.CartID = cart.ID
+	lineEquipment.CartID = &cart.ID
 
 	if err := r.db.Create(lineEquipment).Error; err != nil {
 		return fmt.Errorf("failed to add line equipment to cart: %v", err)
