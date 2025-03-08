@@ -7,6 +7,7 @@ import (
 
 type OrderRepository interface {
 	CreateOrder(tx *gorm.DB, order *model.Order) error
+	SaveOrder(tx *gorm.DB, order *model.Order) error
 }
 
 type orderRepository struct {
@@ -19,4 +20,8 @@ func NewOrderRepository(db *gorm.DB) OrderRepository {
 
 func (r *orderRepository) CreateOrder(tx *gorm.DB, order *model.Order) error {
 	return tx.Create(order).Error
+}
+
+func (r *orderRepository) SaveOrder(tx *gorm.DB, order *model.Order) error {
+	return tx.Save(order).Error
 }

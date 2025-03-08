@@ -20,8 +20,6 @@ type ImageService interface {
 	UploadImage(context context.Context, file multipart.File, fileHeader *multipart.FileHeader, isPrimary bool) (string, error)
 	ArchiveImage(tx *gorm.DB, context context.Context, imgID uuid.UUID, eqpID uuid.UUID, eqOptID uuid.UUID, isPrimary bool) error
 	DeleteImage(tx *gorm.DB, context context.Context, imgID uuid.UUID) error
-	//GetAllEquipmentData() (*response.EquipmentsResponse, error)
-
 }
 
 type imageService struct {

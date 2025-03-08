@@ -14,6 +14,7 @@ type CartRepository interface {
 	GetCart(userID uuid.UUID) (*model.Cart, error)
 	ModifyLineItem(tx *gorm.DB, lineEquipmentID uuid.UUID, quantity int) error
 	ClearAllLineItems(userID uuid.UUID) error
+	FindLineEquipmentByEquipmentIDAndOptionID(tx *gorm.DB, userID uuid.UUID, equipmentID uuid.UUID, equipmentOptionID uuid.UUID) (*model.LineEquipment, error)
 }
 
 type cartRepository struct {
@@ -80,4 +81,25 @@ func (r *cartRepository) ClearAllLineItems(userID uuid.UUID) error {
 	}
 
 	return nil
+}
+
+func (r *cartRepository) FindLineEquipmentByEquipmentIDAndOptionID(tx *gorm.DB, userID uuid.UUID, equipmentID uuid.UUID, equipmentOptionID uuid.UUID) (*model.LineEquipment, error) {
+	var cart model.Cart
+
+	if err := tx.Where("user_id = ?", userID).First(&cart).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("cart not found for user ID: %s", userID)
+		}
+		return nil, err
+	}
+
+	var lineEquipment model.LineEquipment
+	if err := tx.Where("equipment_id = ? AND equipment_option_id", equipmentID, equipmentOptionID).First(&lineEquipment).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("cart not found for user ID: %s", userID)
+		}
+		return nil, err
+	}
+
+	return &lineEquipment, nil
 }

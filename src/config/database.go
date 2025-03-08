@@ -77,10 +77,28 @@ func migrateEnum(db *gorm.DB) error {
 		BEGIN
 			IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_status') THEN
 				CREATE TYPE order_status AS ENUM (
+					'Pending',
 				 	'Placed',
 					'Paid',
 					'Shipped out',
 					'Received'
+				);
+			END IF;
+		END$$;
+	`).Error
+
+	if err != nil {
+		return err
+	}
+
+	err = db.Exec(`
+		DO $$
+		BEGIN
+			IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'payment_type') THEN
+				CREATE TYPE payment_type AS ENUM (
+					'QRPromptPay',
+				 	'Cash',
+					'CreditOrDebitCard',
 				);
 			END IF;
 		END$$;

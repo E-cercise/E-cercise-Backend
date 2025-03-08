@@ -32,7 +32,7 @@ func (c *OrderController) CreateOrder(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	if err = c.OrderService.CreateOrder(req, user.ID); err != nil {
+	if err = c.OrderService.CreateOrder(req, user); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{})
 	}
 

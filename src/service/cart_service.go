@@ -16,7 +16,7 @@ type CartService interface {
 	AddEquipmentToCart(req request.CartItemPostRequest, userID uuid.UUID) error
 	DeleteLineEquipmentInCart(lineEquipmentID uuid.UUID) (string, error)
 	GetAllLineEquipmentInCart(userID uuid.UUID) (*response.GetCartItemResponse, error)
-	ModifyLineEquipmentInCart(req request.CartItemPutRequest) error
+	ModifyLineEquipmentInCart(req request.CartItemPutRequest, userID uuid.UUID) error
 	ClearAllLineEquipmentInCart(userID uuid.UUID) error
 }
 
@@ -133,18 +133,48 @@ func (s *cartService) GetAllLineEquipmentInCart(userID uuid.UUID) (*response.Get
 	return &resp, nil
 }
 
-func (s *cartService) ModifyLineEquipmentInCart(req request.CartItemPutRequest) error {
+func (s *cartService) ModifyLineEquipmentInCart(req request.CartItemPutRequest, userID uuid.UUID) error {
 	tx := s.db.Begin()
-
 	defer func() {
 		if r := recover(); r != nil {
 			tx.Rollback()
 		}
 	}()
 
+	cart, err := s.cartRepo.GetCart(userID)
+	if err != nil {
+		logger.Log.WithError(err).Error("Failed to get cart for user", map[string]interface{}{"user_id": userID})
+		tx.Rollback()
+		return fmt.Errorf("failed to get cart for user %s: %v", userID, err)
+	}
+
+	cartItemsMap := make(map[uuid.UUID]model.LineEquipment)
+	for _, item := range cart.LineEquipments {
+		cartItemsMap[item.ID] = item
+	}
+
 	for _, item := range req.Items {
-		err := s.cartRepo.ModifyLineItem(tx, uuid.MustParse(item.LineEquipmentID), item.Quantity)
+
+		cartItem, exists := cartItemsMap[uuid.MustParse(item.LineEquipmentID)]
+		if !exists {
+			tx.Rollback()
+			return fmt.Errorf("failed to find cart item with id %v", item.LineEquipmentID)
+		}
+
+		eqOpt, err := s.equipmentRepo.FindOptionByID(cartItem.EquipmentOptionID)
 		if err != nil {
+			tx.Rollback()
+			logger.Log.WithError(err).Error("error finding equipment option")
+			return fmt.Errorf("failed to find equipment option with id %v: %v", cartItem.EquipmentOptionID, err)
+		}
+
+		if eqOpt.RemainingProducts < item.Quantity {
+			tx.Rollback()
+			logger.Log.Warning("remaining products is less than quantity")
+			return fmt.Errorf("remaining products is less than quantity")
+		}
+
+		if err := s.cartRepo.ModifyLineItem(tx, uuid.MustParse(item.LineEquipmentID), item.Quantity); err != nil {
 			tx.Rollback()
 			logger.Log.WithError(err).Error("cant modify line equipment with ID:", item.LineEquipmentID)
 			return err

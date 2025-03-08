@@ -1,10 +1,7 @@
 package request
 
-type CheckoutCartRequest struct {
-	Items []CartItem `json:"items"`
-}
+import "github.com/google/uuid"
 
-type CartItem struct {
-	LineEquipmentID string `json:"line_equipment_id"`
-	Quantity        int    `json:"quantity"`
+type CheckoutCartRequest struct {
+	LineEquipments []uuid.UUID `json:"line_equipments"`
 }
