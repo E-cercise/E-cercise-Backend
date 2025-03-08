@@ -66,7 +66,7 @@ func (s *cartService) AddEquipmentToCart(req request.CartItemPostRequest, userID
 
 	if existingLineEquipment != nil {
 		errorMsg := fmt.Sprintf("equipment Option already exists in lineequipmrnt: %v with quantity: %v", existingLineEquipment.ID, existingLineEquipment.Quantity)
-		err := errors.New(errorMsg)
+		err := &helper.CustomRecordNotFoundError{Msg: errorMsg}
 		logger.Log.WithError(err).Error(errorMsg)
 		return err
 	}

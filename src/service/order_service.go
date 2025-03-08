@@ -13,7 +13,7 @@ import (
 )
 
 type OrderService interface {
-	CreateOrder(req request.CheckoutCartRequest, user model.User) error
+	CreateOrder(req request.CheckoutCartRequest, user *model.User) error
 }
 
 type orderService struct {
@@ -27,7 +27,7 @@ func NewOrderService(db *gorm.DB, cartRepo repository.CartRepository, equipmentR
 	return &orderService{db: db, cartRepo: cartRepo, equipmentRepo: equipmentRepo, orderRepo: orderRepo}
 }
 
-func (s *orderService) CreateOrder(req request.CheckoutCartRequest, user model.User) error {
+func (s *orderService) CreateOrder(req request.CheckoutCartRequest, user *model.User) error {
 	logger.Log.Info("Starting order creation process", map[string]interface{}{"user_id": user.ID})
 
 	tx := s.db.Begin()

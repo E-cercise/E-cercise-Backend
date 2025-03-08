@@ -98,7 +98,7 @@ func migrateEnum(db *gorm.DB) error {
 				CREATE TYPE payment_type AS ENUM (
 					'QRPromptPay',
 				 	'Cash',
-					'CreditOrDebitCard',
+					'CreditOrDebitCard'
 				);
 			END IF;
 		END$$;

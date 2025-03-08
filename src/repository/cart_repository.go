@@ -94,10 +94,7 @@ func (r *cartRepository) FindLineEquipmentByEquipmentIDAndOptionID(userID uuid.U
 	}
 
 	var lineEquipment model.LineEquipment
-	if err := r.db.Where("equipment_id = ? AND equipment_option_id", equipmentID, equipmentOptionID).First(&lineEquipment).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, fmt.Errorf("cart not found for user ID: %s", userID)
-		}
+	if err := r.db.Where("equipment_id = ? AND equipment_option_id = ?", equipmentID, equipmentOptionID).First(&lineEquipment).Error; err != nil {
 		return nil, err
 	}
 
