@@ -13,5 +13,5 @@ type Order struct {
 	DeliveryAddress string           `gorm:"type:text;not null" json:"delivery_address"`
 	PaymentType     enum.PaymentType `gorm:"type:payment_type;not null" json:"payment_type"`
 	TotalPrice      float64          `gorm:"type:decimal(10,2);not null" json:"total_price"`
-	OrderStatus     enum.OrderStatus `gorm:"type:order_status;default:'Placed';not null" json:"order_status"`
+	OrderStatus     enum.OrderStatus `gorm:"type:order_status;default:'Pending';not null" json:"order_status"`
 }
