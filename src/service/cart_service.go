@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"github.com/E-cercise/E-cercise/src/data/request"
 	"github.com/E-cercise/E-cercise/src/data/response"
@@ -54,6 +55,20 @@ func (s *cartService) AddEquipmentToCart(req request.CartItemPostRequest, userID
 	if err != nil {
 		logger.Log.WithError(err).Error("cant find equipment Option ID:", eqpOptID)
 		return fmt.Errorf("equipmentOptionID: %v not found", eqpOptID)
+	}
+
+	existingLineEquipment, err := s.cartRepo.FindLineEquipmentByEquipmentIDAndOptionID(userID, equipmentID, eqpOptID)
+
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		logger.Log.WithError(err).Error("error finding line existing equipment")
+		return err
+	}
+
+	if existingLineEquipment != nil {
+		errorMsg := fmt.Sprintf("equipment Option already exists in lineequipmrnt: %v with quantity: %v", existingLineEquipment.ID, existingLineEquipment.Quantity)
+		err := errors.New(errorMsg)
+		logger.Log.WithError(err).Error(errorMsg)
+		return err
 	}
 
 	newLineEquipment := model.LineEquipment{
