@@ -96,6 +96,7 @@ func migrateEnum(db *gorm.DB) error {
 		BEGIN
 			IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'payment_type') THEN
 				CREATE TYPE payment_type AS ENUM (
+					'Unpaid',
 					'QRPromptPay',
 				 	'Cash',
 					'CreditOrDebitCard'

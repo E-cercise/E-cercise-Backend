@@ -8,6 +8,7 @@ import (
 type PaymentType string
 
 const (
+	PaymentTypeUnpaid            PaymentType = "Unpaid"
 	PaymentTypeQRPromptPay       PaymentType = "QRPromptPay"
 	PaymentTypeCash              PaymentType = "Cash"
 	PaymentTypeCreditOrDebitCard PaymentType = "CreditOrDebitCard"

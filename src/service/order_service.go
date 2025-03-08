@@ -57,6 +57,7 @@ func (s *orderService) CreateOrder(req request.CheckoutCartRequest, user *model.
 		DeliveryAddress: user.Address,
 		LineEquipments:  []model.LineEquipment{},
 		OrderStatus:     enum.OrderPending,
+		PaymentType:     enum.PaymentTypeUnpaid,
 	}
 
 	if err := s.orderRepo.CreateOrder(tx, order); err != nil {
@@ -93,7 +94,7 @@ func (s *orderService) CreateOrder(req request.CheckoutCartRequest, user *model.
 		totalPrice += float64(cartItem.Quantity) * equipmentOption.Price
 		cartItem.CartID = nil
 		cartItem.OrderID = &order.ID
-		if err := tx.Save(cartItem).Error; err != nil {
+		if err := tx.Save(&cartItem).Error; err != nil {
 			logger.Log.WithError(err).Error("Failed to update cart item to order item", map[string]interface{}{"cart_item_id": cartItem.ID})
 			tx.Rollback()
 			return fmt.Errorf("failed to update cart item to order item: %v", err)
