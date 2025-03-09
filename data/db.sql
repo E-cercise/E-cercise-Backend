@@ -35,10 +35,18 @@ COMMENT ON EXTENSION "uuid-ossp" IS 'generate universally unique identifiers (UU
 --
 
 CREATE TYPE public.order_status AS ENUM (
+    'Pending',
     'Placed',
     'Paid',
     'Shipped out',
     'Received'
+);
+
+CREATE TYPE public.payment_type AS ENUM (
+    'Unpaid',
+	'QRPromptPay',
+	'Cash',
+	'CreditOrDebitCard'
 );
 
 
