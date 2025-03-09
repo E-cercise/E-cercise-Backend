@@ -22,6 +22,7 @@ func InitRouter(db *gorm.DB) *fiber.App {
 	imageRepo := repository.NewImageRepository(db)
 	muscleGroupRepo := repository.NewMuscleGroupRepository(db)
 	cartRepo := repository.NewCartRepository(db)
+	orderRepo := repository.NewOrderRepository(db)
 
 	cloudinaryService, err := service.NewCloudinaryService()
 
@@ -33,11 +34,13 @@ func InitRouter(db *gorm.DB) *fiber.App {
 	imageService := service.NewImageService(db, imageRepo, cloudinaryService)
 	equipmentService := service.NewEquipmentService(db, equipmentRepo, muscleGroupRepo, imageService)
 	cartService := service.NewCartService(db, cartRepo, equipmentRepo)
+	orderService := service.NewOrderService(db, cartRepo, equipmentRepo, orderRepo)
 
 	authController := controller.NewAuthControllerImpl(userService)
 	equipmentController := controller.NewEquipmentControllerImpl(equipmentService)
 	imageController := controller.NewImageControllerImpl(imageService)
 	cartController := controller.NewCartControllerImpl(cartService)
+	orderController := controller.NewOrderControllerImpl(orderService)
 
 	app := fiber.New()
 
@@ -68,6 +71,7 @@ func InitRouter(db *gorm.DB) *fiber.App {
 	EquipmentRouter(apiGroup, equipmentController, userRepo)
 	ImageRouter(apiGroup, imageController, userRepo)
 	CartRouter(apiGroup, cartController, userRepo)
+	OrderRouter(apiGroup, orderController, userRepo)
 
 	logger2.Log.Info("Router initialized")
 	for _, route := range app.GetRoutes() {
