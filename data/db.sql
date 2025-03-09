@@ -184,9 +184,9 @@ CREATE TABLE public.orders (
     id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
     user_id uuid NOT NULL,
     delivery_address text NOT NULL,
-    payment_type character varying(50) NOT NULL,
+    payment_type character public.payment_type DEFAULT 'Unpaid'::public.payment_type NOT NULL,
     total_price numeric(10,2) NOT NULL,
-    order_status public.order_status DEFAULT 'Placed'::public.order_status NOT NULL
+    order_status public.order_status DEFAULT 'Pending'::public.order_status NOT NULL
 );
 
 
