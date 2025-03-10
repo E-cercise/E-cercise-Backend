@@ -1,6 +1,7 @@
 package response
 
 import (
+	"github.com/E-cercise/E-cercise/src/enum"
 	"github.com/google/uuid"
 )
 
@@ -10,9 +11,9 @@ type Address struct {
 	AddressLine string `json:"address_line"`
 }
 
-type OrderResponse struct {
+type OrderDetailResponse struct {
 	ID uuid.UUID `json:"id"`
-	OrderStatus string `json:"order_status"`
+	OrderStatus enum.OrderStatus `json:"order_status"`
 	Address Address `json:"address"`
 	Orders []LineEquipment `json:"orders"`
 	NetPrice float64 `json:"net_price"`

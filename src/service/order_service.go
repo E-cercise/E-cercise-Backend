@@ -17,7 +17,7 @@ import (
 
 type OrderService interface {
 	CreateOrder(req request.CheckoutCartRequest, user *model.User) error
-	GetOrderDetail(orderID uuid.UUID, user *model.User) (*response.OrderResponse, error)
+	GetOrderDetail(orderID uuid.UUID, user *model.User) (*response.OrderDetailResponse, error)
 }
 
 type orderService struct {
@@ -124,17 +124,17 @@ func (s *orderService) CreateOrder(req request.CheckoutCartRequest, user *model.
 
 }
 
-func (s *orderService) GetOrderDetail(orderID uuid.UUID, user *model.User) (*response.OrderResponse, error) {
-	order, err := s.orderRepo.GetOrderDetail(orderID)
+func (s *orderService) GetOrderDetail(orderID uuid.UUID, user *model.User) (*response.OrderDetailResponse, error) {
+	order, err := s.orderRepo.FindByID(orderID)
 	if err != nil {
 		logger.Log.WithError(err).Error("Falied to get order detail")
 		return nil, fmt.Errorf("failed to get order detail")
 	}
 
-	var resp response.OrderResponse
+	var resp response.OrderDetailResponse
 
 	address := response.Address{
-		FullName: string(user.FirstName) + " " + string(user.LastName),
+		FullName: fmt.Sprintf("%s %s", user.FirstName, user.LastName),
 		AddressLine: user.Address,
 		PhoneNumber: user.PhoneNumber,
 	}
@@ -176,9 +176,9 @@ func (s *orderService) GetOrderDetail(orderID uuid.UUID, user *model.User) (*res
 		return nil, fmt.Errorf("no order found for id: %v", orderID)
 	}
 
-	resp = response.OrderResponse{
+	resp = response.OrderDetailResponse{
 		ID: order.ID,
-		OrderStatus: string(order.OrderStatus),
+		OrderStatus: order.OrderStatus,
 		Address: address,
 		Orders: orders,
 		NetPrice: order.TotalPrice,

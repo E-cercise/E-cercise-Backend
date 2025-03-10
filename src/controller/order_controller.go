@@ -2,6 +2,7 @@ package controller
 
 import (
 	"github.com/E-cercise/E-cercise/src/data/request"
+	// "github.com/E-cercise/E-cercise/src/data/response"
 	"github.com/E-cercise/E-cercise/src/helper"
 	"github.com/E-cercise/E-cercise/src/service"
 	"github.com/gofiber/fiber/v2"
@@ -51,7 +52,7 @@ func (c *OrderController) GetOrderDetail(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	orderDetail, err := c.OrderService.GetOrderDetail(orderID, user)
+	resp, err := c.OrderService.GetOrderDetail(orderID, user)
 
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -59,11 +60,5 @@ func (c *OrderController) GetOrderDetail(ctx *fiber.Ctx) error {
 		})
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
-		"id": orderDetail.ID,
-		"order_status": orderDetail.OrderStatus,
-		"address": orderDetail.Address,
-		"orders": orderDetail.Orders,
-		"net_price": orderDetail.NetPrice,
-	})
+	return ctx.Status(fiber.StatusOK).JSON(resp)
 }
