@@ -3,6 +3,7 @@ package controller
 import (
 	"github.com/E-cercise/E-cercise/src/data/request"
 	"github.com/E-cercise/E-cercise/src/data/response"
+	"github.com/E-cercise/E-cercise/src/enum"
 	"github.com/E-cercise/E-cercise/src/helper"
 	"github.com/E-cercise/E-cercise/src/model"
 	"github.com/E-cercise/E-cercise/src/service"
@@ -56,6 +57,22 @@ func (c *EquipmentController) GetAllEquipment(ctx *fiber.Ctx) error {
 			})
 		}
 		equipments, err = c.EquipmentService.GetRecommendEquipmentData(req, paginator, user.ID)
+		if user.Role == enum.RoleAdmin {
+			// var adminEquipments []any
+			for i, equipment := range equipments.Equipments {
+				resp, err := c.EquipmentService.GetEquipmentDetail(equipment.ID)
+				if err != nil {
+					return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+				}
+
+				var totalRemaining int64
+				for _, opt := range resp.Option {
+					totalRemaining += int64(opt.Available)
+				}
+
+				equipments.Equipments[i].RemainingProduct = &totalRemaining
+			}
+		}
 	} else {
 		equipments, err = c.EquipmentService.GetEquipmentData(req, paginator)
 	}
