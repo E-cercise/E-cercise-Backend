@@ -1,19 +1,23 @@
 package service
 
 import (
-	"errors"
 	"fmt"
+	"errors"
 	"github.com/E-cercise/E-cercise/src/data/request"
+	"github.com/E-cercise/E-cercise/src/data/response"
 	"github.com/E-cercise/E-cercise/src/enum"
+	"github.com/E-cercise/E-cercise/src/helper"
 	"github.com/E-cercise/E-cercise/src/logger"
 	"github.com/E-cercise/E-cercise/src/model"
 	"github.com/E-cercise/E-cercise/src/repository"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"strings"
 )
 
 type OrderService interface {
 	CreateOrder(req request.CheckoutCartRequest, user *model.User) error
+	GetOrderDetail(orderID uuid.UUID, user *model.User) (*response.OrderResponse, error)
 }
 
 type orderService struct {
@@ -118,4 +122,68 @@ func (s *orderService) CreateOrder(req request.CheckoutCartRequest, user *model.
 	}
 	return nil
 
+}
+
+func (s *orderService) GetOrderDetail(orderID uuid.UUID, user *model.User) (*response.OrderResponse, error) {
+	order, err := s.orderRepo.GetOrderDetail(orderID)
+	if err != nil {
+		logger.Log.WithError(err).Error("Falied to get order detail")
+		return nil, fmt.Errorf("failed to get order detail")
+	}
+
+	var resp response.OrderResponse
+	address := response.Address{
+		FullName: string(user.FirstName) + " " + string(user.LastName),
+		AddressLine: user.Address,
+		PhoneNumber: user.PhoneNumber,
+	}
+
+	var orders []response.LineEquipment
+	
+	for _, lineEquipment := range order.LineEquipments {
+		equipment, err := s.equipmentRepo.FindByID(lineEquipment.EquipmentID)
+		if err != nil {
+			logger.Log.WithError(err).Error("error during find equipment with this id")
+			return nil, err
+		}
+
+		equipmentOption, err := s.equipmentRepo.FindOptionByID(lineEquipment.EquipmentOptionID)
+		if err != nil {
+			logger.Log.WithError(err).Error("error during find equipment option with this id")
+			return nil, err
+		}
+
+		primaryImage := helper.FindPrimaryImageFromEquipment(*equipment)
+		var imagePath string
+		if primaryImage == nil {
+			newName := strings.ReplaceAll(equipment.Name, " ", "+")
+			imagePath = fmt.Sprintf("https://placehold.co/600x400?text=%v/png", newName)
+		} else {
+			imagePath = primaryImage.CloudinaryPath
+		}
+
+		lineEquipment := response.LineEquipment{
+			LineEquipmentID: lineEquipment.ID.String(),
+			EquipmentName: equipment.Name,
+			ImgUrl: imagePath,
+			Quantity: lineEquipment.Quantity,
+			PerUnitPrice: equipmentOption.Price,
+			Total: float64(lineEquipment.Quantity) * equipmentOption.Price,
+		}
+		orders = append(orders, lineEquipment)
+	}
+
+	if len(orders) == 0 {
+		return nil, fmt.Errorf("There is no order for id: %v", orderID)
+	}
+
+	resp = response.OrderResponse{
+		ID: order.ID,
+		OrderStatus: string(order.OrderStatus),
+		Address: address,
+		Orders: orders,
+		NetPrice: order.TotalPrice,
+	}
+
+	return &resp, nil
 }

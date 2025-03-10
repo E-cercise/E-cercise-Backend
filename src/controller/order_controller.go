@@ -5,6 +5,7 @@ import (
 	"github.com/E-cercise/E-cercise/src/helper"
 	"github.com/E-cercise/E-cercise/src/service"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 )
 
 type OrderController struct {
@@ -38,5 +39,31 @@ func (c *OrderController) CreateOrder(ctx *fiber.Ctx) error {
 
 	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"message": "Order created successfully",
+	})
+}
+
+func (c *OrderController) GetOrderDetail(ctx *fiber.Ctx) error {
+	orderID := uuid.MustParse(ctx.Params("id"))
+
+	user, err := helper.GetCurrentUser(ctx)
+
+	if err != nil {
+		return err
+	}
+
+	orderDetail, err := c.OrderService.GetOrderDetail(orderID, user)
+
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"id": orderDetail.ID,
+		"order_status": orderDetail.OrderStatus,
+		"address": orderDetail.Address,
+		"orders": orderDetail.Orders,
+		"net_price": orderDetail.NetPrice,
 	})
 }
