@@ -132,6 +132,7 @@ func (s *orderService) GetOrderDetail(orderID uuid.UUID, user *model.User) (*res
 	}
 
 	var resp response.OrderResponse
+
 	address := response.Address{
 		FullName: string(user.FirstName) + " " + string(user.LastName),
 		AddressLine: user.Address,
@@ -143,23 +144,21 @@ func (s *orderService) GetOrderDetail(orderID uuid.UUID, user *model.User) (*res
 	for _, lineEquipment := range order.LineEquipments {
 		equipment, err := s.equipmentRepo.FindByID(lineEquipment.EquipmentID)
 		if err != nil {
-			logger.Log.WithError(err).Error("error during find equipment with this id")
+			logger.Log.WithError(err).Error("error during find equipment with this id", lineEquipment.EquipmentID)
 			return nil, err
 		}
 
 		equipmentOption, err := s.equipmentRepo.FindOptionByID(lineEquipment.EquipmentOptionID)
 		if err != nil {
-			logger.Log.WithError(err).Error("error during find equipment option with this id")
+			logger.Log.WithError(err).Error("error during find equipment option with this id", lineEquipment.EquipmentOptionID)
 			return nil, err
 		}
 
-		primaryImage := helper.FindPrimaryImageFromEquipment(*equipment)
 		var imagePath string
-		if primaryImage == nil {
-			newName := strings.ReplaceAll(equipment.Name, " ", "+")
-			imagePath = fmt.Sprintf("https://placehold.co/600x400?text=%v/png", newName)
-		} else {
+		if primaryImage := helper.FindPrimaryImageFromEquipment(*equipment); primaryImage != nil {
 			imagePath = primaryImage.CloudinaryPath
+		} else {
+			imagePath = fmt.Sprintf("https://placehold.co/600x400?text=%s/png", strings.ReplaceAll(equipment.Name, " ", "+"))
 		}
 
 		lineEquipment := response.LineEquipment{
@@ -174,7 +173,7 @@ func (s *orderService) GetOrderDetail(orderID uuid.UUID, user *model.User) (*res
 	}
 
 	if len(orders) == 0 {
-		return nil, fmt.Errorf("There is no order for id: %v", orderID)
+		return nil, fmt.Errorf("no order found for id: %v", orderID)
 	}
 
 	resp = response.OrderResponse{
