@@ -1,19 +1,23 @@
 package service
 
 import (
-	"errors"
 	"fmt"
+	"errors"
 	"github.com/E-cercise/E-cercise/src/data/request"
+	"github.com/E-cercise/E-cercise/src/data/response"
 	"github.com/E-cercise/E-cercise/src/enum"
+	"github.com/E-cercise/E-cercise/src/helper"
 	"github.com/E-cercise/E-cercise/src/logger"
 	"github.com/E-cercise/E-cercise/src/model"
 	"github.com/E-cercise/E-cercise/src/repository"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"strings"
 )
 
 type OrderService interface {
 	CreateOrder(req request.CheckoutCartRequest, user *model.User) error
+	GetOrderDetail(orderID uuid.UUID, user *model.User) (*response.OrderDetailResponse, error)
 }
 
 type orderService struct {
@@ -118,4 +122,67 @@ func (s *orderService) CreateOrder(req request.CheckoutCartRequest, user *model.
 	}
 	return nil
 
+}
+
+func (s *orderService) GetOrderDetail(orderID uuid.UUID, user *model.User) (*response.OrderDetailResponse, error) {
+	order, err := s.orderRepo.FindByID(orderID)
+	if err != nil {
+		logger.Log.WithError(err).Error("Falied to get order detail")
+		return nil, fmt.Errorf("failed to get order detail")
+	}
+
+	var resp response.OrderDetailResponse
+
+	address := response.Address{
+		FullName: fmt.Sprintf("%s %s", user.FirstName, user.LastName),
+		AddressLine: user.Address,
+		PhoneNumber: user.PhoneNumber,
+	}
+
+	var orders []response.LineEquipment
+	
+	for _, lineEquipment := range order.LineEquipments {
+		equipment, err := s.equipmentRepo.FindByID(lineEquipment.EquipmentID)
+		if err != nil {
+			logger.Log.WithError(err).Error("error during find equipment with this id", lineEquipment.EquipmentID)
+			return nil, err
+		}
+
+		equipmentOption, err := s.equipmentRepo.FindOptionByID(lineEquipment.EquipmentOptionID)
+		if err != nil {
+			logger.Log.WithError(err).Error("error during find equipment option with this id", lineEquipment.EquipmentOptionID)
+			return nil, err
+		}
+
+		var imagePath string
+		if primaryImage := helper.FindPrimaryImageFromEquipment(*equipment); primaryImage != nil {
+			imagePath = primaryImage.CloudinaryPath
+		} else {
+			imagePath = fmt.Sprintf("https://placehold.co/600x400?text=%s/png", strings.ReplaceAll(equipment.Name, " ", "+"))
+		}
+
+		lineEquipment := response.LineEquipment{
+			LineEquipmentID: lineEquipment.ID.String(),
+			EquipmentName: equipment.Name,
+			ImgUrl: imagePath,
+			Quantity: lineEquipment.Quantity,
+			PerUnitPrice: equipmentOption.Price,
+			Total: float64(lineEquipment.Quantity) * equipmentOption.Price,
+		}
+		orders = append(orders, lineEquipment)
+	}
+
+	if len(orders) == 0 {
+		return nil, fmt.Errorf("no order found for id: %v", orderID)
+	}
+
+	resp = response.OrderDetailResponse{
+		ID: order.ID,
+		OrderStatus: order.OrderStatus,
+		Address: address,
+		Orders: orders,
+		NetPrice: order.TotalPrice,
+	}
+
+	return &resp, nil
 }
