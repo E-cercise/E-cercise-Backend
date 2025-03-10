@@ -55,7 +55,7 @@ func (c *OrderController) GetOrderDetail(ctx *fiber.Ctx) error {
 	resp, err := c.OrderService.GetOrderDetail(orderID, user)
 
 	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": err.Error(),
 		})
 	}
