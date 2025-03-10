@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"fmt"
+
 	"github.com/E-cercise/E-cercise/src/data/request"
 	"github.com/E-cercise/E-cercise/src/data/response"
 	"github.com/E-cercise/E-cercise/src/helper"
@@ -55,7 +57,24 @@ func (c *EquipmentController) GetAllEquipment(ctx *fiber.Ctx) error {
 				"message": "cant convert user into model.user in context",
 			})
 		}
+		fmt.Println("User Role (Explicit String):", string(user.Role))
 		equipments, err = c.EquipmentService.GetRecommendEquipmentData(req, paginator, user.ID)
+		if user.Role == "ADMIN" {
+			// var adminEquipments []any
+			for i, equipment := range equipments.Equipments {
+				resp, err := c.EquipmentService.GetEquipmentDetail(equipment.ID)
+				if err != nil {
+					return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+				}
+
+				var totalRemaining int64
+				for _, opt := range resp.Option {
+					totalRemaining += int64(opt.Available)
+				}
+
+				equipments.Equipments[i].RemainingProduct = &totalRemaining
+			}
+		}
 	} else {
 		equipments, err = c.EquipmentService.GetEquipmentData(req, paginator)
 	}

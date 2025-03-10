@@ -16,6 +16,7 @@ type Equipment struct {
 	ImagePath       string    `json:"image_path"`
 	MuscleGroupUsed []string  `json:"muscle_group_used"`
 	//Rating float64 `json:"rating"`
+	RemainingProduct *int64   `json:"remaining_product,omitempty"`
 }
 
 //type Options struct {
