@@ -193,7 +193,7 @@ func (s *orderService) UpdateOrderStatus(orderID uuid.UUID) error {
 	order, err := s.orderRepo.FindByID(orderID)
 	fmt.Println(order.OrderStatus)
 	if err != nil {
-		logger.Log.WithError(err).Error("Falied to get order detail")
+		logger.Log.WithError(err).Error("Failed to get order detail")
 		return fmt.Errorf("failed to get order detail")
 	}
 
@@ -206,7 +206,12 @@ func (s *orderService) UpdateOrderStatus(orderID uuid.UUID) error {
 
 	nextStatus, ok := statusTransaction[order.OrderStatus]
 	if !ok {
-		return fmt.Errorf("received status is the last order status")
+		if order.OrderStatus == enum.OrderReceived {
+			logger.Log.WithError(err).Error("Order has already been received, no further status update possible")
+			return fmt.Errorf("order has already been received, no further status update possible")
+		}
+		logger.Log.WithError(err).Errorf("Invalid order status: %v", order.OrderStatus)
+		return fmt.Errorf("invalid order status: %v", order.OrderStatus)
 	}
 
 	if err := s.orderRepo.UpdateOrderStatusByID(order.ID, nextStatus); err != nil {
