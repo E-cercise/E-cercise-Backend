@@ -1,8 +1,10 @@
 package service
 
 import (
-	"fmt"
 	"errors"
+	"fmt"
+	"strings"
+
 	"github.com/E-cercise/E-cercise/src/data/request"
 	"github.com/E-cercise/E-cercise/src/data/response"
 	"github.com/E-cercise/E-cercise/src/enum"
@@ -12,7 +14,6 @@ import (
 	"github.com/E-cercise/E-cercise/src/repository"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
-	"strings"
 )
 
 type OrderService interface {
@@ -196,33 +197,22 @@ func (s *orderService) UpdateOrderStatus(orderID uuid.UUID) error {
 		return fmt.Errorf("failed to get order detail")
 	}
 
-	switch order.OrderStatus {
-		case enum.OrderPending:
-			err := s.orderRepo.UpdateOrderStatusByID(orderID, enum.OrderPlaced)
-			if err != nil {
-				logger.Log.WithError(err).Error("cant update order status with ID:", orderID)
-				return err
-			}
-		case enum.OrderPlaced:
-			err := s.orderRepo.UpdateOrderStatusByID(orderID, enum.OrderPaid)
-			if err != nil {
-				logger.Log.WithError(err).Error("cant update order status with ID:", orderID)
-				return err
-			}
-		case enum.OrderPaid:
-			err := s.orderRepo.UpdateOrderStatusByID(orderID, enum.OrderShipped)
-			if err != nil {
-				logger.Log.WithError(err).Error("cant update order status with ID:", orderID)
-				return err
-			}
-		case enum.OrderShipped:
-			err := s.orderRepo.UpdateOrderStatusByID(orderID, enum.OrderReceived)
-			if err != nil {
-				logger.Log.WithError(err).Error("cant update order status with ID:", orderID)
-				return err
-			}
-		default:
-			return fmt.Errorf("received status is the last order status")
+	statusTransaction := map[enum.OrderStatus]enum.OrderStatus{
+		enum.OrderPending: enum.OrderPlaced,
+		enum.OrderPlaced: enum.OrderPaid,
+		enum.OrderPaid: enum.OrderShipped,
+		enum.OrderShipped: enum.OrderReceived,
 	}
+
+	nextStatus, ok := statusTransaction[order.OrderStatus]
+	if !ok {
+		return fmt.Errorf("received status is the last order status")
+	}
+
+	if err := s.orderRepo.UpdateOrderStatusByID(order.ID, nextStatus); err != nil {
+		logger.Log.WithError(err).Errorf("Cannot update order status with ID: %v", orderID)
+        return err
+	}
+
 	return nil
 }
