@@ -1,8 +1,10 @@
 package service
 
 import (
-	"fmt"
 	"errors"
+	"fmt"
+	"strings"
+
 	"github.com/E-cercise/E-cercise/src/data/request"
 	"github.com/E-cercise/E-cercise/src/data/response"
 	"github.com/E-cercise/E-cercise/src/enum"
@@ -12,12 +14,12 @@ import (
 	"github.com/E-cercise/E-cercise/src/repository"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
-	"strings"
 )
 
 type OrderService interface {
 	CreateOrder(req request.CheckoutCartRequest, user *model.User) error
 	GetOrderDetail(orderID uuid.UUID, user *model.User) (*response.OrderDetailResponse, error)
+	UpdateOrderStatus(orderID uuid.UUID) error
 }
 
 type orderService struct {
@@ -185,4 +187,37 @@ func (s *orderService) GetOrderDetail(orderID uuid.UUID, user *model.User) (*res
 	}
 
 	return &resp, nil
+}
+
+func (s *orderService) UpdateOrderStatus(orderID uuid.UUID) error {
+	order, err := s.orderRepo.FindByID(orderID)
+	fmt.Println(order.OrderStatus)
+	if err != nil {
+		logger.Log.WithError(err).Error("Failed to get order detail")
+		return fmt.Errorf("failed to get order detail")
+	}
+
+	statusTransaction := map[enum.OrderStatus]enum.OrderStatus{
+		enum.OrderPending: enum.OrderPlaced,
+		enum.OrderPlaced: enum.OrderPaid,
+		enum.OrderPaid: enum.OrderShipped,
+		enum.OrderShipped: enum.OrderReceived,
+	}
+
+	nextStatus, ok := statusTransaction[order.OrderStatus]
+	if !ok {
+		if order.OrderStatus == enum.OrderReceived {
+			logger.Log.WithError(err).Error("Order has already been received, no further status update possible")
+			return fmt.Errorf("order has already been received, no further status update possible")
+		}
+		logger.Log.WithError(err).Errorf("Invalid order status: %v", order.OrderStatus)
+		return fmt.Errorf("invalid order status: %v", order.OrderStatus)
+	}
+
+	if err := s.orderRepo.UpdateOrderStatusByID(order.ID, nextStatus); err != nil {
+		logger.Log.WithError(err).Errorf("Cannot update order status with ID: %v", orderID)
+        return err
+	}
+
+	return nil
 }

@@ -2,7 +2,6 @@ package controller
 
 import (
 	"github.com/E-cercise/E-cercise/src/data/request"
-	// "github.com/E-cercise/E-cercise/src/data/response"
 	"github.com/E-cercise/E-cercise/src/helper"
 	"github.com/E-cercise/E-cercise/src/service"
 	"github.com/gofiber/fiber/v2"
@@ -61,4 +60,19 @@ func (c *OrderController) GetOrderDetail(ctx *fiber.Ctx) error {
 	}
 
 	return ctx.Status(fiber.StatusOK).JSON(resp)
+}
+
+func (c *OrderController) UpdateOrderStatus(ctx *fiber.Ctx) error {
+	orderID := uuid.MustParse(ctx.Params("id"))
+
+	err := c.OrderService.UpdateOrderStatus(orderID)
+	if err != nil {
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Order status updated successfully",
+	})
 }

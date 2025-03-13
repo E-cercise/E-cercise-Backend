@@ -66,6 +66,7 @@ func (r *cartRepository) GetCart(userID uuid.UUID) (*model.Cart, error) {
 func (r *cartRepository) ModifyLineItem(tx *gorm.DB, lineEquipmentID uuid.UUID, quantity int) error {
 	return tx.Model(&model.LineEquipment{}).Where("id = ?", lineEquipmentID).Update("quantity", quantity).Error
 }
+
 func (r *cartRepository) ClearAllLineItems(userID uuid.UUID) error {
 	var cart model.Cart
 
