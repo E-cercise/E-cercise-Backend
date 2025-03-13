@@ -18,6 +18,7 @@ import (
 type OrderService interface {
 	CreateOrder(req request.CheckoutCartRequest, user *model.User) error
 	GetOrderDetail(orderID uuid.UUID, user *model.User) (*response.OrderDetailResponse, error)
+	UpdateOrderStatus(orderID uuid.UUID) error
 }
 
 type orderService struct {
@@ -185,4 +186,43 @@ func (s *orderService) GetOrderDetail(orderID uuid.UUID, user *model.User) (*res
 	}
 
 	return &resp, nil
+}
+
+func (s *orderService) UpdateOrderStatus(orderID uuid.UUID) error {
+	order, err := s.orderRepo.FindByID(orderID)
+	fmt.Println(order.OrderStatus)
+	if err != nil {
+		logger.Log.WithError(err).Error("Falied to get order detail")
+		return fmt.Errorf("failed to get order detail")
+	}
+
+	switch order.OrderStatus {
+		case enum.OrderPending:
+			err := s.orderRepo.UpdateOrderStatusByID(orderID, enum.OrderPlaced)
+			if err != nil {
+				logger.Log.WithError(err).Error("cant update order status with ID:", orderID)
+				return err
+			}
+		case enum.OrderPlaced:
+			err := s.orderRepo.UpdateOrderStatusByID(orderID, enum.OrderPaid)
+			if err != nil {
+				logger.Log.WithError(err).Error("cant update order status with ID:", orderID)
+				return err
+			}
+		case enum.OrderPaid:
+			err := s.orderRepo.UpdateOrderStatusByID(orderID, enum.OrderShipped)
+			if err != nil {
+				logger.Log.WithError(err).Error("cant update order status with ID:", orderID)
+				return err
+			}
+		case enum.OrderShipped:
+			err := s.orderRepo.UpdateOrderStatusByID(orderID, enum.OrderReceived)
+			if err != nil {
+				logger.Log.WithError(err).Error("cant update order status with ID:", orderID)
+				return err
+			}
+		default:
+			return fmt.Errorf("received status is the last order status")
+	}
+	return nil
 }

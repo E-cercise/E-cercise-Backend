@@ -14,4 +14,5 @@ func OrderRouter(router fiber.Router, orderController *controller.OrderControlle
 
 	orderGroup.Post("", middleware.Authentication(userRepo), middleware.RoleAuthorization(enum.RoleUser, enum.RoleAdmin), validation.ValidateCheckoutOrder(), orderController.CreateOrder)
 	orderGroup.Get("/:id", middleware.Authentication(userRepo), middleware.RoleAuthorization(enum.RoleUser, enum.RoleAdmin), orderController.GetOrderDetail)
+	orderGroup.Put("/status/:id", middleware.Authentication(userRepo), middleware.RoleAuthorization(enum.RoleUser, enum.RoleAdmin), orderController.UpdateOrderStatus)
 }
