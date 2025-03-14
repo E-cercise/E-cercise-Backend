@@ -28845,14 +28845,6 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: users uni_users_role; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.users
-    ADD CONSTRAINT uni_users_role UNIQUE (role);
-
-
---
 -- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
