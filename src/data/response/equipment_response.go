@@ -25,6 +25,15 @@ type Equipment struct {
 //	Weight           float64 `json:"weight"`
 //}
 
+type CategoriesResponse struct {
+	Categories []Category `json:"categories"`
+}
+
+type Category struct {
+	Value int64  `json:"value"`
+	Label string `json:"label"`
+}
+
 type EquipmentDetailResponse struct {
 	Brand           string            `json:"brand"`
 	Color           string            `json:"color"`
