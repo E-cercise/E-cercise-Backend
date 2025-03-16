@@ -43,7 +43,7 @@ func (r *equipmentRepository) FindEquipmentList(q string, muscleGroup []string, 
 	query := r.db.Model(&model.Equipment{})
 
 	if q != "" {
-		query = query.Where("equipment.name ILIKE ? OR equipment.description ILIKE ?", "%"+q+"%", "%"+q+"%")
+		query = query.Where("equipment.name ILIKE ? OR equipment.description ILIKE ? OR equipment.category ILIKE ?", "%"+q+"%", "%"+q+"%", "%"+q+"%")
 	}
 
 	if len(muscleGroup) > 0 {

@@ -72,7 +72,6 @@ func (s *equipmentService) GetEquipmentData(q request.EquipmentListRequest, pagi
 
 	}
 	return &resp, nil
-
 }
 
 func (s *equipmentService) GetRecommendEquipmentData(q request.EquipmentListRequest, paginatior *helper.Paginator, userID uuid.UUID) (*response.EquipmentsResponse, error) {
