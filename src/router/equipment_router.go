@@ -15,6 +15,8 @@ func EquipmentRouter(router fiber.Router, equipmentController *controller.Equipm
 	equipmentGroup.Get("/list", middleware.OptionalAuthentication(userRepo),
 		middleware.PreparePagination("1", "10"), equipmentController.GetAllEquipment) //group by collaborative filtering later
 
+	equipmentGroup.Get("/categories", equipmentController.GetAllEquipmentCategories)
+
 	equipmentGroup.Post("", middleware.Authentication(userRepo), middleware.RoleAuthorization(enum.RoleAdmin),
 		validation.ValidateAddEquipment(), equipmentController.AddEquipment)
 

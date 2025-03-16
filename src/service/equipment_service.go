@@ -21,6 +21,7 @@ type EquipmentService interface {
 	GetEquipmentDetail(eqID uuid.UUID) (*response.EquipmentDetailResponse, error)
 	UpdateEquipment(eqID uuid.UUID, context context.Context, req request.EquipmentPutRequest) error
 	DeleteEquipment(eqID uuid.UUID, context context.Context) error
+	GetAllEquipmentCategories() (*response.CategoriesResponse, error)
 }
 
 type equipmentService struct {
@@ -498,4 +499,24 @@ func (s *equipmentService) DeleteEquipment(eqID uuid.UUID, context context.Conte
 	}
 
 	return nil
+}
+
+func (s *equipmentService) GetAllEquipmentCategories() (*response.CategoriesResponse, error) {
+	equipments, err := s.equipmentRepo.GetAllEquipmentCategories()
+	if err != nil {
+		logger.Log.WithError(err).Error("can't get all equipment categories")
+		return nil, err
+	}
+
+	var resp response.CategoriesResponse
+
+	for i, equipment := range equipments {
+		category := response.Category{
+			Value: int64(i + 1),
+			Label: equipment.Category,
+		}
+		resp.Categories = append(resp.Categories, category)
+	}
+
+	return &resp, nil
 }

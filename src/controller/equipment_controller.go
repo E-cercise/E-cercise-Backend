@@ -147,3 +147,14 @@ func (c *EquipmentController) DeleteEquipment(ctx *fiber.Ctx) error {
 
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{"message": "equipment has been deleted"})
 }
+
+func (c *EquipmentController) GetAllEquipmentCategories(ctx *fiber.Ctx) error {
+	resp, err := c.EquipmentService.GetAllEquipmentCategories()
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(resp)
+}
