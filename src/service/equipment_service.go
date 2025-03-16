@@ -40,7 +40,7 @@ func (s *equipmentService) GetEquipmentData(q request.EquipmentListRequest, pagi
 	if q.MuscleGroup != "" {
 		muscleGroup = strings.Split(q.MuscleGroup, ",")
 	}
-	equipments, err := s.equipmentRepo.FindEquipmentList(q.Q, muscleGroup, paginator)
+	equipments, err := s.equipmentRepo.FindEquipmentList(q.Q, muscleGroup, paginator, q.Category)
 
 	if err != nil {
 		logger.Log.WithError(err).Error("error during find all equipments")
@@ -72,7 +72,6 @@ func (s *equipmentService) GetEquipmentData(q request.EquipmentListRequest, pagi
 
 	}
 	return &resp, nil
-
 }
 
 func (s *equipmentService) GetRecommendEquipmentData(q request.EquipmentListRequest, paginatior *helper.Paginator, userID uuid.UUID) (*response.EquipmentsResponse, error) {

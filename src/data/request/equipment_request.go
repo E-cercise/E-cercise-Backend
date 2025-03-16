@@ -8,6 +8,7 @@ import (
 type EquipmentListRequest struct {
 	Q           string `query:"q"`
 	MuscleGroup string `query:"muscle_group"`
+	Category    string `query:"category"`
 }
 
 type EquipmentPostRequest struct {

@@ -10,7 +10,7 @@ import (
 )
 
 type EquipmentRepository interface {
-	FindEquipmentList(q string, muscleGroup []string, paginator *helper.Paginator) ([]model.Equipment, error)
+	FindEquipmentList(q string, muscleGroup []string, paginator *helper.Paginator, category string) ([]model.Equipment, error)
 	CreateEquipment(tx *gorm.DB, eq model.Equipment) error
 	AddAttributes(tx *gorm.DB, attr []model.Attribute) error
 	FindByID(eqID uuid.UUID) (*model.Equipment, error)
@@ -37,13 +37,17 @@ func NewEquipmentRepository(db *gorm.DB) EquipmentRepository {
 	return &equipmentRepository{db: db}
 }
 
-func (r *equipmentRepository) FindEquipmentList(q string, muscleGroup []string, paginator *helper.Paginator) ([]model.Equipment, error) {
+func (r *equipmentRepository) FindEquipmentList(q string, muscleGroup []string, paginator *helper.Paginator, category string) ([]model.Equipment, error) {
 	var equipments []model.Equipment
 
 	query := r.db.Model(&model.Equipment{})
 
 	if q != "" {
 		query = query.Where("equipment.name ILIKE ? OR equipment.description ILIKE ?", "%"+q+"%", "%"+q+"%")
+	}
+
+	if category != "" {
+		query = query.Where("equipment.category = ?", category)
 	}
 
 	if len(muscleGroup) > 0 {

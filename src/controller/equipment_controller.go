@@ -30,11 +30,19 @@ func (c *EquipmentController) GetAllEquipment(ctx *fiber.Ctx) error {
 		})
 	}
 	limit, ok := ctx.Locals("limit").(int)
+
 	if !ok {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "limit not found in context",
 		})
 	}
+	// category, ok := ctx.Locals("category").(string)
+
+	// if !ok {
+	// 	return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+	// 		"message": "category not found in context",
+	// 	})
+	// }
 
 	paginator := helper.NewPaginator(page, limit)
 
