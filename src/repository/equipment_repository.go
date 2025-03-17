@@ -10,7 +10,7 @@ import (
 )
 
 type EquipmentRepository interface {
-	FindEquipmentList(q string, muscleGroup []string, paginator *helper.Paginator, category string) ([]model.Equipment, error)
+	FindEquipmentList(q string, muscleGroup []string, paginator *helper.Paginator, category string, min int64, max int64) ([]model.Equipment, error)
 	CreateEquipment(tx *gorm.DB, eq model.Equipment) error
 	AddAttributes(tx *gorm.DB, attr []model.Attribute) error
 	FindByID(eqID uuid.UUID) (*model.Equipment, error)
@@ -37,7 +37,7 @@ func NewEquipmentRepository(db *gorm.DB) EquipmentRepository {
 	return &equipmentRepository{db: db}
 }
 
-func (r *equipmentRepository) FindEquipmentList(q string, muscleGroup []string, paginator *helper.Paginator, category string) ([]model.Equipment, error) {
+func (r *equipmentRepository) FindEquipmentList(q string, muscleGroup []string, paginator *helper.Paginator, category string, min int64, max int64) ([]model.Equipment, error) {
 	var equipments []model.Equipment
 
 	query := r.db.Model(&model.Equipment{})
@@ -48,6 +48,11 @@ func (r *equipmentRepository) FindEquipmentList(q string, muscleGroup []string, 
 
 	if category != "" {
 		query = query.Where("equipment.category = ?", category)
+	}
+
+	if min != 0 || max != 0 {
+		  query = query.Joins("JOIN equipment_options eo ON eo.equipment_id = equipment.id").
+		  	Where("eo.price >= ? and eo.price <= ?", min, max)
 	}
 
 	if len(muscleGroup) > 0 {
