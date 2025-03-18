@@ -10,7 +10,7 @@ import (
 )
 
 type EquipmentRepository interface {
-	FindEquipmentList(q string, muscleGroup []string, paginator *helper.Paginator, category string, minBudget int64, maxBudget int64) ([]model.Equipment, error)
+	FindEquipmentList(q string, muscleGroup []string, paginator *helper.Paginator, category string, minBudget int, maxBudget int) ([]model.Equipment, error)
 	CreateEquipment(tx *gorm.DB, eq model.Equipment) error
 	AddAttributes(tx *gorm.DB, attr []model.Attribute) error
 	FindByID(eqID uuid.UUID) (*model.Equipment, error)
