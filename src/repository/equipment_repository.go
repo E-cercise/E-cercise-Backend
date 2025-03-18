@@ -37,7 +37,7 @@ func NewEquipmentRepository(db *gorm.DB) EquipmentRepository {
 	return &equipmentRepository{db: db}
 }
 
-func (r *equipmentRepository) FindEquipmentList(q string, muscleGroup []string, paginator *helper.Paginator, category string, minBudget int64, maxBudget int64) ([]model.Equipment, error) {
+func (r *equipmentRepository) FindEquipmentList(q string, muscleGroup []string, paginator *helper.Paginator, category string, minBudget int, maxBudget int) ([]model.Equipment, error) {
 	var equipments []model.Equipment
 
 	query := r.db.Model(&model.Equipment{})
