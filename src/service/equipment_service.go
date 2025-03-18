@@ -40,7 +40,7 @@ func (s *equipmentService) GetEquipmentData(q request.EquipmentListRequest, pagi
 	if q.MuscleGroup != "" {
 		muscleGroup = strings.Split(q.MuscleGroup, ",")
 	}
-	equipments, err := s.equipmentRepo.FindEquipmentList(q.Q, muscleGroup, paginator, q.Category)
+	equipments, err := s.equipmentRepo.FindEquipmentList(q.Q, muscleGroup, paginator, q.Category, int64(q.MinBudget),int64(q.MaxBudget))
 
 	if err != nil {
 		logger.Log.WithError(err).Error("error during find all equipments")
@@ -61,16 +61,14 @@ func (s *equipmentService) GetEquipmentData(q request.EquipmentListRequest, pagi
 
 		price := findEquipmentMinimumPrice(equipment)
 
-		if (q.Min == 0 || price >= q.Min) && (q.Max == 0 || price <= q.Max) {
-			eq := response.Equipment{
-				ID:              equipment.ID,
-				Name:            equipment.Name,
-				Price:           price,
-				ImagePath:       imagePath,
-				MuscleGroupUsed: helper.GetMuscleGroupIDFromEquipment(equipment),
-			}
-			resp.Equipments = append(resp.Equipments, eq)
+		eq := response.Equipment{
+			ID:              equipment.ID,
+			Name:            equipment.Name,
+			Price:           price,
+			ImagePath:       imagePath,
+			MuscleGroupUsed: helper.GetMuscleGroupIDFromEquipment(equipment),
 		}
+		resp.Equipments = append(resp.Equipments, eq)
 	}
 	return &resp, nil
 }
