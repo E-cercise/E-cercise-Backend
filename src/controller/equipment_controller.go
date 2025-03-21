@@ -9,6 +9,7 @@ import (
 	"github.com/E-cercise/E-cercise/src/service"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"strings"
 )
 
 type EquipmentController struct {
@@ -36,13 +37,6 @@ func (c *EquipmentController) GetAllEquipment(ctx *fiber.Ctx) error {
 			"message": "limit not found in context",
 		})
 	}
-	// category, ok := ctx.Locals("category").(string)
-
-	// if !ok {
-	// 	return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-	// 		"message": "category not found in context",
-	// 	})
-	// }
 
 	paginator := helper.NewPaginator(page, limit)
 
@@ -158,6 +152,35 @@ func (c *EquipmentController) DeleteEquipment(ctx *fiber.Ctx) error {
 
 func (c *EquipmentController) GetAllEquipmentCategories(ctx *fiber.Ctx) error {
 	resp, err := c.EquipmentService.GetAllEquipmentCategories()
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(resp)
+}
+
+func (c *EquipmentController) GetAllEquipmentsDetail(ctx *fiber.Ctx) error {
+	var req request.EquipmentIDsRequest
+
+	if err := ctx.QueryParser(&req); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request data",
+		})
+	}
+
+	equipmentIDStrings := strings.Split(req.EquipmentIDs, ",")
+	if len(equipmentIDStrings) != 3 {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Exactly 3 equipment IDs are required"})
+	}
+
+	equipmentUUIDs, err := helper.ParseUUIDs(equipmentIDStrings)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid UUID format"})
+	}
+
+	resp, err := c.EquipmentService.GetAllEquipmentsDetail(equipmentUUIDs)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),

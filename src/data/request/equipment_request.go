@@ -13,6 +13,10 @@ type EquipmentListRequest struct {
 	MaxBudget   float64 `query:"max_budget"`
 }
 
+type EquipmentIDsRequest struct {
+	EquipmentIDs string `query:"equipment_ids"`
+}
+
 type EquipmentPostRequest struct {
 	Brand            string            `json:"brand"`
 	Color            string            `json:"color"`

@@ -22,6 +22,7 @@ type EquipmentService interface {
 	UpdateEquipment(eqID uuid.UUID, context context.Context, req request.EquipmentPutRequest) error
 	DeleteEquipment(eqID uuid.UUID, context context.Context) error
 	GetAllEquipmentCategories() (*response.CategoriesResponse, error)
+	GetAllEquipmentsDetail(eqIDs []uuid.UUID) (*response.EquipmentDetailComparisonResponse, error)
 }
 
 type equipmentService struct {
@@ -514,6 +515,70 @@ func (s *equipmentService) GetAllEquipmentCategories() (*response.CategoriesResp
 			Label: equipment.Category,
 		}
 		resp.Categories = append(resp.Categories, category)
+	}
+
+	return &resp, nil
+}
+
+func (s *equipmentService) GetAllEquipmentsDetail(eqIDs []uuid.UUID) (*response.EquipmentDetailComparisonResponse, error) {
+	equipments, err := s.equipmentRepo.FindByIDs(eqIDs)
+
+	if err != nil {
+		return nil, err
+	}
+
+	commonKeys := helper.FindCommonAttributes(equipments)
+
+	var filteredEquipments []map[string]interface{}
+	for _, eq := range equipments {
+		filteredData := map[string]interface{}{
+			"id": eq.ID,
+			"name": eq.Name,
+			"brand": eq.Brand,
+			"color": eq.Color,
+			"category": eq.Category,
+			"description": eq.Description,
+			"material": eq.Material,
+			"model": eq.Model,
+			"option": eq.EquipmentOptions,
+			// "feature": eq.EquipmentFeature,
+		}
+		var additionalAttributes []response.AdditionalField
+		for _, key := range commonKeys {
+			for _, attr := range eq.Attribute {
+				if attr.Key == key {
+					attribute := response.AdditionalField{
+						ID: attr.ID.String(),
+						Key: attr.Key,
+						Value: attr.Value,
+					}
+					additionalAttributes = append(additionalAttributes, attribute)
+					// filteredData[key] = attr.Value
+				}
+			}
+		}
+		filteredData["additional_fields"] = additionalAttributes
+		filteredEquipments = append(filteredEquipments, filteredData)
+	}
+
+	equipmentMap := make(map[uuid.UUID]map[string]interface{})
+	for _, eq := range filteredEquipments {
+		id, ok := eq["id"].(uuid.UUID)
+		if !ok {
+			return nil, fmt.Errorf("invalid ID type in filteredEquipments")
+		}
+		equipmentMap[id] = eq
+	}
+
+	var sortedEquipments []map[string]interface{}
+	for _, id := range eqIDs {
+		if eq, exists := equipmentMap[id]; exists {
+			sortedEquipments = append(sortedEquipments, eq)
+		}
+	}
+
+	resp := response.EquipmentDetailComparisonResponse{
+		Equipments: sortedEquipments,
 	}
 
 	return &resp, nil

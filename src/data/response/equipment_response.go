@@ -5,6 +5,10 @@ import (
 	"github.com/google/uuid"
 )
 
+type EquipmentDetailComparisonResponse struct {
+	Equipments []map[string]interface{} `json:"equipments"`
+}
+
 type EquipmentsResponse struct {
 	Equipments []Equipment `json:"equipments"`
 }
