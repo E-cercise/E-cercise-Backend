@@ -12,6 +12,7 @@ import (
 func CartRouter(router fiber.Router, cartController *controller.CartController, userRepo repository.UserRepository) {
 	cartGroup := router.Group("/cart")
 
+	cartGroup.Get("/items-by-ids", middleware.Authentication(userRepo), middleware.RoleAuthorization(enum.RoleUser, enum.RoleAdmin), cartController.GetItemsInCart)
 	cartGroup.Post("/item", middleware.Authentication(userRepo), middleware.RoleAuthorization(enum.RoleUser, enum.RoleAdmin), validation.ValidateAddLineEquipment(), cartController.AddEquipmentToCart)
 	cartGroup.Delete("/:line_equipment_id", middleware.Authentication(userRepo), middleware.RoleAuthorization(enum.RoleUser, enum.RoleAdmin), validation.ValidateParam("line_equipment_id", "uuid"),
 		cartController.DeleteItemInCart)

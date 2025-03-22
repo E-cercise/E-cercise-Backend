@@ -3,6 +3,8 @@ package repository
 import (
 	"errors"
 	"fmt"
+
+	"github.com/E-cercise/E-cercise/src/helper"
 	"github.com/E-cercise/E-cercise/src/model"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -15,6 +17,7 @@ type CartRepository interface {
 	ModifyLineItem(tx *gorm.DB, lineEquipmentID uuid.UUID, quantity int) error
 	ClearAllLineItems(userID uuid.UUID) error
 	FindLineEquipmentByEquipmentIDAndOptionID(userID uuid.UUID, equipmentID uuid.UUID, equipmentOptionID uuid.UUID) (*model.LineEquipment, error)
+	FindLineEquipmentsByLineEquipmentIDs(userID uuid.UUID, lineEquipmentIDs []uuid.UUID) ([]model.LineEquipment, error)
 }
 
 type cartRepository struct {
@@ -100,4 +103,25 @@ func (r *cartRepository) FindLineEquipmentByEquipmentIDAndOptionID(userID uuid.U
 	}
 
 	return &lineEquipment, nil
+}
+
+func (r *cartRepository) FindLineEquipmentsByLineEquipmentIDs(userID uuid.UUID, lineEquipmentIDs []uuid.UUID) ([]model.LineEquipment, error) {
+	var cart model.Cart
+
+	if err := r.db.Preload("LineEquipments").Where("user_id = ?", userID).First(&cart).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("cart not found for user ID: %s", userID)
+		}
+		return nil, err
+	}
+
+	var lineEquipments []model.LineEquipment 
+
+	for _, lineEquipment := range cart.LineEquipments {
+		if helper.Contains(lineEquipmentIDs, lineEquipment.ID) {
+			lineEquipments = append(lineEquipments, lineEquipment)
+		}
+	}
+
+	return lineEquipments, nil
 }
