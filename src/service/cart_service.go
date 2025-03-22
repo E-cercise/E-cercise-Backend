@@ -19,7 +19,7 @@ type CartService interface {
 	GetAllLineEquipmentInCart(userID uuid.UUID) (*response.GetCartItemResponse, error)
 	ModifyLineEquipmentInCart(req request.CartItemPutRequest, userID uuid.UUID) error
 	ClearAllLineEquipmentInCart(userID uuid.UUID) error
-	GetAllLineEquipmentsInCart(userID uuid.UUID, lineEquipmentIDs []uuid.UUID) (*response.GetCartItemResponse, error)
+	GetLineEquipmentsInCart(userID uuid.UUID, lineEquipmentIDs []uuid.UUID) (*response.GetCartItemResponse, error)
 }
 
 type cartService struct {
@@ -214,7 +214,7 @@ func (s *cartService) ClearAllLineEquipmentInCart(userID uuid.UUID) error {
 	return nil
 }
 
-func (s *cartService) GetAllLineEquipmentsInCart(userID uuid.UUID, lineEquipmentIDs []uuid.UUID) (*response.GetCartItemResponse, error) {
+func (s *cartService) GetLineEquipmentsInCart(userID uuid.UUID, lineEquipmentIDs []uuid.UUID) (*response.GetCartItemResponse, error) {
 	lineEquipments, err := s.cartRepo.FindLineEquipmentsByLineEquipmentIDs(userID, lineEquipmentIDs)
 	if err != nil {
 		logger.Log.WithError(err).Error("error finding the line equipments in cart")
