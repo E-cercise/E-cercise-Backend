@@ -17,7 +17,7 @@ import (
 )
 
 type ImageService interface {
-	UploadImage(context context.Context, file multipart.File, fileHeader *multipart.FileHeader, isPrimary bool) (string, error)
+	UploadImage(context context.Context, file multipart.File, fileHeader *multipart.FileHeader, isPrimary bool) (string, string, error)
 	ArchiveImage(tx *gorm.DB, context context.Context, imgID uuid.UUID, eqpID uuid.UUID, eqOptID uuid.UUID, isPrimary bool) error
 	DeleteImage(tx *gorm.DB, context context.Context, imgID uuid.UUID) error
 }
@@ -32,7 +32,7 @@ func NewImageService(db *gorm.DB, imageRepo repository.ImageRepository, cloudina
 	return &imageService{db: db, imageRepo: imageRepo, cloudinaryService: cloudinaryService}
 }
 
-func (s *imageService) UploadImage(context context.Context, file multipart.File, fileHeader *multipart.FileHeader, isPrimary bool) (string, error) {
+func (s *imageService) UploadImage(context context.Context, file multipart.File, fileHeader *multipart.FileHeader, isPrimary bool) (string, string, error) {
 	tx := s.db.Begin()
 
 	defer func() {
@@ -48,7 +48,7 @@ func (s *imageService) UploadImage(context context.Context, file multipart.File,
 	if err != nil {
 		tx.Rollback()
 		logger.Log.WithError(err).Error("error uploading image to cloudinary")
-		return "", err
+		return "", "", err
 	}
 
 	newImage := model.Image{
@@ -64,15 +64,15 @@ func (s *imageService) UploadImage(context context.Context, file multipart.File,
 	if err != nil {
 		tx.Rollback()
 		logger.Log.WithError(err).Error("error creating image")
-		return "", err
+		return "", "", err
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return "", err
+		return "", "", err
 	}
 
-	return newImage.ID.String(), nil
+	return newImage.ID.String(), cloudinaryPath, nil
 }
 
 func generateFileName(folder string) string {
