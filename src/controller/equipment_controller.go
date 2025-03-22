@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"strings"
+
 	"github.com/E-cercise/E-cercise/src/data/request"
 	"github.com/E-cercise/E-cercise/src/data/response"
 	"github.com/E-cercise/E-cercise/src/enum"
@@ -9,7 +11,6 @@ import (
 	"github.com/E-cercise/E-cercise/src/service"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"strings"
 )
 
 type EquipmentController struct {

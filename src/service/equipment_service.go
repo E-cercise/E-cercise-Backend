@@ -529,20 +529,37 @@ func (s *equipmentService) GetAllEquipmentsDetail(eqIDs []uuid.UUID) (*response.
 
 	commonKeys := helper.FindCommonAttributes(equipments)
 
-	var filteredEquipments []map[string]interface{}
+	var filteredEquipments []response.EquipmentDetail
 	for _, eq := range equipments {
-		filteredData := map[string]interface{}{
-			"id": eq.ID,
-			"name": eq.Name,
-			"brand": eq.Brand,
-			"color": eq.Color,
-			"category": eq.Category,
-			"description": eq.Description,
-			"material": eq.Material,
-			"model": eq.Model,
-			"option": eq.EquipmentOptions,
-			// "feature": eq.EquipmentFeature,
+		filteredData := response.EquipmentDetail{
+			ID: eq.ID,
+			Name: eq.Name,
+			Brand: eq.Brand,
+			Color: eq.Color,
+			Category: eq.Category,
+			Description: eq.Description,
+			Material: eq.Material,
+			Model: eq.Model,
 		}
+		for _, opt := range eq.EquipmentOptions {
+			option := response.Option{
+				ID: opt.ID.String(),
+				Name: opt.Name,
+				Available: opt.RemainingProducts,
+				Price: opt.Price,
+				Weight: opt.Weight,			
+			}
+			for _, img := range opt.Images {
+				image := response.Image{
+					ID: img.ID.String(),
+					Url: img.CloudinaryPath,
+					IsPrimary: img.IsPrimary,
+				}
+				option.Images = append(option.Images, image)
+			}
+			filteredData.Option = append(filteredData.Option, option)
+		}
+
 		var additionalAttributes []response.AdditionalField
 		for _, key := range commonKeys {
 			for _, attr := range eq.Attribute {
@@ -557,20 +574,16 @@ func (s *equipmentService) GetAllEquipmentsDetail(eqIDs []uuid.UUID) (*response.
 				}
 			}
 		}
-		filteredData["additional_fields"] = additionalAttributes
+		filteredData.AdditionalField = additionalAttributes
 		filteredEquipments = append(filteredEquipments, filteredData)
 	}
 
-	equipmentMap := make(map[uuid.UUID]map[string]interface{})
+	equipmentMap := make(map[uuid.UUID]response.EquipmentDetail)
 	for _, eq := range filteredEquipments {
-		id, ok := eq["id"].(uuid.UUID)
-		if !ok {
-			return nil, fmt.Errorf("invalid ID type in filteredEquipments")
-		}
-		equipmentMap[id] = eq
+		equipmentMap[eq.ID] = eq
 	}
 
-	var sortedEquipments []map[string]interface{}
+	var sortedEquipments []response.EquipmentDetail
 	for _, id := range eqIDs {
 		if eq, exists := equipmentMap[id]; exists {
 			sortedEquipments = append(sortedEquipments, eq)
