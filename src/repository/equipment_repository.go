@@ -27,6 +27,7 @@ type EquipmentRepository interface {
 	FindOptionByID(optionID uuid.UUID) (*model.EquipmentOption, error)
 	DeleteEquipment(tx *gorm.DB, eqID uuid.UUID) error
 	GetAllEquipmentCategories() ([]model.Equipment, error)
+	FindByIDs(ids []uuid.UUID) ([]model.Equipment, error)
 }
 
 type equipmentRepository struct {
@@ -174,5 +175,21 @@ func (r *equipmentRepository) GetAllEquipmentCategories() ([]model.Equipment, er
 	if err != nil {
 		return nil, err
 	}
+	return equipments, nil
+}
+
+func (r *equipmentRepository) FindByIDs(ids []uuid.UUID) ([]model.Equipment, error) {
+	var equipments []model.Equipment
+	err := r.db.Preload("MuscleGroups").
+		Preload("EquipmentOptions").
+		Preload("EquipmentOptions.Images").
+		Preload("EquipmentFeature").
+		Preload("Attribute").
+		Where("id IN ?", ids).
+		Find(&equipments).Error
+	if err != nil {
+		return nil, err
+	}
+
 	return equipments, nil
 }

@@ -22,6 +22,7 @@ type EquipmentService interface {
 	UpdateEquipment(eqID uuid.UUID, context context.Context, req request.EquipmentPutRequest) error
 	DeleteEquipment(eqID uuid.UUID, context context.Context) error
 	GetAllEquipmentCategories() (*response.CategoriesResponse, error)
+	GetAllEquipmentsDetail(eqIDs []uuid.UUID) (*response.EquipmentDetailComparisonResponse, error)
 }
 
 type equipmentService struct {
@@ -514,6 +515,83 @@ func (s *equipmentService) GetAllEquipmentCategories() (*response.CategoriesResp
 			Label: equipment.Category,
 		}
 		resp.Categories = append(resp.Categories, category)
+	}
+
+	return &resp, nil
+}
+
+func (s *equipmentService) GetAllEquipmentsDetail(eqIDs []uuid.UUID) (*response.EquipmentDetailComparisonResponse, error) {
+	equipments, err := s.equipmentRepo.FindByIDs(eqIDs)
+
+	if err != nil {
+		return nil, err
+	}
+
+	commonKeys := helper.FindCommonAttributes(equipments)
+
+	var filteredEquipments []response.EquipmentDetail
+	for _, eq := range equipments {
+		filteredData := response.EquipmentDetail{
+			ID: eq.ID,
+			Name: eq.Name,
+			Brand: eq.Brand,
+			Color: eq.Color,
+			Category: eq.Category,
+			Description: eq.Description,
+			Material: eq.Material,
+			Model: eq.Model,
+		}
+		for _, opt := range eq.EquipmentOptions {
+			option := response.Option{
+				ID: opt.ID.String(),
+				Name: opt.Name,
+				Available: opt.RemainingProducts,
+				Price: opt.Price,
+				Weight: opt.Weight,			
+			}
+			for _, img := range opt.Images {
+				image := response.Image{
+					ID: img.ID.String(),
+					Url: img.CloudinaryPath,
+					IsPrimary: img.IsPrimary,
+				}
+				option.Images = append(option.Images, image)
+			}
+			filteredData.Option = append(filteredData.Option, option)
+		}
+
+		var additionalAttributes []response.AdditionalField
+		for _, key := range commonKeys {
+			for _, attr := range eq.Attribute {
+				if attr.Key == key {
+					attribute := response.AdditionalField{
+						ID: attr.ID.String(),
+						Key: attr.Key,
+						Value: attr.Value,
+					}
+					additionalAttributes = append(additionalAttributes, attribute)
+					// filteredData[key] = attr.Value
+				}
+			}
+		}
+		filteredData.AdditionalField = additionalAttributes
+		filteredEquipments = append(filteredEquipments, filteredData)
+	}
+
+	equipmentMap := make(map[uuid.UUID]response.EquipmentDetail)
+	for _, eq := range filteredEquipments {
+		equipmentMap[eq.ID] = eq
+	}
+
+	var sortedEquipments []response.EquipmentDetail
+	for _, id := range eqIDs {
+		if eq, exists := equipmentMap[id]; exists {
+			sortedEquipments = append(sortedEquipments, eq)
+		}
+	}
+
+	resp := response.EquipmentDetailComparisonResponse{
+		Equipments: sortedEquipments,
 	}
 
 	return &resp, nil

@@ -5,6 +5,23 @@ import (
 	"github.com/google/uuid"
 )
 
+type EquipmentDetailComparisonResponse struct {
+	Equipments []EquipmentDetail `json:"equipments"`
+}
+
+type EquipmentDetail struct {
+	ID              uuid.UUID         `json:"id"`
+	Name            string            `json:"name"`
+	Brand           string            `json:"brand"`
+	Color           string            `json:"color"`
+	Category        string            `json:"category"`
+	Description     string            `json:"description"`
+	Material        string            `json:"material"`
+	Model           string            `json:"model"`
+	Option          []Option          `json:"option"`
+	AdditionalField []AdditionalField `json:"additional_field"`
+}
+
 type EquipmentsResponse struct {
 	Equipments []Equipment `json:"equipments"`
 }
