@@ -19,6 +19,7 @@ type CartService interface {
 	GetAllLineEquipmentInCart(userID uuid.UUID) (*response.GetCartItemResponse, error)
 	ModifyLineEquipmentInCart(req request.CartItemPutRequest, userID uuid.UUID) error
 	ClearAllLineEquipmentInCart(userID uuid.UUID) error
+	GetLineEquipmentsInCart(userID uuid.UUID, lineEquipmentIDs []uuid.UUID) (*response.GetCartItemResponse, error)
 }
 
 type cartService struct {
@@ -123,7 +124,7 @@ func (s *cartService) GetAllLineEquipmentInCart(userID uuid.UUID) (*response.Get
 
 		equipmentOption, err := s.equipmentRepo.FindOptionByID(line.EquipmentOptionID)
 		if err != nil {
-			logger.Log.WithError(err).Error("error during find equipmentOpyion ID", equipmentOption.ID)
+			logger.Log.WithError(err).Error("error during find equipmentOption ID", equipmentOption.ID)
 			return nil, err
 		}
 
@@ -211,4 +212,44 @@ func (s *cartService) ClearAllLineEquipmentInCart(userID uuid.UUID) error {
 		return err
 	}
 	return nil
+}
+
+func (s *cartService) GetLineEquipmentsInCart(userID uuid.UUID, lineEquipmentIDs []uuid.UUID) (*response.GetCartItemResponse, error) {
+	lineEquipments, err := s.cartRepo.FindLineEquipmentsByLineEquipmentIDs(userID, lineEquipmentIDs)
+	if err != nil {
+		logger.Log.WithError(err).Error("error finding the line equipments in cart")
+		return nil, err
+	}
+
+	var resp response.GetCartItemResponse
+	total := 0.0
+	for _, lineEquipment := range lineEquipments {
+		equipment, err := s.equipmentRepo.FindByID(lineEquipment.EquipmentID)
+		if err != nil {
+			logger.Log.WithError(err).Error("error during find equipment ID", equipment.ID)
+			return nil, err
+		}
+
+		equipmentOption, err := s.equipmentRepo.FindOptionByID(lineEquipment.EquipmentOptionID)
+		if err != nil {
+			logger.Log.WithError(err).Error("error during find equipment option ID", equipmentOption.ID)
+			return nil, err
+		}
+		img := helper.FindPrimaryImage(*equipmentOption)
+
+		lineTotal := float64(equipmentOption.Price) * float64(lineEquipment.Quantity)
+		total += lineTotal
+
+		resp.LineEquipments = append(resp.LineEquipments, response.LineEquipment{
+			EquipmentName: equipment.Name,
+			LineEquipmentID: lineEquipment.ID.String(),
+			ImgUrl: img.CloudinaryPath,
+			PerUnitPrice: equipmentOption.Price,
+			Quantity: lineEquipment.Quantity,
+			Total: lineTotal,
+		})
+	}
+	resp.TotalPrice = total
+
+	return &resp, err
 }
