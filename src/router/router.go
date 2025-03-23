@@ -59,6 +59,17 @@ func InitRouter(db *gorm.DB) *fiber.App {
 
 	app.Use(logger.New())
 
+	app.Use(func(c *fiber.Ctx) error {
+		err := c.Next()
+		if err != nil {
+			logger2.Log.WithError(err).Error("error occured: ", err.Error())
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": err.Error(),
+			})
+		}
+		return nil
+	})
+
 	// Define API group
 	apiGroup := app.Group("/api")
 
