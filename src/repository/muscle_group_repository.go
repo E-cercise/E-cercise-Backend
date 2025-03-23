@@ -52,46 +52,55 @@ func (r *muscleGroupRepository) AddGroup(tx *gorm.DB, groupsID []string, eqID uu
 	return nil
 }
 
-func (r *muscleGroupRepository) UpdateGroups(tx *gorm.DB, groupsID []string, eqID uuid.UUID) error {
-	// Fetch the current muscle group associations for the equipment
+func (r *muscleGroupRepository) UpdateGroups(db *gorm.DB, groupsID []string, eqID uuid.UUID) error {
+	logger.Log.Infof("🔄 Starting UpdateGroups for equipment %s", eqID)
+
 	var currentGroupIDs []string
-	if err := tx.Table("equipment_muscle_groups").
+	if err := db.Table("equipment_muscle_groups").
 		Where("equipment_id = ?", eqID).
 		Pluck("muscle_group_id", &currentGroupIDs).Error; err != nil {
-		logger.Log.WithError(err).Error("failed to fetch current muscle group associations")
+		logger.Log.WithError(err).Error("Failed to fetch current muscle group associations")
 		return fmt.Errorf("failed to fetch current muscle group associations: %w", err)
 	}
 
-	// Determine the muscle groups to add and delete
 	toAdd := difference(groupsID, currentGroupIDs)
 	toDelete := difference(currentGroupIDs, groupsID)
 
-	// Add new associations
-	var associations []map[string]interface{}
-	for _, groupID := range toAdd {
-		associations = append(associations, map[string]interface{}{
-			"equipment_id":    eqID,
-			"muscle_group_id": groupID,
-		})
-	}
+	logger.Log.Infof("🔍 To Add: %v", toAdd)
+	logger.Log.Infof("🧹 To Delete: %v", toDelete)
 
-	if len(associations) > 0 {
-		if err := tx.Table("equipment_muscle_groups").Create(associations).Error; err != nil {
-			logger.Log.WithError(err).Error("failed to add new muscle group associations")
+	// Add new associations
+	if len(toAdd) > 0 {
+		var associations []map[string]interface{}
+		for _, groupID := range toAdd {
+			associations = append(associations, map[string]interface{}{
+				"equipment_id":    eqID,
+				"muscle_group_id": groupID,
+			})
+		}
+		if err := db.Table("equipment_muscle_groups").Create(&associations).Error; err != nil {
+			logger.Log.WithError(err).Error("Failed to add new muscle group associations")
 			return fmt.Errorf("failed to add new muscle group associations: %w", err)
 		}
 	}
 
-	// Delete obsolete associations
 	if len(toDelete) > 0 {
-		if err := tx.Table("equipment_muscle_groups").
-			Where("equipment_id = ? AND muscle_group_id IN ?", eqID, toDelete).
-			Delete(nil).Error; err != nil {
-			logger.Log.WithError(err).Error("failed to delete obsolete muscle group associations")
-			return fmt.Errorf("failed to delete obsolete muscle group associations: %w", err)
-		}
-	}
+		logger.Log.Infof("🗑 Executing Association Delete: equipment_id = %s, muscle_group_id IN %v", eqID, toDelete)
 
+		equipment := model.Equipment{ID: eqID}
+		var groupsToDelete []model.MuscleGroup
+		for _, id := range toDelete {
+			groupsToDelete = append(groupsToDelete, model.MuscleGroup{ID: id})
+		}
+
+		if err := db.Model(&equipment).Association("MuscleGroups").Delete(&groupsToDelete); err != nil {
+			logger.Log.WithError(err).Error("Failed to delete muscle group associations via GORM association")
+			return fmt.Errorf("failed to delete muscle group associations: %w", err)
+		}
+
+		logger.Log.Infof("✅ Deleted %d muscle group associations", len(groupsToDelete))
+	}
+	logger.Log.Infof("✅ UpdateGroups completed for equipment ID %s", eqID)
 	return nil
 }
 

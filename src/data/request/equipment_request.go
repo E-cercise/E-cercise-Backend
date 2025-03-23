@@ -6,10 +6,10 @@ import (
 )
 
 type EquipmentListRequest struct {
-	Q           string `query:"q"`
-	MuscleGroup string `query:"muscle_group"`
-	Category    string `query:"category"`
-	MinBudget	float64 `query:"min_budget"`
+	Q           string  `query:"q"`
+	MuscleGroup string  `query:"muscle_group"`
+	Category    string  `query:"category"`
+	MinBudget   float64 `query:"min_budget"`
 	MaxBudget   float64 `query:"max_budget"`
 }
 
@@ -66,6 +66,7 @@ type EquipmentPutRequest struct {
 	AdditionalField *AdditionalFieldPut `json:"additional_field,omitempty"`
 	Brand           *string             `json:"brand,omitempty"`
 	Description     *string             `json:"description,omitempty"`
+	Category        *string             `json:"category,omitempty"`
 	Color           *string             `json:"color,omitempty"`
 	Material        *string             `json:"material,omitempty"`
 	Model           *string             `json:"model,omitempty"`
