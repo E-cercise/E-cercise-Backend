@@ -14,10 +14,10 @@ func CartRouter(router fiber.Router, cartController *controller.CartController, 
 
 	cartGroup.Get("/items-by-ids", middleware.Authentication(userRepo), middleware.RoleAuthorization(enum.RoleUser, enum.RoleAdmin), cartController.GetItemsInCart)
 	cartGroup.Post("/item", middleware.Authentication(userRepo), middleware.RoleAuthorization(enum.RoleUser, enum.RoleAdmin), validation.ValidateAddLineEquipment(), cartController.AddEquipmentToCart)
-	cartGroup.Delete("/:line_equipment_id", middleware.Authentication(userRepo), middleware.RoleAuthorization(enum.RoleUser, enum.RoleAdmin), validation.ValidateParam("line_equipment_id", "uuid"),
-		cartController.DeleteItemInCart)
-
+	
 	cartGroup.Get("/items", middleware.Authentication(userRepo), middleware.RoleAuthorization(enum.RoleUser, enum.RoleAdmin), cartController.GetCartItems)
 	cartGroup.Put("/items", middleware.Authentication(userRepo), middleware.RoleAuthorization(enum.RoleUser, enum.RoleAdmin), validation.ValidateModifyLineEquipmentRequest(), cartController.ModifyItemInCart)
 	cartGroup.Delete("/clear", middleware.Authentication(userRepo), middleware.RoleAuthorization(enum.RoleUser, enum.RoleAdmin), cartController.ClearAllItemsInCart)
+	cartGroup.Delete("/:line_equipment_id", middleware.Authentication(userRepo), middleware.RoleAuthorization(enum.RoleUser, enum.RoleAdmin), validation.ValidateParam("line_equipment_id", "uuid"),
+		cartController.DeleteItemInCart)
 }
