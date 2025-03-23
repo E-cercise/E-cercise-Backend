@@ -19,5 +19,5 @@ func CartRouter(router fiber.Router, cartController *controller.CartController, 
 
 	cartGroup.Get("/items", middleware.Authentication(userRepo), middleware.RoleAuthorization(enum.RoleUser, enum.RoleAdmin), cartController.GetCartItems)
 	cartGroup.Put("/items", middleware.Authentication(userRepo), middleware.RoleAuthorization(enum.RoleUser, enum.RoleAdmin), validation.ValidateModifyLineEquipmentRequest(), cartController.ModifyItemInCart)
-	cartGroup.Post("/clear", middleware.Authentication(userRepo), middleware.RoleAuthorization(enum.RoleUser, enum.RoleAdmin), cartController.ClearAllItemsInCart)
+	cartGroup.Delete("/clear", middleware.Authentication(userRepo), middleware.RoleAuthorization(enum.RoleUser, enum.RoleAdmin), cartController.ClearAllItemsInCart)
 }
