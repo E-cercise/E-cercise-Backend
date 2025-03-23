@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/E-cercise/E-cercise/src/data/request"
-	"github.com/E-cercise/E-cercise/src/data/response"
 	"github.com/E-cercise/E-cercise/src/enum"
 	"github.com/E-cercise/E-cercise/src/helper"
 	"github.com/E-cercise/E-cercise/src/model"
@@ -23,7 +22,7 @@ func NewEquipmentControllerImpl(equipmentService service.EquipmentService) *Equi
 	}
 }
 
-func (c *EquipmentController) GetAllEquipment(ctx *fiber.Ctx) error {
+func (c *EquipmentController) GetAllEquipments(ctx *fiber.Ctx) error {
 	page, ok := ctx.Locals("page").(int)
 
 	if !ok {
@@ -49,36 +48,7 @@ func (c *EquipmentController) GetAllEquipment(ctx *fiber.Ctx) error {
 		})
 	}
 
-	currentUser := ctx.Locals("currentUser")
-	var equipments *response.EquipmentsResponse
-	var err error
-	if currentUser != nil {
-		user, ok := currentUser.(*model.User)
-		if !ok {
-			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"message": "cant convert user into model.user in context",
-			})
-		}
-		equipments, err = c.EquipmentService.GetRecommendEquipmentData(req, paginator, user.ID)
-		if user.Role == enum.RoleAdmin {
-			// var adminEquipments []any
-			for i, equipment := range equipments.Equipments {
-				resp, err := c.EquipmentService.GetEquipmentDetail(equipment.ID)
-				if err != nil {
-					return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
-				}
-
-				var totalRemaining int64
-				for _, opt := range resp.Option {
-					totalRemaining += int64(opt.Available)
-				}
-
-				equipments.Equipments[i].RemainingProduct = &totalRemaining
-			}
-		}
-	} else {
-		equipments, err = c.EquipmentService.GetEquipmentData(req, paginator)
-	}
+	equipments, err := c.EquipmentService.GetEquipmentData(req, paginator)
 
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -86,13 +56,34 @@ func (c *EquipmentController) GetAllEquipment(ctx *fiber.Ctx) error {
 		})
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+	resp := fiber.Map{
 		"equipments":  &equipments,
 		"page":        paginator.Page,
 		"limit":       paginator.Limit,
 		"total_pages": paginator.TotalPages,
 		"total_rows":  paginator.TotalRows,
-	})
+	}
+
+	currentUser := ctx.Locals("currentUser")
+    if currentUser != nil {
+        user, ok := currentUser.(*model.User)
+        if !ok {
+            return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+                "message": "cant convert user into model.user in context",
+            })
+        }
+		if user.Role != enum.RoleAdmin {
+			recommendationEquipments, err := c.EquipmentService.GetRecommendEquipmentData(req, paginator, user.ID)
+			if err != nil {
+				return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"error": err.Error(),
+				})
+			}
+			resp["recommendation_equipments"] = &recommendationEquipments
+        }
+    }
+
+	return ctx.Status(fiber.StatusOK).JSON(resp)
 }
 
 func (c *EquipmentController) AddEquipment(ctx *fiber.Ctx) error {

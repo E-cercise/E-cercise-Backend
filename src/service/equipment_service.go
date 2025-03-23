@@ -75,8 +75,10 @@ func (s *equipmentService) GetEquipmentData(q request.EquipmentListRequest, pagi
 }
 
 func (s *equipmentService) GetRecommendEquipmentData(q request.EquipmentListRequest, paginatior *helper.Paginator, userID uuid.UUID) (*response.EquipmentsResponse, error) {
-	logger.Log.Infof("recommending equipment to userID: %v", userID)
-	return s.GetEquipmentData(q, paginatior)
+	var resp response.EquipmentsResponse
+	var equipments []response.Equipment
+	resp.Equipments = equipments
+	return &resp, nil
 }
 
 func findEquipmentMinimumPrice(equipment model.Equipment) float64 {
