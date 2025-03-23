@@ -56,7 +56,6 @@ func (c *EquipmentController) GetAllEquipments(ctx *fiber.Ctx) error {
 		})
 	}
 
-	// var recommendationEquipments response.EquipmentsResponse
 	resp := fiber.Map{
 		"equipments":  &equipments,
 		"page":        paginator.Page,
