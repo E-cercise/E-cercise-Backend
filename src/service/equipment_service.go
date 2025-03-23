@@ -41,7 +41,7 @@ func (s *equipmentService) GetEquipmentData(q request.EquipmentListRequest, pagi
 	if q.MuscleGroup != "" {
 		muscleGroup = strings.Split(q.MuscleGroup, ",")
 	}
-	equipments, err := s.equipmentRepo.FindEquipmentList(q.Q, muscleGroup, paginator, q.Category, int(q.MinBudget),int(q.MaxBudget))
+	equipments, err := s.equipmentRepo.FindEquipmentList(q.Q, muscleGroup, paginator, q.Category, int(q.MinBudget), int(q.MaxBudget))
 
 	if err != nil {
 		logger.Log.WithError(err).Error("error during find all equipments")
@@ -94,6 +94,7 @@ func (s *equipmentService) AddEquipment(req request.EquipmentPostRequest, contex
 
 	defer func() {
 		if r := recover(); r != nil {
+			logger.Log.Error("error ", r)
 			tx.Rollback()
 		}
 	}()
@@ -137,7 +138,13 @@ func (s *equipmentService) AddEquipment(req request.EquipmentPostRequest, contex
 		}
 
 		for _, img := range option.Images {
-			imgID := uuid.MustParse(img.ID)
+			imgID, err := uuid.Parse(img.ID)
+			if err != nil {
+				tx.Rollback()
+				logger.Log.WithError(err).Error("error parsing image id")
+				return err
+			}
+
 			err = s.imageService.ArchiveImage(tx, context, imgID, equipmentID, optID, img.IsPrimary)
 			if err != nil {
 				tx.Rollback()
@@ -532,27 +539,27 @@ func (s *equipmentService) GetAllEquipmentsDetail(eqIDs []uuid.UUID) (*response.
 	var filteredEquipments []response.EquipmentDetail
 	for _, eq := range equipments {
 		filteredData := response.EquipmentDetail{
-			ID: eq.ID,
-			Name: eq.Name,
-			Brand: eq.Brand,
-			Color: eq.Color,
-			Category: eq.Category,
+			ID:          eq.ID,
+			Name:        eq.Name,
+			Brand:       eq.Brand,
+			Color:       eq.Color,
+			Category:    eq.Category,
 			Description: eq.Description,
-			Material: eq.Material,
-			Model: eq.Model,
+			Material:    eq.Material,
+			Model:       eq.Model,
 		}
 		for _, opt := range eq.EquipmentOptions {
 			option := response.Option{
-				ID: opt.ID.String(),
-				Name: opt.Name,
+				ID:        opt.ID.String(),
+				Name:      opt.Name,
 				Available: opt.RemainingProducts,
-				Price: opt.Price,
-				Weight: opt.Weight,			
+				Price:     opt.Price,
+				Weight:    opt.Weight,
 			}
 			for _, img := range opt.Images {
 				image := response.Image{
-					ID: img.ID.String(),
-					Url: img.CloudinaryPath,
+					ID:        img.ID.String(),
+					Url:       img.CloudinaryPath,
 					IsPrimary: img.IsPrimary,
 				}
 				option.Images = append(option.Images, image)
@@ -565,8 +572,8 @@ func (s *equipmentService) GetAllEquipmentsDetail(eqIDs []uuid.UUID) (*response.
 			for _, attr := range eq.Attribute {
 				if attr.Key == key {
 					attribute := response.AdditionalField{
-						ID: attr.ID.String(),
-						Key: attr.Key,
+						ID:    attr.ID.String(),
+						Key:   attr.Key,
 						Value: attr.Value,
 					}
 					additionalAttributes = append(additionalAttributes, attribute)
