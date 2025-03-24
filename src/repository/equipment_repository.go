@@ -2,6 +2,7 @@ package repository
 
 import (
 	"github.com/E-cercise/E-cercise/src/helper"
+	"github.com/E-cercise/E-cercise/src/logger"
 	"github.com/E-cercise/E-cercise/src/model"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -95,8 +96,8 @@ func (r *equipmentRepository) DeleteEquipmentOption(tx *gorm.DB, optID []uuid.UU
 	return tx.Where("id IN ?", optID).Delete(&model.EquipmentOption{}).Error
 }
 
-func (r *equipmentRepository) DeleteEquipmentFeature(tx *gorm.DB, optID []uuid.UUID) error {
-	return tx.Where("id IN ?", optID).Delete(&model.EquipmentFeature{}).Error
+func (r *equipmentRepository) DeleteEquipmentFeature(tx *gorm.DB, featIDs []uuid.UUID) error {
+	return tx.Where("id IN ?", featIDs).Delete(&model.EquipmentFeature{}).Error
 }
 
 func (r *equipmentRepository) AddAttributes(tx *gorm.DB, attr []model.Attribute) error {
@@ -154,7 +155,14 @@ func (r *equipmentRepository) SaveAttributes(tx *gorm.DB, attr *model.Attribute)
 }
 
 func (r *equipmentRepository) DeletesAttributes(tx *gorm.DB, attrID []uuid.UUID) error {
-	return tx.Delete(model.Attribute{}, attrID).Error
+	logger.Log.Infof("🧪 DEBUG Delete Attribute IDs: %v", attrID)
+
+	debugTx := tx.Session(&gorm.Session{Logger: tx.Logger.LogMode(4)}) // 4 = Info level
+
+	result := debugTx.Where("id IN ?", attrID).Delete(&model.Attribute{})
+	logger.Log.Infof("🧾 Rows affected in attribute delete: %d", result.RowsAffected)
+
+	return result.Error
 }
 
 func (r *equipmentRepository) SaveEquipment(tx *gorm.DB, equipment *model.Equipment) error {

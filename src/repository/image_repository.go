@@ -67,7 +67,9 @@ func (r *imageRepository) SaveImage(tx *gorm.DB, img *model.Image) error {
 }
 
 func (r *imageRepository) DeleteImage(tx *gorm.DB, imgID uuid.UUID) error {
-	return tx.Delete(model.Image{}, imgID).Error
+	result := tx.Where("id = ?", imgID).Delete(&model.Image{})
+	logger.Log.Infof("🧾 Rows affected for image delete (ID: %s): %d", imgID, result.RowsAffected)
+	return result.Error
 }
 
 func (r *imageRepository) FindByEquipmentOptionID(tx *gorm.DB, optionID uuid.UUID) ([]model.Image, error) {
