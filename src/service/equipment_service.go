@@ -258,7 +258,9 @@ func (s *equipmentService) UpdateEquipment(eqID uuid.UUID, context context.Conte
 	if req.Option != nil {
 		if req.Option.Created != nil {
 			for _, optCreated := range req.Option.Created {
+				optID := uuid.New()
 				newOption := model.EquipmentOption{
+					ID:                optID,
 					EquipmentID:       equipment.ID,
 					Name:              optCreated.Name,
 					Weight:            optCreated.Weight,
@@ -272,7 +274,7 @@ func (s *equipmentService) UpdateEquipment(eqID uuid.UUID, context context.Conte
 				}
 				for _, img := range optCreated.Images {
 					imgID := uuid.MustParse(img.ID)
-					err = s.imageService.ArchiveImage(tx, context, imgID, equipment.ID, newOption.ID, img.IsPrimary)
+					err = s.imageService.ArchiveImage(tx, context, imgID, equipment.ID, optID, img.IsPrimary)
 					if err != nil {
 						tx.Rollback()
 						logger.Log.WithError(err).Error("error archiving image", imgID)
