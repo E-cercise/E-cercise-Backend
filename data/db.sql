@@ -28905,7 +28905,7 @@ ALTER TABLE ONLY public.equipment_muscle_groups
 --
 
 ALTER TABLE ONLY public.images
-    ADD CONSTRAINT fk_equipment_options_images FOREIGN KEY (equipment_option_id) REFERENCES public.equipment_options(id);
+    ADD CONSTRAINT fk_equipment_options_images FOREIGN KEY (equipment_option_id) REFERENCES public.equipment_options(id) ON DELETE CASCADE;
 
 
 --

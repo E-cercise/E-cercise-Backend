@@ -14,6 +14,8 @@ type ImageRepository interface {
 	CreateImage(tx *gorm.DB, image *model.Image) error
 	SaveImage(tx *gorm.DB, img *model.Image) error
 	DeleteImage(tx *gorm.DB, imgID uuid.UUID) error
+	DeleteByOptionID(tx *gorm.DB, optionID uuid.UUID) error
+	FindByEquipmentOptionID(tx *gorm.DB, optionID uuid.UUID) ([]model.Image, error)
 }
 
 type imageRepository struct {
@@ -66,4 +68,14 @@ func (r *imageRepository) SaveImage(tx *gorm.DB, img *model.Image) error {
 
 func (r *imageRepository) DeleteImage(tx *gorm.DB, imgID uuid.UUID) error {
 	return tx.Delete(model.Image{}, imgID).Error
+}
+
+func (r *imageRepository) FindByEquipmentOptionID(tx *gorm.DB, optionID uuid.UUID) ([]model.Image, error) {
+	var images []model.Image
+	err := tx.Where("equipment_option_id = ?", optionID).Find(&images).Error
+	return images, err
+}
+
+func (r *imageRepository) DeleteByOptionID(tx *gorm.DB, optionID uuid.UUID) error {
+	return tx.Where("equipment_option_id = ?", optionID).Delete(&model.Image{}).Error
 }

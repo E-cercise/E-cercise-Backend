@@ -20,6 +20,7 @@ type ImageService interface {
 	UploadImage(context context.Context, file multipart.File, fileHeader *multipart.FileHeader, isPrimary bool) (string, string, error)
 	ArchiveImage(tx *gorm.DB, context context.Context, imgID uuid.UUID, eqpID uuid.UUID, eqOptID uuid.UUID, isPrimary bool) error
 	DeleteImage(tx *gorm.DB, context context.Context, imgID uuid.UUID) error
+	DeleteImagesByOptionID(tx *gorm.DB, ctx context.Context, optionID uuid.UUID) error
 }
 
 type imageService struct {
@@ -138,6 +139,34 @@ func (s *imageService) DeleteImage(tx *gorm.DB, ctx context.Context, imgID uuid.
 		return fmt.Errorf("❌ error deleting from Cloudinary (%s): %w", imgPath, err)
 	}
 	logger.Log.Infof("✅ Deleted image from Cloudinary: %s", imgPath)
+
+	return nil
+}
+
+func (s *imageService) DeleteImagesByOptionID(tx *gorm.DB, ctx context.Context, optionID uuid.UUID) error {
+	if optionID == uuid.Nil {
+		return fmt.Errorf("invalid equipment option ID")
+	}
+
+	images, err := s.imageRepo.FindByEquipmentOptionID(tx, optionID)
+	if err != nil {
+		logger.Log.WithError(err).Error("❌ Failed to find images by equipment option ID", "optionID", optionID)
+		return err
+	}
+
+	for _, img := range images {
+		if err := s.cloudinaryService.DeleteImage(ctx, img.ImgPath); err != nil {
+			logger.Log.WithError(err).Errorf("❌ Failed to delete image from Cloudinary: %s", img.ImgPath)
+			return err
+		}
+		logger.Log.Infof("✅ Deleted image from Cloudinary: %s", img.ImgPath)
+	}
+
+	if err := s.imageRepo.DeleteByOptionID(tx, optionID); err != nil {
+		logger.Log.WithError(err).Error("❌ Failed to delete images from DB", "optionID", optionID)
+		return err
+	}
+	logger.Log.Infof("✅ Deleted all images from DB for EquipmentOptionID: %s", optionID)
 
 	return nil
 }

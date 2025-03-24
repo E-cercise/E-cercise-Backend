@@ -287,8 +287,17 @@ func (s *equipmentService) UpdateEquipment(eqID uuid.UUID, context context.Conte
 		if req.Option.Deleted != nil {
 			var opts []uuid.UUID
 			for _, opt := range req.Option.Deleted {
-				opts = append(opts, uuid.MustParse(opt))
+				optID := uuid.MustParse(opt)
+
+				if err := s.imageService.DeleteImagesByOptionID(tx, context, optID); err != nil {
+					tx.Rollback()
+					logger.Log.WithError(err).Error("error deleting images for equipment option", "optionID", optID)
+					return err
+				}
+
+				opts = append(opts, optID)
 			}
+
 			if err := s.equipmentRepo.DeleteEquipmentOption(tx, opts); err != nil {
 				tx.Rollback()
 				logger.Log.WithError(err).Error("error deleting equipment options")
@@ -380,7 +389,6 @@ func (s *equipmentService) UpdateEquipment(eqID uuid.UUID, context context.Conte
 		}
 	}
 
-	// ✅ Handle additional fields
 	if req.AdditionalField != nil {
 		if req.AdditionalField.Created != nil {
 			var toCreate []model.Attribute
@@ -427,7 +435,6 @@ func (s *equipmentService) UpdateEquipment(eqID uuid.UUID, context context.Conte
 		}
 	}
 
-	// ✅ Update top-level fields
 	if req.Brand != nil {
 		equipment.Brand = *req.Brand
 	}
