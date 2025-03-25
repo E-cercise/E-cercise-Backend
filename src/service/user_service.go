@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/E-cercise/E-cercise/src/data/request"
+	"github.com/E-cercise/E-cercise/src/data/response"
 	"github.com/E-cercise/E-cercise/src/helper"
 	"github.com/E-cercise/E-cercise/src/logger"
 	"github.com/E-cercise/E-cercise/src/model"
@@ -15,6 +16,7 @@ import (
 type UserService interface {
 	RegisterUser(reqBody request.RegisterRequest) error
 	LoginUser(reqBody request.LoginRequest) (*string, error)
+	GetUserProfile(user *model.User) response.UserProfileResponse
 }
 
 type userService struct {
@@ -78,4 +80,16 @@ func (s *userService) LoginUser(reqBody request.LoginRequest) (*string, error) {
 
 	return &token, nil
 
+}
+
+func (s *userService) GetUserProfile(user *model.User) response.UserProfileResponse {
+	res := response.UserProfileResponse{
+		Email:       user.Email,
+		FirstName:   user.FirstName,
+		LastName:    user.LastName,
+		Address:     user.Address,
+		PhoneNumber: user.PhoneNumber,
+	}
+
+	return res
 }

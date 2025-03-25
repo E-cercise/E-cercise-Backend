@@ -41,6 +41,7 @@ func InitRouter(db *gorm.DB) *fiber.App {
 	imageController := controller.NewImageControllerImpl(imageService)
 	cartController := controller.NewCartControllerImpl(cartService)
 	orderController := controller.NewOrderControllerImpl(orderService)
+	userController := controller.NewUserControllerImpl(userService)
 
 	app := fiber.New()
 
@@ -83,6 +84,7 @@ func InitRouter(db *gorm.DB) *fiber.App {
 	ImageRouter(apiGroup, imageController, userRepo)
 	CartRouter(apiGroup, cartController, userRepo)
 	OrderRouter(apiGroup, orderController, userRepo)
+	UserRouter(apiGroup, userController, userRepo)
 
 	logger2.Log.Info("Router initialized")
 	for _, route := range app.GetRoutes() {
