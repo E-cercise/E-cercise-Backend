@@ -3,6 +3,7 @@ package model
 import (
 	"github.com/E-cercise/E-cercise/src/enum"
 	"github.com/google/uuid"
+	"time"
 )
 
 type Order struct {
@@ -14,4 +15,11 @@ type Order struct {
 	PaymentType     enum.PaymentType `gorm:"type:payment_type" json:"payment_type"`
 	TotalPrice      float64          `gorm:"type:decimal(10,2);not null" json:"total_price"`
 	OrderStatus     enum.OrderStatus `gorm:"type:order_status;default:'Placed';not null" json:"order_status"`
+	CreatedAt       time.Time        `gorm:"default:CURRENT_TIMESTAMP"`
+	UpdatedAt       time.Time        `gorm:"default:CURRENT_TIMESTAMP"`
+}
+
+func (o *Order) BeforeUpdate() (err error) {
+	o.UpdatedAt = time.Now()
+	return nil
 }

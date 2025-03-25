@@ -76,3 +76,26 @@ func (c *OrderController) UpdateOrderStatus(ctx *fiber.Ctx) error {
 		"message": "Order status updated successfully",
 	})
 }
+
+func (c *OrderController) GetMyOrders(ctx *fiber.Ctx) error {
+
+	user, err := helper.GetCurrentUser(ctx)
+	if err != nil {
+		return err
+	}
+
+	var req request.OrderDetailRequest
+
+	if err := ctx.QueryParser(&req); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request data",
+		})
+	}
+
+	resp, err := c.OrderService.GetMyOrders(user.ID, req.OrderStatus)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error(), "message": "error during get my orders"})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(resp)
+}
