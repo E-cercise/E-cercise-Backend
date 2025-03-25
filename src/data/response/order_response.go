@@ -19,7 +19,7 @@ type OrderDetailResponse struct {
 	NetPrice    float64          `json:"net_price"`
 }
 
-type OrderListResponse struct {
+type MyOrderResponse struct {
 	Orders []Order `json:"orders"`
 }
 
@@ -36,4 +36,19 @@ type Order struct {
 type FirstLineEquipment struct {
 	ImgURL string `json:"img_url"`
 	Name   string `json:"name"`
+}
+
+type OrderListResponse struct {
+	Orders []OrderList `json:"orders"`
+}
+
+type OrderList struct {
+	CreatedAt          string             `json:"created_at"`
+	FirstLineEquipment FirstLineEquipment `json:"first_line_equipment"`
+	ID                 uuid.UUID          `json:"id"`
+	OrderStatus        enum.OrderStatus   `json:"order_status"`
+	PaymentType        enum.PaymentType   `json:"payment_type"`
+	TotalPrice         float64            `json:"total_price"`
+	UpdatedAt          string             `json:"updated_at"`
+	UserID             uuid.UUID          `json:"user_id"`
 }

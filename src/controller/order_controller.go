@@ -84,7 +84,7 @@ func (c *OrderController) GetMyOrders(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	var req request.OrderDetailRequest
+	var req request.OrderMeRequest
 	if err := ctx.QueryParser(&req); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid request data",
@@ -94,6 +94,23 @@ func (c *OrderController) GetMyOrders(ctx *fiber.Ctx) error {
 	resp, err := c.OrderService.GetMyOrders(user.ID, req.OrderStatus)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error(), "message": "error during get my orders"})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(resp)
+}
+
+func (c *OrderController) GetOrderList(ctx *fiber.Ctx) error {
+
+	var req request.OrderListRequest
+	if err := ctx.QueryParser(&req); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request data",
+		})
+	}
+
+	resp, err := c.OrderService.GetOrderList(req)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error(), "message": "error during get order list"})
 	}
 
 	return ctx.Status(fiber.StatusOK).JSON(resp)

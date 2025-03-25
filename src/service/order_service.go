@@ -20,7 +20,8 @@ type OrderService interface {
 	CreateOrder(req request.CheckoutCartRequest, user *model.User) error
 	GetOrderDetail(orderID uuid.UUID, user *model.User) (*response.OrderDetailResponse, error)
 	UpdateOrderStatus(orderID uuid.UUID) error
-	GetMyOrders(userID uuid.UUID, orderStatus enum.OrderStatus) (*response.OrderListResponse, error)
+	GetMyOrders(userID uuid.UUID, orderStatus enum.OrderStatus) (*response.MyOrderResponse, error)
+	GetOrderList(q request.OrderListRequest) (*response.OrderListResponse, error)
 }
 
 type orderService struct {
@@ -217,15 +218,14 @@ func (s *orderService) UpdateOrderStatus(orderID uuid.UUID) error {
 	return nil
 }
 
-func (s *orderService) GetMyOrders(userID uuid.UUID, orderStatus enum.OrderStatus) (*response.OrderListResponse, error) {
-	logger.Log.Info("Get order detail")
+func (s *orderService) GetMyOrders(userID uuid.UUID, orderStatus enum.OrderStatus) (*response.MyOrderResponse, error) {
 	orders, err := s.orderRepo.FindByStatus(userID, orderStatus)
 	if err != nil {
-		logger.Log.WithError(err).Error("Failed to get orders")
+		logger.Log.WithError(err).Error("Failed to get orders", "userID", userID)
 		return nil, fmt.Errorf("failed to get orders")
 	}
 
-	var resp response.OrderListResponse
+	var resp response.MyOrderResponse
 
 	if len(orders) == 0 {
 		logger.Log.WithError(err).Error("No orders found")
@@ -255,6 +255,55 @@ func (s *orderService) GetMyOrders(userID uuid.UUID, orderStatus enum.OrderStatu
 				Name:   helper.AbbreviateEquipmentName(equipment.Name, equipmentOpt.Name),
 			},
 			ID:          order.ID,
+			OrderStatus: order.OrderStatus,
+			PaymentType: order.PaymentType,
+			TotalPrice:  order.TotalPrice,
+			UpdatedAt:   order.UpdatedAt.Format("2006-01-02 15:04:05"),
+		}
+		resp.Orders = append(resp.Orders, orderResp)
+	}
+
+	return &resp, nil
+}
+
+func (s *orderService) GetOrderList(q request.OrderListRequest) (*response.OrderListResponse, error) {
+	orders, err := s.orderRepo.FindOrderList(q)
+	if err != nil {
+		logger.Log.WithError(err).Error("Failed to get orders List")
+		return nil, fmt.Errorf("failed to get orders")
+	}
+
+	var resp response.OrderListResponse
+
+	if len(orders) == 0 {
+		logger.Log.WithError(err).Error("No orders found")
+		return &resp, nil
+	}
+
+	for _, order := range orders {
+		logger.Log.Info(fmt.Sprintf("Order with ID: %s with Status: %s", order.ID, order.OrderStatus))
+		equipment, err := s.equipmentRepo.FindByID(order.LineEquipments[0].EquipmentID)
+		if err != nil {
+			logger.Log.WithError(err).Error("Failed to get equipment")
+			return nil, fmt.Errorf("failed to get equipment")
+		}
+
+		equipmentOpt, err := s.equipmentRepo.FindOptionByID(order.LineEquipments[0].EquipmentOptionID)
+		if err != nil {
+			logger.Log.WithError(err).Error("Failed to get equipment option")
+			return nil, fmt.Errorf("failed to get equipment option")
+		}
+
+		img := helper.FindPrimaryImage(*equipmentOpt)
+
+		orderResp := response.OrderList{
+			CreatedAt: order.CreatedAt.Format("2006-01-02 15:04:05"),
+			FirstLineEquipment: response.FirstLineEquipment{
+				ImgURL: img.CloudinaryPath,
+				Name:   helper.AbbreviateEquipmentName(equipment.Name, equipmentOpt.Name),
+			},
+			ID:          order.ID,
+			UserID:      order.UserID,
 			OrderStatus: order.OrderStatus,
 			PaymentType: order.PaymentType,
 			TotalPrice:  order.TotalPrice,
