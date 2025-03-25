@@ -14,8 +14,8 @@ type OrderMeRequest struct {
 }
 
 type OrderListRequest struct {
-	OrderStatus *enum.OrderStatus `query:"order_status"`
-	UserID      *uuid.UUID        `query:"user_id"`
-	OrderID     *uuid.UUID        `query:"order_id"`
-	PaymentType *enum.PaymentType `query:"payment_type"`
+	OrderStatus *string `query:"order_status"`
+	UserID      *string `query:"user_id"`
+	OrderID     *string `query:"order_id"`
+	PaymentType *string `query:"payment_type"`
 }
