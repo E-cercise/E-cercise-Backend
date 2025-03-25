@@ -35,7 +35,6 @@ COMMENT ON EXTENSION "uuid-ossp" IS 'generate universally unique identifiers (UU
 --
 
 CREATE TYPE public.order_status AS ENUM (
-    'Pending',
     'Placed',
     'Paid',
     'Shipped out',
@@ -181,14 +180,13 @@ CREATE TABLE public.muscle_groups (
 --
 
 CREATE TABLE public.orders (
-    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    id uuid DEFAULT public.uuid_generate_v4() PRIMARY KEY,
     user_id uuid NOT NULL,
     delivery_address text NOT NULL,
-    payment_type character public.payment_type DEFAULT 'Unpaid'::public.payment_type NOT NULL,
+    payment_type public.payment_type DEFAULT 'Unpaid'::public.payment_type NOT NULL,
     total_price numeric(10,2) NOT NULL,
-    order_status public.order_status DEFAULT 'Pending'::public.order_status NOT NULL
+    order_status public.order_status DEFAULT 'Placed'::public.order_status NOT NULL
 );
-
 
 --
 -- Name: users; Type: TABLE; Schema: public; Owner: -
@@ -28818,15 +28816,6 @@ ALTER TABLE ONLY public.line_equipments
 
 ALTER TABLE ONLY public.muscle_groups
     ADD CONSTRAINT muscle_groups_pkey PRIMARY KEY (id);
-
-
---
--- Name: orders orders_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.orders
-    ADD CONSTRAINT orders_pkey PRIMARY KEY (id);
-
 
 --
 -- Name: carts uni_carts_user_id; Type: CONSTRAINT; Schema: public; Owner: -

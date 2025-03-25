@@ -77,7 +77,6 @@ func migrateEnum(db *gorm.DB) error {
 		BEGIN
 			IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_status') THEN
 				CREATE TYPE order_status AS ENUM (
-					'Pending',
 				 	'Placed',
 					'Paid',
 					'Shipped out',

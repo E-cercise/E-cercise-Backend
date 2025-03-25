@@ -8,7 +8,6 @@ import (
 type OrderStatus string
 
 const (
-	OrderPending  OrderStatus = "Pending"
 	OrderPlaced   OrderStatus = "Placed"
 	OrderPaid     OrderStatus = "Paid"
 	OrderShipped  OrderStatus = "Shipped out"
