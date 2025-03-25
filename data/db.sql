@@ -179,15 +179,17 @@ CREATE TABLE public.muscle_groups (
 -- Name: orders; Type: TABLE; Schema: public; Owner: -
 --
 
+-- Table creation with auditing columns included
 CREATE TABLE public.orders (
     id uuid DEFAULT public.uuid_generate_v4() PRIMARY KEY,
     user_id uuid NOT NULL,
     delivery_address text NOT NULL,
     payment_type public.payment_type DEFAULT 'Unpaid'::public.payment_type NOT NULL,
     total_price numeric(10,2) NOT NULL,
-    order_status public.order_status DEFAULT 'Placed'::public.order_status NOT NULL
+    order_status public.order_status DEFAULT 'Placed'::public.order_status NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-
 --
 -- Name: users; Type: TABLE; Schema: public; Owner: -
 --
@@ -28919,9 +28921,4 @@ ALTER TABLE ONLY public.carts
 
 ALTER TABLE ONLY public.orders
     ADD CONSTRAINT fk_users_orders FOREIGN KEY (user_id) REFERENCES public.users(id);
-
-
---
--- PostgreSQL database dump complete
---
 

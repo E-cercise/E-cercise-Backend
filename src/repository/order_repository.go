@@ -44,11 +44,13 @@ func (r *orderRepository) UpdateOrderStatusByID(orderID uuid.UUID, orderStatus e
 
 func (r *orderRepository) FindByStatus(userID uuid.UUID, orderStatus enum.OrderStatus) ([]model.Order, error) {
 	var orders []model.Order
-	err := r.db.Preload("LineEquipments", func(db *gorm.DB) *gorm.DB {
-		return db.Order("created_at ASC").Limit(1)
-	}).Preload("LineEquipments.EquipmentOption").
-		Preload("LineEquipments.EquipmentOption.Equipment").
-		Where("user_id = ? AND order_status = ?", userID, orderStatus).Find(&orders).Error
+	err := r.db.Debug().
+		Preload("LineEquipments", func(db *gorm.DB) *gorm.DB {
+			return db.Limit(1)
+		}).
+		Preload("LineEquipments.EquipmentOption"). // corrected preload
+		Where("user_id = ? AND order_status = ?", userID, orderStatus).
+		Find(&orders).Error
 	if err != nil {
 		return nil, err
 	}

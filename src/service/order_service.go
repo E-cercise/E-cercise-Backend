@@ -174,10 +174,6 @@ func (s *orderService) GetOrderDetail(orderID uuid.UUID, user *model.User) (*res
 		orders = append(orders, lineEquipment)
 	}
 
-	if len(orders) == 0 {
-		return nil, fmt.Errorf("no order found for id: %v", orderID)
-	}
-
 	resp = response.OrderDetailResponse{
 		ID:          order.ID,
 		OrderStatus: order.OrderStatus,
@@ -222,6 +218,7 @@ func (s *orderService) UpdateOrderStatus(orderID uuid.UUID) error {
 }
 
 func (s *orderService) GetMyOrders(userID uuid.UUID, orderStatus enum.OrderStatus) (*response.OrderListResponse, error) {
+	logger.Log.Info("Get order detail")
 	orders, err := s.orderRepo.FindByStatus(userID, orderStatus)
 	if err != nil {
 		logger.Log.WithError(err).Error("Failed to get orders")
@@ -236,7 +233,7 @@ func (s *orderService) GetMyOrders(userID uuid.UUID, orderStatus enum.OrderStatu
 	}
 
 	for _, order := range orders {
-
+		logger.Log.Info(fmt.Sprintf("Order with ID: %s with Status: %s", order.ID, order.OrderStatus))
 		equipment, err := s.equipmentRepo.FindByID(order.LineEquipments[0].EquipmentID)
 		if err != nil {
 			logger.Log.WithError(err).Error("Failed to get equipment")

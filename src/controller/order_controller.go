@@ -85,7 +85,6 @@ func (c *OrderController) GetMyOrders(ctx *fiber.Ctx) error {
 	}
 
 	var req request.OrderDetailRequest
-
 	if err := ctx.QueryParser(&req); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid request data",

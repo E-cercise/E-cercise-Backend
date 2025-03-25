@@ -48,19 +48,16 @@ func Authentication(userRepo repository.UserRepository) fiber.Handler {
 
 func RoleAuthorization(allowedRoles ...enum.Role) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
-		// Retrieve currentUser from the context
 		currentUser := ctx.Locals("currentUser")
 		if currentUser == nil {
 			return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Roles not found in context"})
 		}
 
-		// Type assert currentUser to *model.User
 		user, ok := currentUser.(*model.User)
 		if !ok {
 			return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Invalid user context"})
 		}
 
-		// Check if any user role matches allowed roles
 		if helper.ContainsRole(allowedRoles, user.Role) {
 			return ctx.Next()
 		}

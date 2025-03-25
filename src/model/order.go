@@ -19,7 +19,7 @@ type Order struct {
 	UpdatedAt       time.Time        `gorm:"default:CURRENT_TIMESTAMP"`
 }
 
-func (o *Order) BeforeUpdate() (err error) {
+func (o *Order) BeforeUpdate() error {
 	o.UpdatedAt = time.Now()
 	return nil
 }
