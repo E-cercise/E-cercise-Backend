@@ -21,7 +21,7 @@ func (r *UserExperience) Scan(value interface{}) error {
 		return fmt.Errorf("invalid str")
 	}
 
-	*r = UserExperience(]str)
+	*r = UserExperience(str)
 	return nil
 }
 
