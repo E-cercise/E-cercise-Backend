@@ -77,3 +77,59 @@ func (c *OrderController) UpdateOrderStatus(ctx *fiber.Ctx) error {
 		"message": "Order status updated successfully",
 	})
 }
+
+func (c *OrderController) GetMyOrders(ctx *fiber.Ctx) error {
+
+	user, err := helper.GetCurrentUser(ctx)
+	if err != nil {
+		return err
+	}
+
+	var req request.OrderMeRequest
+	if err := ctx.QueryParser(&req); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request data",
+		})
+	}
+
+	resp, err := c.OrderService.GetMyOrders(user.ID, req.OrderStatus)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error(), "message": "error during get my orders"})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(resp)
+}
+
+func (c *OrderController) GetOrderList(ctx *fiber.Ctx) error {
+	var req request.OrderListRequest
+	if err := ctx.QueryParser(&req); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   "Invalid request data",
+			"message": err.Error(),
+		})
+	}
+
+	// Normalize empty strings to nil pointers
+	if req.OrderStatus != nil && *req.OrderStatus == "" {
+		req.OrderStatus = nil
+	}
+	if req.UserID != nil && *req.UserID == "" {
+		req.UserID = nil
+	}
+	if req.OrderID != nil && *req.OrderID == "" {
+		req.OrderID = nil
+	}
+	if req.PaymentType != nil && *req.PaymentType == "" {
+		req.PaymentType = nil
+	}
+
+	resp, err := c.OrderService.GetOrderList(req)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":   err.Error(),
+			"message": "error during get order list",
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(resp)
+}

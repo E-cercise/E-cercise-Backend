@@ -13,9 +13,11 @@ type LineEquipment struct {
 	EquipmentID       uuid.UUID  `gorm:"type:uuid;not null" json:"equipment_id"`
 	EquipmentOptionID uuid.UUID  `gorm:"type:uuid;not null" json:"equipment_option_id"`
 	Quantity          int        `gorm:"type:int;not null;default:1" json:"quantity"`
+	
+	EquipmentOption EquipmentOption `gorm:"foreignKey:EquipmentOptionID" json:"equipment_option"`
 }
 
-func (l *LineEquipment) BeforeUpdate(tx *gorm.DB) (err error) {
+func (l *LineEquipment) BeforeUpdate(tx *gorm.DB) error {
 	if l.Quantity < 0 {
 		return errors.New("quantity cannot be less than 0")
 	}
