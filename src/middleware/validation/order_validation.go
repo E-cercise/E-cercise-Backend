@@ -7,7 +7,7 @@ import (
 
 func ValidateCheckoutOrder() fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
-		var req request.CheckoutCartRequest
+		var req request.PlaceOrderCartRequest
 
 		if err := ctx.BodyParser(&req); err != nil {
 			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
