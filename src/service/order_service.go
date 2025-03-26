@@ -17,7 +17,7 @@ import (
 )
 
 type OrderService interface {
-	CreateOrder(req request.CheckoutCartRequest, user *model.User) error
+	CreateOrder(req request.PlaceOrderCartRequest, user *model.User) error
 	GetOrderDetail(orderID uuid.UUID, user *model.User) (*response.OrderDetailResponse, error)
 	UpdateOrderStatus(orderID uuid.UUID) error
 	GetMyOrders(userID uuid.UUID, orderStatus enum.OrderStatus) (*response.MyOrderResponse, error)
@@ -35,7 +35,7 @@ func NewOrderService(db *gorm.DB, cartRepo repository.CartRepository, equipmentR
 	return &orderService{db: db, cartRepo: cartRepo, equipmentRepo: equipmentRepo, orderRepo: orderRepo}
 }
 
-func (s *orderService) CreateOrder(req request.CheckoutCartRequest, user *model.User) error {
+func (s *orderService) CreateOrder(req request.PlaceOrderCartRequest, user *model.User) error {
 	logger.Log.Info("Starting order creation process", map[string]interface{}{"user_id": user.ID})
 
 	tx := s.db.Begin()
@@ -61,10 +61,10 @@ func (s *orderService) CreateOrder(req request.CheckoutCartRequest, user *model.
 
 	order := &model.Order{
 		UserID:          user.ID,
-		DeliveryAddress: user.Address,
+		DeliveryAddress: req.Address,
 		LineEquipments:  []model.LineEquipment{},
 		OrderStatus:     enum.OrderPlaced,
-		PaymentType:     enum.PaymentTypeUnpaid,
+		PaymentType:     req.PaymentType,
 	}
 
 	if err := s.orderRepo.CreateOrder(tx, order); err != nil {

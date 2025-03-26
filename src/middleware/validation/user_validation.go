@@ -50,3 +50,24 @@ func ValidateLoginRequest() fiber.Handler {
 		return c.Next()
 	}
 }
+
+func ValidateUserUpdateProfile() fiber.Handler {
+	return func(ctx *fiber.Ctx) error {
+		var reqBody request.UpdateUserProfileRequest
+		if err := ctx.BodyParser(&reqBody); err != nil {
+			logger.Log.WithError(err).Error("Invalid JSON data")
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": fmt.Sprintf("Invalid JSON data: %v", err.Error()),
+			})
+		}
+
+		if err := validate.Struct(&reqBody); err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": err.Error(),
+			})
+		}
+
+		ctx.Locals("reqBody", reqBody)
+		return ctx.Next()
+	}
+}
