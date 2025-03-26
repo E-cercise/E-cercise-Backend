@@ -32,7 +32,7 @@ func InitRouter(db *gorm.DB) *fiber.App {
 		panic(err)
 	}
 
-	userService := service.NewUserService(db, userRepo)
+	userService := service.NewUserService(db, userRepo, userPreferenceRepo)
 	imageService := service.NewImageService(db, imageRepo, cloudinaryService)
 	equipmentService := service.NewEquipmentService(db, equipmentRepo, muscleGroupRepo, imageService)
 	cartService := service.NewCartService(db, cartRepo, equipmentRepo)
