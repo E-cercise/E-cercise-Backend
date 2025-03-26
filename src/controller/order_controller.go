@@ -19,7 +19,7 @@ func NewOrderControllerImpl(orderService service.OrderService) *OrderController 
 }
 
 func (c *OrderController) CreateOrder(ctx *fiber.Ctx) error {
-	req, ok := ctx.Locals("req").(request.CheckoutCartRequest)
+	req, ok := ctx.Locals("req").(request.PlaceOrderCartRequest)
 
 	if !ok {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
