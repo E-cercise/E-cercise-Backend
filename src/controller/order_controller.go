@@ -28,13 +28,14 @@ func (c *OrderController) CreateOrder(ctx *fiber.Ctx) error {
 	}
 
 	user, err := helper.GetCurrentUser(ctx)
-
 	if err != nil {
 		return err
 	}
 
 	if err = c.OrderService.CreateOrder(req, user); err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{})
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
 	}
 
 	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{
