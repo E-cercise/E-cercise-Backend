@@ -24,6 +24,5 @@ func (s *userPrefService) SetUserPreferences(userID uuid.UUID, tagIDs []uuid.UUI
 }
 
 func (s *userPrefService) GetUserPreferences(userID uuid.UUID) ([]model.Tag, error) {
-
 	return s.repo.GetPreferences(userID)
 }
