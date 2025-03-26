@@ -20,6 +20,7 @@ func (r *UserExperience) Scan(value interface{}) error {
 	if !ok {
 		return fmt.Errorf("invalid str")
 	}
+
 	*r = UserExperience(str)
 	return nil
 }

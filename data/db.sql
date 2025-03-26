@@ -35,7 +35,6 @@ COMMENT ON EXTENSION "uuid-ossp" IS 'generate universally unique identifiers (UU
 --
 
 CREATE TYPE public.order_status AS ENUM (
-    'Pending',
     'Placed',
     'Paid',
     'Shipped out',
@@ -207,24 +206,26 @@ CREATE TABLE public.users (
 
 -- Tags table
 CREATE TABLE public.tags (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    id UUID DEFAULT public.uuid_generate_v4() PRIMARY KEY,
     name VARCHAR(50) UNIQUE NOT NULL
 );
 
 -- User preferences (many-to-many via tag)
 CREATE TABLE public.user_preferences (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    tag_id UUID NOT NULL REFERENCES tags(id) ON DELETE CASCADE
+
+    id UUID DEFAULT public.uuid_generate_v4() PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    tag_id UUID NOT NULL REFERENCES public.tags(id) ON DELETE CASCADE
 );
 
 CREATE TABLE public.goals (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    id UUID DEFAULT public.uuid_generate_v4() PRIMARY KEY,
     name VARCHAR(50) UNIQUE NOT NULL
 );
 
 
-INSERT INTO tags (name) VALUES
+
+INSERT INTO public.tags (name) VALUES
   ('abs'), ('core'), ('arms'), ('shoulders'), ('chest'), ('back'), ('legs'), ('glutes'), ('full-body'),
   ('bodyweight'), ('resistance'), ('weighted'), ('calisthenics'), ('stretching'), ('cardio'),
   ('beginner-friendly'), ('intermediate'), ('advanced'), ('athlete'),
@@ -234,7 +235,7 @@ INSERT INTO tags (name) VALUES
   ('budget'), ('foldable'), ('portable'), ('multi-function'), ('gym-grade');
 
 
-INSERT INTO goals (name) VALUES
+INSERT INTO public.goals (name) VALUES
   ('tone'),
   ('build-muscle'),
   ('weight-loss'),
@@ -28968,12 +28969,6 @@ ALTER TABLE ONLY public.carts
 
 ALTER TABLE ONLY public.orders
     ADD CONSTRAINT fk_users_orders FOREIGN KEY (user_id) REFERENCES public.users(id);
-
-ALTER TABLE users
-ADD COLUMN weight decimal(5,2),
-ADD COLUMN height decimal(5,2),
-ADD COLUMN experience varchar(20),
-ADD COLUMN goal_id uuid REFERENCES goals(id) ON DELETE SET NULL;
 
 
 --
