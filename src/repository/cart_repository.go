@@ -98,7 +98,7 @@ func (r *cartRepository) FindLineEquipmentByEquipmentIDAndOptionID(userID uuid.U
 	}
 
 	var lineEquipment model.LineEquipment
-	if err := r.db.Where("equipment_id = ? AND equipment_option_id = ?", equipmentID, equipmentOptionID).First(&lineEquipment).Error; err != nil {
+	if err := r.db.Where("cart_id = ? AND equipment_id = ? AND equipment_option_id = ?", cart.ID, equipmentID, equipmentOptionID).First(&lineEquipment).Error; err != nil {
 		return nil, err
 	}
 
@@ -115,7 +115,7 @@ func (r *cartRepository) FindLineEquipmentsByLineEquipmentIDs(userID uuid.UUID, 
 		return nil, err
 	}
 
-	var lineEquipments []model.LineEquipment 
+	var lineEquipments []model.LineEquipment
 
 	for _, lineEquipment := range cart.LineEquipments {
 		if helper.Contains(lineEquipmentIDs, lineEquipment.ID) {
