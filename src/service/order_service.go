@@ -57,13 +57,12 @@ func (s *orderService) CreateOrder(req request.CheckoutCartRequest, user *model.
 		cartItemsMap[item.ID] = item
 	}
 
-	// Initialize order
 	order := &model.Order{
 		UserID:          user.ID,
-		DeliveryAddress: user.Address,
+		DeliveryAddress: req.Address,
 		LineEquipments:  []model.LineEquipment{},
-		OrderStatus:     enum.OrderPending,
-		PaymentType:     enum.PaymentTypeUnpaid,
+		OrderStatus:     enum.OrderPlaced,
+		PaymentType:     req.PaymentType,
 	}
 
 	if err := s.orderRepo.CreateOrder(tx, order); err != nil {
@@ -136,13 +135,13 @@ func (s *orderService) GetOrderDetail(orderID uuid.UUID, user *model.User) (*res
 	var resp response.OrderDetailResponse
 
 	address := response.Address{
-		FullName: fmt.Sprintf("%s %s", user.FirstName, user.LastName),
+		FullName:    fmt.Sprintf("%s %s", user.FirstName, user.LastName),
 		AddressLine: user.Address,
 		PhoneNumber: user.PhoneNumber,
 	}
 
 	var orders []response.LineEquipment
-	
+
 	for _, lineEquipment := range order.LineEquipments {
 		equipment, err := s.equipmentRepo.FindByID(lineEquipment.EquipmentID)
 		if err != nil {
@@ -165,11 +164,11 @@ func (s *orderService) GetOrderDetail(orderID uuid.UUID, user *model.User) (*res
 
 		lineEquipment := response.LineEquipment{
 			LineEquipmentID: lineEquipment.ID.String(),
-			EquipmentName: equipment.Name,
-			ImgUrl: imagePath,
-			Quantity: lineEquipment.Quantity,
-			PerUnitPrice: equipmentOption.Price,
-			Total: float64(lineEquipment.Quantity) * equipmentOption.Price,
+			EquipmentName:   equipment.Name,
+			ImgUrl:          imagePath,
+			Quantity:        lineEquipment.Quantity,
+			PerUnitPrice:    equipmentOption.Price,
+			Total:           float64(lineEquipment.Quantity) * equipmentOption.Price,
 		}
 		orders = append(orders, lineEquipment)
 	}
@@ -179,11 +178,11 @@ func (s *orderService) GetOrderDetail(orderID uuid.UUID, user *model.User) (*res
 	}
 
 	resp = response.OrderDetailResponse{
-		ID: order.ID,
+		ID:          order.ID,
 		OrderStatus: order.OrderStatus,
-		Address: address,
-		Orders: orders,
-		NetPrice: order.TotalPrice,
+		Address:     address,
+		Orders:      orders,
+		NetPrice:    order.TotalPrice,
 	}
 
 	return &resp, nil
@@ -199,8 +198,8 @@ func (s *orderService) UpdateOrderStatus(orderID uuid.UUID) error {
 
 	statusTransaction := map[enum.OrderStatus]enum.OrderStatus{
 		enum.OrderPending: enum.OrderPlaced,
-		enum.OrderPlaced: enum.OrderPaid,
-		enum.OrderPaid: enum.OrderShipped,
+		enum.OrderPlaced:  enum.OrderPaid,
+		enum.OrderPaid:    enum.OrderShipped,
 		enum.OrderShipped: enum.OrderReceived,
 	}
 
@@ -216,7 +215,7 @@ func (s *orderService) UpdateOrderStatus(orderID uuid.UUID) error {
 
 	if err := s.orderRepo.UpdateOrderStatusByID(order.ID, nextStatus); err != nil {
 		logger.Log.WithError(err).Errorf("Cannot update order status with ID: %v", orderID)
-        return err
+		return err
 	}
 
 	return nil
