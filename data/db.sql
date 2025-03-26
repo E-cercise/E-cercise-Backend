@@ -205,7 +205,30 @@ CREATE TABLE public.users (
     phone_number character varying(20)
 );
 
+-- Tags table
+CREATE TABLE public.tags (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    name VARCHAR(50) UNIQUE NOT NULL
+);
 
+-- User preferences (many-to-many via tag)
+CREATE TABLE public.user_preferences (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    tag_id UUID NOT NULL REFERENCES tags(id) ON DELETE CASCADE
+);
+
+
+INSERT INTO tags (name) VALUES
+  ('abs'), ('core'), ('arms'), ('shoulders'), ('chest'), ('back'), ('legs'), ('glutes'), ('full-body'),
+  ('bodyweight'), ('resistance'), ('weighted'), ('calisthenics'), ('stretching'), ('cardio'),
+  ('beginner-friendly'), ('intermediate'), ('advanced'), ('athlete'),
+  ('tone'), ('build-muscle'), ('weight-loss'), ('endurance'), ('rehab'), ('mobility'), ('flexibility'),
+  ('low-impact'), ('joint-friendly'), ('post-injury'), ('elderly'),
+  ('pull-up'), ('dip'), ('ab-machine'), ('rowing'), ('cable'), ('tower'), ('barbell-compatible'), ('compact'), ('adjustable'),
+  ('budget'), ('foldable'), ('portable'), ('multi-function'), ('gym-grade');
+
+  
 --
 -- Data for Name: attributes; Type: TABLE DATA; Schema: public; Owner: -
 --
