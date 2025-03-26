@@ -1,8 +1,10 @@
 package controller
 
 import (
+	"github.com/E-cercise/E-cercise/src/helper"
 	"github.com/E-cercise/E-cercise/src/service"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 )
 
 type TagController struct {
@@ -14,34 +16,44 @@ func NewTagControllerImpl(t service.TagService, p service.UserPreferenceService)
 	return TagController{t, p}
 }
 
-func (ctrl TagController) GetTags(c *fiber.Ctx) error {
+func (ctrl TagController) GetTags(ctx *fiber.Ctx) error {
 	tags, err := ctrl.tagService.GetAllTags()
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "cannot fetch tags"})
+		return ctx.Status(500).JSON(fiber.Map{"error": "cannot fetch tags"})
 	}
-	return c.JSON(tags)
+	return ctx.JSON(tags)
 }
 
-func (ctrl TagController) SetUserPreferences(c *fiber.Ctx) error {
-	userID := c.Locals("user_id").(string) // assuming middleware sets this
-	var req struct {
-		TagIDs []string `json:"tag_ids"`
-	}
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "invalid input"})
-	}
+func (ctrl TagController) SetUserPreferences(ctx *fiber.Ctx) error {
+	user, err := helper.GetCurrentUser(ctx)
 
-	if err := ctrl.prefService.SetUserPreferences(userID, req.TagIDs); err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "cannot set preferences"})
-	}
-	return c.JSON(fiber.Map{"message": "preferences saved"})
-}
-
-func (ctrl TagController) GetUserPreferences(c *fiber.Ctx) error {
-	userID := c.Locals("user_id").(string)
-	tags, err := ctrl.prefService.GetUserPreferences(userID)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "cannot get preferences"})
+		return err
 	}
-	return c.JSON(tags)
+
+	var req struct {
+		TagIDs []uuid.UUID `json:"tag_ids"`
+	}
+
+	if err := ctx.BodyParser(&req); err != nil {
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "invalid input"})
+	}
+
+	if err := ctrl.prefService.SetUserPreferences(user.ID, req.TagIDs); err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "cannot set preferences"})
+	}
+	return ctx.JSON(fiber.Map{"message": "preferences saved"})
+}
+
+func (ctrl TagController) GetUserPreferences(ctx *fiber.Ctx) error {
+	user, err := helper.GetCurrentUser(ctx)
+	if err != nil {
+		return err
+	}
+
+	tags, err := ctrl.prefService.GetUserPreferences(user.ID)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "cannot get preferences"})
+	}
+	return ctx.JSON(tags)
 }

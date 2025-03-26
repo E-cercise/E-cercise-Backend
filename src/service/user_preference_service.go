@@ -3,11 +3,12 @@ package service
 import (
 	"github.com/E-cercise/E-cercise/src/model"
 	"github.com/E-cercise/E-cercise/src/repository"
+	"github.com/google/uuid"
 )
 
 type UserPreferenceService interface {
-	SetUserPreferences(userID string, tagIDs []string) error
-	GetUserPreferences(userID string) ([]model.Tag, error)
+	SetUserPreferences(userID uuid.UUID, tagIDs []uuid.UUID) error
+	GetUserPreferences(userID uuid.UUID) ([]model.Tag, error)
 }
 
 type userPrefService struct {
@@ -18,10 +19,10 @@ func NewUserPreferenceService(r repository.UserPreferenceRepository) UserPrefere
 	return &userPrefService{repo: r}
 }
 
-func (s *userPrefService) SetUserPreferences(userID string, tagIDs []string) error {
+func (s *userPrefService) SetUserPreferences(userID uuid.UUID, tagIDs []uuid.UUID) error {
 	return s.repo.SetPreferences(userID, tagIDs)
 }
 
-func (s *userPrefService) GetUserPreferences(userID string) ([]model.Tag, error) {
+func (s *userPrefService) GetUserPreferences(userID uuid.UUID) ([]model.Tag, error) {
 	return s.repo.GetPreferences(userID)
 }
