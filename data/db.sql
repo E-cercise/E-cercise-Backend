@@ -35,6 +35,7 @@ COMMENT ON EXTENSION "uuid-ossp" IS 'generate universally unique identifiers (UU
 --
 
 CREATE TYPE public.order_status AS ENUM (
+    'Pending',
     'Placed',
     'Paid',
     'Shipped out',
@@ -179,12 +180,11 @@ CREATE TABLE public.muscle_groups (
 -- Name: orders; Type: TABLE; Schema: public; Owner: -
 --
 
--- Table creation with auditing columns included
 CREATE TABLE public.orders (
-    id uuid DEFAULT public.uuid_generate_v4() PRIMARY KEY,
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
     user_id uuid NOT NULL,
     delivery_address text NOT NULL,
-    payment_type public.payment_type DEFAULT 'Unpaid'::public.payment_type NOT NULL,
+    payment_type character public.payment_type DEFAULT 'Unpaid'::public.payment_type NOT NULL,
     total_price numeric(10,2) NOT NULL,
     order_status public.order_status DEFAULT 'Placed'::public.order_status NOT NULL,
     created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -207,42 +207,9 @@ CREATE TABLE public.users (
 
 -- Tags table
 CREATE TABLE public.tags (
-    id UUID DEFAULT public.uuid_generate_v4() PRIMARY KEY,
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     name VARCHAR(50) UNIQUE NOT NULL
 );
-
--- User preferences (many-to-many via tag)
-CREATE TABLE public.user_preferences (
-    id UUID DEFAULT public.uuid_generate_v4() PRIMARY KEY,
-    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-    tag_id UUID NOT NULL REFERENCES public.tags(id) ON DELETE CASCADE
-);
-
-CREATE TABLE public.goals (
-    id UUID DEFAULT public.uuid_generate_v4() PRIMARY KEY,
-    name VARCHAR(50) UNIQUE NOT NULL
-);
-
-
-INSERT INTO public.tags (name) VALUES
-  ('abs'), ('core'), ('arms'), ('shoulders'), ('chest'), ('back'), ('legs'), ('glutes'), ('full-body'),
-  ('bodyweight'), ('resistance'), ('weighted'), ('calisthenics'), ('stretching'), ('cardio'),
-  ('beginner-friendly'), ('intermediate'), ('advanced'), ('athlete'),
-  ('tone'), ('build-muscle'), ('weight-loss'), ('endurance'), ('rehab'), ('mobility'), ('flexibility'),
-  ('low-impact'), ('joint-friendly'), ('post-injury'), ('elderly'),
-  ('pull-up'), ('dip'), ('ab-machine'), ('rowing'), ('cable'), ('tower'), ('barbell-compatible'), ('compact'), ('adjustable'),
-  ('budget'), ('foldable'), ('portable'), ('multi-function'), ('gym-grade');
-
-
-INSERT INTO public.goals (name) VALUES
-  ('tone'),
-  ('build-muscle'),
-  ('weight-loss'),
-  ('rehab'),
-  ('mobility'),
-  ('strength'),
-  ('endurance'),
-  ('flexibility');
 
 -- User preferences (many-to-many via tag)
 CREATE TABLE public.user_preferences (
@@ -28890,6 +28857,15 @@ ALTER TABLE ONLY public.line_equipments
 ALTER TABLE ONLY public.muscle_groups
     ADD CONSTRAINT muscle_groups_pkey PRIMARY KEY (id);
 
+
+--
+-- Name: orders orders_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.orders
+    ADD CONSTRAINT orders_pkey PRIMARY KEY (id);
+
+
 --
 -- Name: carts uni_carts_user_id; Type: CONSTRAINT; Schema: public; Owner: -
 --
@@ -28992,3 +28968,14 @@ ALTER TABLE ONLY public.carts
 
 ALTER TABLE ONLY public.orders
     ADD CONSTRAINT fk_users_orders FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+ALTER TABLE users
+ADD COLUMN weight decimal(5,2),
+ADD COLUMN height decimal(5,2),
+ADD COLUMN experience varchar(20),
+ADD COLUMN goal_id uuid REFERENCES goals(id) ON DELETE SET NULL;
+
+
+--
+-- PostgreSQL database dump complete
+--
