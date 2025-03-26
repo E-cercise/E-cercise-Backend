@@ -9,6 +9,6 @@ import (
 
 func TagRouter(app fiber.Router, tagController controller.TagController, userRepo repository.UserRepository) {
 	tag := app.Group("/tags")
-	tag.Get("/", middleware.Authentication(userRepo), tagController.GetTags)
+	tag.Get("/", tagController.GetTags)
 	tag.Get("/me", middleware.Authentication(userRepo), tagController.GetUserPreferences)
 }
