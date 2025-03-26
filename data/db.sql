@@ -34,6 +34,7 @@ COMMENT ON EXTENSION "uuid-ossp" IS 'generate universally unique identifiers (UU
 -- Name: order_status; Type: TYPE; Schema: public; Owner: -
 --
 
+
 CREATE TYPE public.order_status AS ENUM (
     'Placed',
     'Paid',
@@ -41,11 +42,16 @@ CREATE TYPE public.order_status AS ENUM (
     'Received'
 );
 
+
+--
+-- Name: payment_type; Type: TYPE; Schema: public; Owner: -
+--
+
 CREATE TYPE public.payment_type AS ENUM (
     'Unpaid',
-	'QRPromptPay',
-	'Cash',
-	'CreditOrDebitCard'
+    'QRPromptPay',
+    'Cash',
+    'CreditOrDebitCard'
 );
 
 
@@ -56,6 +62,19 @@ CREATE TYPE public.payment_type AS ENUM (
 CREATE TYPE public.role_type AS ENUM (
     'USER',
     'ADMIN'
+);
+
+
+--
+-- Name: user_experience; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.user_experience AS ENUM (
+    'Beginner',
+    'Intermediate',
+    'Advanced',
+    'Athlete',
+    'Elderly'
 );
 
 
@@ -137,6 +156,16 @@ CREATE TABLE public.equipment_options (
 
 
 --
+-- Name: goals; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.goals (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    name character varying(50) NOT NULL
+);
+
+
+--
 -- Name: images; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -183,12 +212,35 @@ CREATE TABLE public.orders (
     id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
     user_id uuid NOT NULL,
     delivery_address text NOT NULL,
-    payment_type character public.payment_type DEFAULT 'Unpaid'::public.payment_type NOT NULL,
+    payment_type public.payment_type,
     total_price numeric(10,2) NOT NULL,
     order_status public.order_status DEFAULT 'Placed'::public.order_status NOT NULL,
-    created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );
+
+
+--
+-- Name: tags; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.tags (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    name character varying(50) NOT NULL
+);
+
+
+--
+-- Name: user_preferences; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_preferences (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    user_id uuid NOT NULL,
+    tag_id uuid NOT NULL
+);
+
+
 --
 -- Name: users; Type: TABLE; Schema: public; Owner: -
 --
@@ -199,28 +251,13 @@ CREATE TABLE public.users (
     last_name character varying(100) NOT NULL,
     email character varying(255) NOT NULL,
     password character varying(255) NOT NULL,
-    role text DEFAULT 'USER'::text NOT NULL,
+    role public.role_type DEFAULT 'USER'::public.role_type NOT NULL,
     address text,
-    phone_number character varying(20)
-);
-
--- Tags table
-CREATE TABLE public.tags (
-    id UUID DEFAULT public.uuid_generate_v4() PRIMARY KEY,
-    name VARCHAR(50) UNIQUE NOT NULL
-);
-
--- User preferences (many-to-many via tag)
-CREATE TABLE public.user_preferences (
-
-    id UUID DEFAULT public.uuid_generate_v4() PRIMARY KEY,
-    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-    tag_id UUID NOT NULL REFERENCES public.tags(id) ON DELETE CASCADE
-);
-
-CREATE TABLE public.goals (
-    id UUID DEFAULT public.uuid_generate_v4() PRIMARY KEY,
-    name VARCHAR(50) UNIQUE NOT NULL
+    phone_number character varying(20),
+    weight numeric(10,2),
+    height numeric(10,2),
+    experience public.user_experience,
+    goal_id uuid
 );
 
 
@@ -28836,6 +28873,14 @@ ALTER TABLE ONLY public.equipment
 
 
 --
+-- Name: goals goals_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.goals
+    ADD CONSTRAINT goals_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: images images_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -28868,6 +28913,14 @@ ALTER TABLE ONLY public.orders
 
 
 --
+-- Name: tags tags_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tags
+    ADD CONSTRAINT tags_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: carts uni_carts_user_id; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -28876,11 +28929,35 @@ ALTER TABLE ONLY public.carts
 
 
 --
+-- Name: goals uni_goals_name; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.goals
+    ADD CONSTRAINT uni_goals_name UNIQUE (name);
+
+
+--
+-- Name: tags uni_tags_name; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tags
+    ADD CONSTRAINT uni_tags_name UNIQUE (name);
+
+
+--
 -- Name: users uni_users_email; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT uni_users_email UNIQUE (email);
+
+
+--
+-- Name: user_preferences user_preferences_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_preferences
+    ADD CONSTRAINT user_preferences_pkey PRIMARY KEY (id);
 
 
 --
@@ -28944,7 +29021,15 @@ ALTER TABLE ONLY public.equipment_muscle_groups
 --
 
 ALTER TABLE ONLY public.images
-    ADD CONSTRAINT fk_equipment_options_images FOREIGN KEY (equipment_option_id) REFERENCES public.equipment_options(id) ON DELETE CASCADE;
+    ADD CONSTRAINT fk_equipment_options_images FOREIGN KEY (equipment_option_id) REFERENCES public.equipment_options(id);
+
+
+--
+-- Name: line_equipments fk_line_equipments_equipment_option; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.line_equipments
+    ADD CONSTRAINT fk_line_equipments_equipment_option FOREIGN KEY (equipment_option_id) REFERENCES public.equipment_options(id);
 
 
 --
@@ -28956,11 +29041,27 @@ ALTER TABLE ONLY public.line_equipments
 
 
 --
+-- Name: user_preferences fk_user_preferences_tag; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_preferences
+    ADD CONSTRAINT fk_user_preferences_tag FOREIGN KEY (tag_id) REFERENCES public.tags(id);
+
+
+--
 -- Name: carts fk_users_cart; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.carts
     ADD CONSTRAINT fk_users_cart FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: users fk_users_goal; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT fk_users_goal FOREIGN KEY (goal_id) REFERENCES public.goals(id);
 
 
 --
