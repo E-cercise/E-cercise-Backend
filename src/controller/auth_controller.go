@@ -19,11 +19,18 @@ func NewAuthControllerImpl(userService service.UserService) *AuthController {
 func (c *AuthController) UserRegister(ctx *fiber.Ctx) error {
 	reqBody := ctx.Locals("reqBody").(request.RegisterRequest)
 
-	err := c.UserService.RegisterUser(reqBody)
+	createdUser, err := c.UserService.RegisterUser(reqBody)
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": err.Error(),
 		})
+	}
+
+	if len(reqBody.Preferences) > 0 {
+		err := c.UserService.SaveUserPreferences(createdUser.ID, reqBody.Preferences)
+		if err != nil {
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		}
 	}
 
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{

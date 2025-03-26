@@ -9,35 +9,38 @@ import (
 	"github.com/E-cercise/E-cercise/src/logger"
 	"github.com/E-cercise/E-cercise/src/model"
 	"github.com/E-cercise/E-cercise/src/repository"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"strings"
 )
 
 type UserService interface {
-	RegisterUser(reqBody request.RegisterRequest) error
+	RegisterUser(reqBody request.RegisterRequest) (*model.User, error)
 	LoginUser(reqBody request.LoginRequest) (*string, error)
 	GetUserProfile(user *model.User) response.UserProfileResponse
 	UpdateUserProfile(user *model.User, req request.UpdateUserProfileRequest) error
+	SaveUserPreferences(userID uuid.UUID, tagIDs []uuid.UUID) error
 }
 
 type userService struct {
-	db       *gorm.DB
-	userRepo repository.UserRepository
+	db           *gorm.DB
+	userRepo     repository.UserRepository
+	userPrefRepo repository.UserPreferenceRepository
 }
 
-func NewUserService(db *gorm.DB, userRepo repository.UserRepository) UserService {
-	return &userService{db: db, userRepo: userRepo}
+func NewUserService(db *gorm.DB, userRepo repository.UserRepository, userPrefRepo repository.UserPreferenceRepository) UserService {
+	return &userService{db: db, userRepo: userRepo, userPrefRepo: userPrefRepo}
 }
 
-func (s *userService) RegisterUser(reqBody request.RegisterRequest) error {
+func (s *userService) RegisterUser(reqBody request.RegisterRequest) (*model.User, error) {
 	existingUser, err := s.userRepo.FindByEmail(reqBody.Email)
 	if existingUser != nil || err != nil {
-		return errors.New("email already exists")
+		return nil, errors.New("email already exists")
 	}
 
 	password, err := helper.EncryptPassword(reqBody.Password)
 	if err != nil {
-		return errors.New("failed to encrypt password")
+		return nil, errors.New("failed to encrypt password")
 	}
 
 	newUser := model.User{
@@ -47,15 +50,19 @@ func (s *userService) RegisterUser(reqBody request.RegisterRequest) error {
 		LastName:    reqBody.LastName,
 		Address:     reqBody.Address,
 		PhoneNumber: reqBody.PhoneNumber,
+		Weight:      reqBody.Weight,
+		Height:      reqBody.Height,
+		Experience:  reqBody.Experience,
+		GoalID:      reqBody.GoalID,
 	}
 
 	err = s.userRepo.CreateUser(&newUser)
 	if err != nil {
 		logger.Log.WithError(err).Error("failed to create user")
-		return fmt.Errorf("failed to create user: %w", err)
+		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 
-	return nil
+	return &newUser, nil
 
 }
 
@@ -90,6 +97,13 @@ func (s *userService) GetUserProfile(user *model.User) response.UserProfileRespo
 		LastName:    user.LastName,
 		Address:     user.Address,
 		PhoneNumber: user.PhoneNumber,
+		Weight:      user.Weight,
+		Height:      user.Height,
+		Experience:  user.Experience,
+		Goal: response.GoalResponse{ // if preloaded
+			ID:   user.Goal.ID,
+			Name: user.Goal.Name,
+		},
 	}
 
 	return res
@@ -121,9 +135,31 @@ func (s *userService) UpdateUserProfile(user *model.User, req request.UpdateUser
 		user.PhoneNumber = *req.PhoneNumber
 	}
 
+	if req.Weight != nil {
+		user.Weight = req.Weight
+	}
+	if req.Height != nil {
+		user.Height = req.Height
+	}
+	if req.Experience != nil {
+		user.Experience = req.Experience
+	}
+	if req.GoalID != nil {
+		user.GoalID = req.GoalID
+	}
+
 	err := s.userRepo.SaveUser(user)
 	if err != nil {
 		logger.Log.WithError(err).Error("failed to update user profile")
+		return err
+	}
+	return nil
+}
+
+func (s *userService) SaveUserPreferences(userID uuid.UUID, tagIDs []uuid.UUID) error {
+	err := s.userPrefRepo.SetPreferences(userID, tagIDs)
+	if err != nil {
+		logger.Log.WithError(err).Error("failed to save user preferences")
 		return err
 	}
 	return nil
