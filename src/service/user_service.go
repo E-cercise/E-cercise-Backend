@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/E-cercise/E-cercise/src/data/request"
+	"github.com/E-cercise/E-cercise/src/data/response"
 	"github.com/E-cercise/E-cercise/src/helper"
 	"github.com/E-cercise/E-cercise/src/logger"
 	"github.com/E-cercise/E-cercise/src/model"
@@ -15,6 +16,8 @@ import (
 type UserService interface {
 	RegisterUser(reqBody request.RegisterRequest) error
 	LoginUser(reqBody request.LoginRequest) (*string, error)
+	GetUserProfile(user *model.User) response.UserProfileResponse
+	UpdateUserProfile(user *model.User, req request.UpdateUserProfileRequest) error
 }
 
 type userService struct {
@@ -78,4 +81,50 @@ func (s *userService) LoginUser(reqBody request.LoginRequest) (*string, error) {
 
 	return &token, nil
 
+}
+
+func (s *userService) GetUserProfile(user *model.User) response.UserProfileResponse {
+	res := response.UserProfileResponse{
+		Email:       user.Email,
+		FirstName:   user.FirstName,
+		LastName:    user.LastName,
+		Address:     user.Address,
+		PhoneNumber: user.PhoneNumber,
+	}
+
+	return res
+}
+
+func (s *userService) UpdateUserProfile(user *model.User, req request.UpdateUserProfileRequest) error {
+
+	if req.Email != nil {
+		existingUser, err := s.userRepo.FindByEmail(*req.Email)
+		if existingUser != nil || err != nil {
+			return errors.New("email already exists")
+		}
+		user.Email = *req.Email
+	}
+
+	if req.FirstName != nil {
+		user.FirstName = *req.FirstName
+	}
+
+	if req.LastName != nil {
+		user.LastName = *req.LastName
+	}
+
+	if req.Address != nil {
+		user.Address = *req.Address
+	}
+
+	if req.PhoneNumber != nil {
+		user.PhoneNumber = *req.PhoneNumber
+	}
+
+	err := s.userRepo.SaveUser(user)
+	if err != nil {
+		logger.Log.WithError(err).Error("failed to update user profile")
+		return err
+	}
+	return nil
 }
