@@ -10,7 +10,7 @@ type TagController struct {
 	prefService service.UserPreferenceService
 }
 
-func NewTagController(t service.TagService, p service.UserPreferenceService) TagController {
+func NewTagControllerImpl(t service.TagService, p service.UserPreferenceService) TagController {
 	return TagController{t, p}
 }
 
