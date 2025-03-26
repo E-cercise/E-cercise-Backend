@@ -56,4 +56,5 @@ func (ctrl TagController) GetUserPreferences(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "cannot get preferences"})
 	}
 	return ctx.JSON(tags)
+
 }

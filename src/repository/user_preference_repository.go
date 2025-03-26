@@ -20,6 +20,7 @@ func NewUserPreferenceRepository(db *gorm.DB) UserPreferenceRepository {
 }
 
 func (r *userPrefRepo) SetPreferences(userID uuid.UUID, tagIDs []uuid.UUID) error {
+
 	r.db.Where("user_id = ?", userID).Delete(&model.UserPreference{})
 
 	for _, tagID := range tagIDs {
