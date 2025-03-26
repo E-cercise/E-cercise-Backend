@@ -218,6 +218,11 @@ CREATE TABLE public.user_preferences (
     tag_id UUID NOT NULL REFERENCES tags(id) ON DELETE CASCADE
 );
 
+CREATE TABLE public.goals (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    name VARCHAR(50) UNIQUE NOT NULL
+);
+
 
 INSERT INTO tags (name) VALUES
   ('abs'), ('core'), ('arms'), ('shoulders'), ('chest'), ('back'), ('legs'), ('glutes'), ('full-body'),
@@ -228,7 +233,17 @@ INSERT INTO tags (name) VALUES
   ('pull-up'), ('dip'), ('ab-machine'), ('rowing'), ('cable'), ('tower'), ('barbell-compatible'), ('compact'), ('adjustable'),
   ('budget'), ('foldable'), ('portable'), ('multi-function'), ('gym-grade');
 
-  
+
+INSERT INTO goals (name) VALUES
+  ('tone'),
+  ('build-muscle'),
+  ('weight-loss'),
+  ('rehab'),
+  ('mobility'),
+  ('strength'),
+  ('endurance'),
+  ('flexibility');
+
 --
 -- Data for Name: attributes; Type: TABLE DATA; Schema: public; Owner: -
 --
@@ -28944,4 +28959,3 @@ ALTER TABLE ONLY public.carts
 
 ALTER TABLE ONLY public.orders
     ADD CONSTRAINT fk_users_orders FOREIGN KEY (user_id) REFERENCES public.users(id);
-

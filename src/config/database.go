@@ -108,5 +108,24 @@ func migrateEnum(db *gorm.DB) error {
 		return err
 	}
 
+	err = db.Exec(`
+		DO $$
+		BEGIN
+			IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_experience') THEN
+				CREATE TYPE user_experience AS ENUM (
+					'Beginner',
+					'Intermediate',
+				 	'Advanced',
+					'Athlete',
+					'Elderly'
+				);
+			END IF;
+		END$$;
+	`).Error
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

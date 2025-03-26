@@ -11,5 +11,4 @@ func TagRouter(app fiber.Router, tagController controller.TagController, userRep
 	tag := app.Group("/tags")
 	tag.Get("/", middleware.Authentication(userRepo), tagController.GetTags)
 	tag.Get("/me", middleware.Authentication(userRepo), tagController.GetUserPreferences)
-	tag.Post("/me", middleware.Authentication(userRepo), tagController.SetUserPreferences)
 }
