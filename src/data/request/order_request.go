@@ -5,7 +5,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type CheckoutCartRequest struct {
+type PlaceOrderCartRequest struct {
 	LineEquipments []uuid.UUID      `json:"line_equipments"`
 	PaymentType    enum.PaymentType `json:"payment_type"`
 	Address        string           `json:"address"`
