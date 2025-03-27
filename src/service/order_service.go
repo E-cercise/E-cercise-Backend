@@ -197,7 +197,8 @@ func (s *orderService) UpdateOrderStatus(orderID uuid.UUID) error {
 	statusTransaction := map[enum.OrderStatus]enum.OrderStatus{
 		enum.OrderPlaced:  enum.OrderPaid,
 		enum.OrderPaid:    enum.OrderShipped,
-		enum.OrderShipped: enum.OrderReceived,
+		enum.OrderShipped: enum.OrderToReceive,
+		enum.OrderToReceive: enum.OrderReceived,
 	}
 
 	nextStatus, ok := statusTransaction[order.OrderStatus]
