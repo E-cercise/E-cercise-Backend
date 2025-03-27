@@ -19,7 +19,7 @@ import (
 type OrderService interface {
 	CreateOrder(req request.PlaceOrderCartRequest, user *model.User) (*uuid.UUID, error)
 	GetOrderDetail(orderID uuid.UUID, user *model.User) (*response.OrderDetailResponse, error)
-	UpdateOrderStatus(orderID uuid.UUID) error
+	UpdateOrderStatus(orderID uuid.UUID, user *model.User) error
 	GetMyOrders(userID uuid.UUID, orderStatus enum.OrderStatus) (*response.MyOrderResponse, error)
 	GetOrderList(q request.OrderListRequest) (*response.OrderListResponse, error)
 }
@@ -190,12 +190,32 @@ func (s *orderService) GetOrderDetail(orderID uuid.UUID, user *model.User) (*res
 	return &resp, nil
 }
 
-func (s *orderService) UpdateOrderStatus(orderID uuid.UUID) error {
+func (s *orderService) UpdateOrderStatus(orderID uuid.UUID, user *model.User) error {
 	order, err := s.orderRepo.FindByID(orderID)
 	fmt.Println(order.OrderStatus)
 	if err != nil {
 		logger.Log.WithError(err).Error("Failed to get order detail")
 		return fmt.Errorf("failed to get order detail")
+	}
+
+	switch user.Role {
+		case enum.RoleUser:
+			if order.UserID != user.ID {
+				logger.Log.Errorf("User %v tried to update order %v not owned by them", user.ID, order.ID)
+				return fmt.Errorf("you are not allowed to update this order")
+			}
+			if order.OrderStatus != enum.OrderPlaced && order.OrderStatus != enum.OrderToReceive {
+				logger.Log.Errorf("User %v not allowed to update order in status: %v", user.ID, order.OrderStatus)
+				return fmt.Errorf("you can only update order if status is 'Placed' or 'ToReceive'")
+			}
+		case enum.RoleAdmin:
+			if order.OrderStatus != enum.OrderPaid && order.OrderStatus != enum.OrderShipped {
+				logger.Log.Errorf("Admin not allowed to update order in status: %v", order.OrderStatus)
+				return fmt.Errorf("admin can only update order if status is 'Paid' or 'Shipped'")
+			}
+		default:
+			logger.Log.Errorf("Unauthorized role: %v", user.Role)
+			return fmt.Errorf("unauthorized role")
 	}
 
 	statusTransaction := map[enum.OrderStatus]enum.OrderStatus{
