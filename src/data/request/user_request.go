@@ -16,4 +16,6 @@ type UpdateUserProfileRequest struct {
 	Experience  *enum.UserExperience `json:"experience,omitempty"`
 	GoalID      *uuid.UUID           `json:"goal_id,omitempty"`
 	Preferences []uuid.UUID          `json:"preferences,omitempty"`
+	Gender      *enum.Gender         `json:"gender,omitempty"`
+	Age         *int                 `json:"age,omitempty"`
 }

@@ -11,6 +11,7 @@ type UserRepository interface {
 	FindByID(userID string) (*model.User, error)
 	SaveUser(user *model.User) error
 	SaveUserTransaction(tx *gorm.DB, user *model.User) error
+	UpdateUserPreferences(tx *gorm.DB, user *model.User, pref []model.UserPreference) error
 }
 
 type userRepository struct {
@@ -60,4 +61,8 @@ func (r *userRepository) SaveUser(user *model.User) error {
 
 func (r *userRepository) SaveUserTransaction(tx *gorm.DB, user *model.User) error {
 	return tx.Save(user).Error
+}
+
+func (r *userRepository) UpdateUserPreferences(tx *gorm.DB, user *model.User, pref []model.UserPreference) error {
+	return tx.Model(user).Association("UserPreferences").Replace(pref)
 }

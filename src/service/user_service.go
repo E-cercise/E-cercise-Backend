@@ -9,17 +9,15 @@ import (
 	"github.com/E-cercise/E-cercise/src/logger"
 	"github.com/E-cercise/E-cercise/src/model"
 	"github.com/E-cercise/E-cercise/src/repository"
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"strings"
 )
 
 type UserService interface {
-	RegisterUser(reqBody request.RegisterRequest) (*model.User, error)
+	RegisterUser(reqBody request.RegisterRequest) error
 	LoginUser(reqBody request.LoginRequest) (*string, error)
 	GetUserProfile(user *model.User) response.UserProfileResponse
 	UpdateUserProfile(user *model.User, req request.UpdateUserProfileRequest) error
-	SaveUserPreferences(userID uuid.UUID, tagIDs []uuid.UUID) error
 }
 
 type userService struct {
@@ -32,15 +30,15 @@ func NewUserService(db *gorm.DB, userRepo repository.UserRepository, userPrefRep
 	return &userService{db: db, userRepo: userRepo, userPrefRepo: userPrefRepo}
 }
 
-func (s *userService) RegisterUser(reqBody request.RegisterRequest) (*model.User, error) {
+func (s *userService) RegisterUser(reqBody request.RegisterRequest) error {
 	existingUser, err := s.userRepo.FindByEmail(reqBody.Email)
 	if existingUser != nil || err != nil {
-		return nil, errors.New("email already exists")
+		return errors.New("email already exists")
 	}
 
 	password, err := helper.EncryptPassword(reqBody.Password)
 	if err != nil {
-		return nil, errors.New("failed to encrypt password")
+		return errors.New("failed to encrypt password")
 	}
 
 	newUser := model.User{
@@ -54,15 +52,17 @@ func (s *userService) RegisterUser(reqBody request.RegisterRequest) (*model.User
 		Height:      reqBody.Height,
 		Experience:  reqBody.Experience,
 		GoalID:      reqBody.GoalID,
+		Gender:      reqBody.Gender,
+		Age:         reqBody.Age,
 	}
 
 	err = s.userRepo.CreateUser(&newUser)
 	if err != nil {
 		logger.Log.WithError(err).Error("failed to create user")
-		return nil, fmt.Errorf("failed to create user: %w", err)
+		return fmt.Errorf("failed to create user: %w", err)
 	}
 
-	return &newUser, nil
+	return nil
 
 }
 
@@ -111,11 +111,13 @@ func (s *userService) GetUserProfile(user *model.User) response.UserProfileRespo
 		Weight:      user.Weight,
 		Height:      user.Height,
 		Experience:  user.Experience,
-		Goal: &response.GoalResponse{
+		Goal: response.GoalResponse{
 			ID:   user.Goal.ID,
 			Name: user.Goal.Name,
 		},
 		Preferences: preferences,
+		Gender:      user.Gender,
+		Age:         user.Age,
 	}
 
 	return res
@@ -157,16 +159,31 @@ func (s *userService) UpdateUserProfile(user *model.User, req request.UpdateUser
 	}
 
 	if req.Weight != nil {
-		user.Weight = req.Weight
+		user.Weight = *req.Weight
 	}
 	if req.Height != nil {
-		user.Height = req.Height
+		user.Height = *req.Height
 	}
 	if req.Experience != nil {
-		user.Experience = req.Experience
+		user.Experience = *req.Experience
 	}
 	if req.GoalID != nil {
-		user.GoalID = req.GoalID
+		user.GoalID = *req.GoalID
+	}
+
+	if req.Age != nil {
+		user.Age = *req.Age
+	}
+
+	if req.Gender != nil {
+		user.Gender = *req.Gender
+	}
+
+	err := s.userRepo.SaveUserTransaction(tx, user)
+	if err != nil {
+		tx.Rollback()
+		logger.Log.WithError(err).Error("failed to update user profile")
+		return err
 	}
 
 	if req.Preferences != nil {
@@ -177,18 +194,11 @@ func (s *userService) UpdateUserProfile(user *model.User, req request.UpdateUser
 				TagID:  tagID,
 			})
 		}
-		if err := tx.Model(user).
-			Association("UserPreferences").
-			Replace(newPrefs); err != nil {
+		if err := s.userRepo.UpdateUserPreferences(tx, user, newPrefs); err != nil {
+			tx.Rollback()
+			logger.Log.WithError(err).Error("failed to update user preferences")
 			return err
 		}
-	}
-
-	err := s.userRepo.SaveUserTransaction(tx, user)
-	if err != nil {
-		tx.Rollback()
-		logger.Log.WithError(err).Error("failed to update user profile")
-		return err
 	}
 
 	if err := tx.Commit().Error; err != nil {
@@ -196,14 +206,5 @@ func (s *userService) UpdateUserProfile(user *model.User, req request.UpdateUser
 		return err
 	}
 
-	return nil
-}
-
-func (s *userService) SaveUserPreferences(userID uuid.UUID, tagIDs []uuid.UUID) error {
-	err := s.userPrefRepo.SetPreferences(userID, tagIDs)
-	if err != nil {
-		logger.Log.WithError(err).Error("failed to save user preferences")
-		return err
-	}
 	return nil
 }

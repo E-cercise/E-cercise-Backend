@@ -127,5 +127,21 @@ func migrateEnum(db *gorm.DB) error {
 		return err
 	}
 
+	err = db.Exec(`
+		DO $$
+		BEGIN
+			IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'gender_type') THEN
+				CREATE TYPE gender_type AS ENUM (
+				 	'Male',
+					'Female'
+				);
+			END IF;
+		END$$;
+	`).Error
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
