@@ -100,7 +100,7 @@ func (s *equipmentService) GetRecommendEquipmentData(user *model.User) (*respons
 	}
 
 	// Make POST request to recommender
-	recommenderURL := fmt.Sprintf("%s/recommend", config.RecommedationServiceBaseUrl)
+	recommenderURL := fmt.Sprintf("%s/recommend", config.RecommendationServiceBaseUrl)
 	res, err := helper.PostJSON(recommenderURL, payload)
 	if err != nil {
 		logger.Log.WithError(err).Error("failed to call recommender service")
