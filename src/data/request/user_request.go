@@ -15,4 +15,5 @@ type UpdateUserProfileRequest struct {
 	Height      *float64             `json:"height,omitempty"`
 	Experience  *enum.UserExperience `json:"experience,omitempty"`
 	GoalID      *uuid.UUID           `json:"goal_id,omitempty"`
+	Preferences []uuid.UUID          `json:"preferences,omitempty"`
 }

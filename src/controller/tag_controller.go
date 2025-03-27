@@ -12,8 +12,8 @@ type TagController struct {
 	prefService service.UserPreferenceService
 }
 
-func NewTagControllerImpl(t service.TagService, p service.UserPreferenceService) TagController {
-	return TagController{t, p}
+func NewTagControllerImpl(t service.TagService, p service.UserPreferenceService) *TagController {
+	return &TagController{t, p}
 }
 
 func (ctrl TagController) GetTags(ctx *fiber.Ctx) error {

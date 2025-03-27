@@ -272,7 +272,7 @@ INSERT INTO public.tags (name) VALUES
   ('budget'), ('foldable'), ('portable'), ('multi-function'), ('gym-grade');
 
 
-INSERT INTO public.goals (name) VALUES
+NSERT INTO goals (name) VALUES
   ('tone'),
   ('build-muscle'),
   ('weight-loss'),
@@ -280,7 +280,12 @@ INSERT INTO public.goals (name) VALUES
   ('mobility'),
   ('strength'),
   ('endurance'),
-  ('flexibility');
+  ('flexibility'),
+  ('posture-correction'),
+  ('pre/post-natal'),
+  ('athletic-training'),
+  ('injury-prevention'),
+  ('functionality');
 
 --
 -- Data for Name: attributes; Type: TABLE DATA; Schema: public; Owner: -

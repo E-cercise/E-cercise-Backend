@@ -3,6 +3,7 @@ package model
 import (
 	"github.com/E-cercise/E-cercise/src/enum"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 	"time"
 )
 
@@ -19,7 +20,7 @@ type Order struct {
 	UpdatedAt       time.Time        `gorm:"default:CURRENT_TIMESTAMP"`
 }
 
-func (o *Order) BeforeUpdate() error {
+func (o *Order) BeforeUpdate(tx *gorm.DB) error {
 	o.UpdatedAt = time.Now()
 	return nil
 }

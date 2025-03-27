@@ -7,7 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func TagRouter(app fiber.Router, tagController controller.TagController, userRepo repository.UserRepository) {
+func TagRouter(app fiber.Router, tagController *controller.TagController, userRepo repository.UserRepository) {
 	tag := app.Group("/tags")
 	tag.Get("/", tagController.GetTags)
 	tag.Get("/me", middleware.Authentication(userRepo), tagController.GetUserPreferences)
