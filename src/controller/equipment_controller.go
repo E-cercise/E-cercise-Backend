@@ -6,7 +6,6 @@ import (
 	"github.com/E-cercise/E-cercise/src/data/request"
 	"github.com/E-cercise/E-cercise/src/enum"
 	"github.com/E-cercise/E-cercise/src/helper"
-	"github.com/E-cercise/E-cercise/src/model"
 	"github.com/E-cercise/E-cercise/src/service"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -65,23 +64,22 @@ func (c *EquipmentController) GetAllEquipments(ctx *fiber.Ctx) error {
 	}
 
 	currentUser := ctx.Locals("currentUser")
-    if currentUser != nil {
-        user, ok := currentUser.(*model.User)
-        if !ok {
-            return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-                "message": "cant convert user into model.user in context",
-            })
-        }
+	if currentUser != nil {
+		user, err := helper.GetCurrentUser(ctx)
+		if err != nil {
+			return err
+		}
+
 		if user.Role != enum.RoleAdmin {
-			recommendationEquipments, err := c.EquipmentService.GetRecommendEquipmentData(req, paginator, user.ID)
+			recommendationEquipments, err := c.EquipmentService.GetRecommendEquipmentData(user)
 			if err != nil {
 				return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 					"error": err.Error(),
 				})
 			}
 			resp["recommendation_equipments"] = &recommendationEquipments
-        }
-    }
+		}
+	}
 
 	return ctx.Status(fiber.StatusOK).JSON(resp)
 }

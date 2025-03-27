@@ -2,7 +2,10 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/E-cercise/E-cercise/src/config"
+	"github.com/E-cercise/E-cercise/src/data/dto"
 	"github.com/E-cercise/E-cercise/src/data/request"
 	"github.com/E-cercise/E-cercise/src/data/response"
 	"github.com/E-cercise/E-cercise/src/helper"
@@ -16,7 +19,7 @@ import (
 
 type EquipmentService interface {
 	GetEquipmentData(q request.EquipmentListRequest, paginatior *helper.Paginator) (*response.EquipmentsResponse, error)
-	GetRecommendEquipmentData(q request.EquipmentListRequest, paginatior *helper.Paginator, userID uuid.UUID) (*response.EquipmentsResponse, error)
+	GetRecommendEquipmentData(user *model.User) (*response.EquipmentsResponse, error)
 	AddEquipment(req request.EquipmentPostRequest, context context.Context) error
 	GetEquipmentDetail(eqID uuid.UUID) (*response.EquipmentDetailResponse, error)
 	UpdateEquipment(eqID uuid.UUID, context context.Context, req request.EquipmentPutRequest) error
@@ -74,10 +77,93 @@ func (s *equipmentService) GetEquipmentData(q request.EquipmentListRequest, pagi
 	return &resp, nil
 }
 
-func (s *equipmentService) GetRecommendEquipmentData(q request.EquipmentListRequest, paginatior *helper.Paginator, userID uuid.UUID) (*response.EquipmentsResponse, error) {
+func (s *equipmentService) GetRecommendEquipmentData(user *model.User) (*response.EquipmentsResponse, error) {
 	var resp response.EquipmentsResponse
-	var equipments []response.Equipment
-	resp.Equipments = equipments
+
+	// Build payload for recommender
+	payload := dto.RecommenderRequest{
+		UserType:   strings.ToLower(string(user.Experience)),
+		Gender:     strings.ToLower(string(user.Gender)),
+		Age:        user.Age,
+		Weight:     user.Weight,
+		Height:     user.Height,
+		Goal:       strings.ToLower(user.Goal.Name),
+		Experience: strings.ToLower(string(user.Experience)),
+	}
+
+	for _, pref := range user.UserPreferences {
+		group := helper.GetTagGroup(pref.Tag.Name)
+		payload.Preferences = append(payload.Preferences, dto.RecommenderPreference{
+			Tag:   pref.Tag.Name,
+			Group: group,
+		})
+	}
+
+	// Make POST request to recommender
+	recommenderURL := fmt.Sprintf("%s/recommend", config.RecommedationServiceBaseUrl)
+	res, err := helper.PostJSON(recommenderURL, payload)
+	if err != nil {
+		logger.Log.WithError(err).Error("failed to call recommender service")
+		return nil, err
+	}
+
+	var recommended dto.RecommendedResponseDTO
+
+	if err := json.Unmarshal(res, &recommended); err != nil {
+		logger.Log.WithError(err).Error("failed to parse recommender response")
+		return nil, err
+	}
+
+	// Convert option IDs to UUIDs
+	var optionIDs []uuid.UUID
+	for _, item := range recommended {
+		if id, err := uuid.Parse(item.ID); err == nil {
+			optionIDs = append(optionIDs, id)
+		}
+	}
+
+	equipments, err := s.equipmentRepo.FindEquipmentsByOptionIDs(optionIDs)
+	if err != nil {
+		logger.Log.WithError(err).Error("failed to fetch equipment by option IDs")
+		return nil, err
+	}
+
+	bestOptions := make(map[string]string)
+	for _, item := range recommended {
+		bestOptions[item.EquipmentID] = item.ID
+	}
+
+	for _, eq := range equipments {
+		var selectedOption *model.EquipmentOption
+		for _, opt := range eq.EquipmentOptions {
+			if bestOptions[eq.ID.String()] == opt.ID.String() {
+				selectedOption = &opt
+				break
+			}
+		}
+		if selectedOption == nil {
+			continue
+		}
+
+		primaryImg := helper.FindPrimaryImage(*selectedOption)
+		var imagePath string
+		if primaryImg != nil {
+			imagePath = primaryImg.CloudinaryPath
+		}
+
+		resp.Equipments = append(resp.Equipments, response.Equipment{
+			ID:              eq.ID,
+			Name:            eq.Name,
+			Price:           selectedOption.Price,
+			ImagePath:       imagePath,
+			MuscleGroupUsed: helper.GetMuscleGroupIDFromEquipment(eq),
+			RemainingProduct: func() *int64 {
+				v := int64(selectedOption.RemainingProducts)
+				return &v
+			}(),
+		})
+	}
+
 	return &resp, nil
 }
 
