@@ -67,6 +67,10 @@ func (s *orderService) CreateOrder(req request.PlaceOrderCartRequest, user *mode
 		PaymentType:     req.PaymentType,
 	}
 
+	if order.PaymentType == enum.PaymentTypeCreditOrDebitCard {
+		order.OrderStatus = enum.OrderPaid
+	}
+
 	if err := s.orderRepo.CreateOrder(tx, order); err != nil {
 		tx.Rollback()
 		logger.Log.WithError(err).Error("Failed to create order", map[string]interface{}{"order_id": order.ID})
