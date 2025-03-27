@@ -91,6 +91,17 @@ func (s *userService) LoginUser(reqBody request.LoginRequest) (*string, error) {
 }
 
 func (s *userService) GetUserProfile(user *model.User) response.UserProfileResponse {
+
+	var preferences []response.PrefResponse
+
+	for _, preference := range user.UserPreferences {
+
+		preferences = append(preferences, response.PrefResponse{
+			ID:   preference.Tag.ID,
+			Name: preference.Tag.Name,
+		})
+	}
+
 	res := response.UserProfileResponse{
 		Email:       user.Email,
 		FirstName:   user.FirstName,
@@ -100,16 +111,26 @@ func (s *userService) GetUserProfile(user *model.User) response.UserProfileRespo
 		Weight:      user.Weight,
 		Height:      user.Height,
 		Experience:  user.Experience,
-		Goal: response.GoalResponse{ // if preloaded
+		Goal: &response.GoalResponse{
 			ID:   user.Goal.ID,
 			Name: user.Goal.Name,
 		},
+		Preferences: preferences,
 	}
 
 	return res
 }
 
 func (s *userService) UpdateUserProfile(user *model.User, req request.UpdateUserProfileRequest) error {
+
+	tx := s.db.Begin()
+
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Log.Error("error ", r)
+			tx.Rollback()
+		}
+	}()
 
 	if req.Email != nil {
 		existingUser, err := s.userRepo.FindByEmail(*req.Email)
@@ -148,11 +169,33 @@ func (s *userService) UpdateUserProfile(user *model.User, req request.UpdateUser
 		user.GoalID = req.GoalID
 	}
 
-	err := s.userRepo.SaveUser(user)
+	if req.Preferences != nil {
+		var newPrefs []model.UserPreference
+		for _, tagID := range req.Preferences {
+			newPrefs = append(newPrefs, model.UserPreference{
+				UserID: user.ID,
+				TagID:  tagID,
+			})
+		}
+		if err := tx.Model(user).
+			Association("UserPreferences").
+			Replace(newPrefs); err != nil {
+			return err
+		}
+	}
+
+	err := s.userRepo.SaveUserTransaction(tx, user)
 	if err != nil {
+		tx.Rollback()
 		logger.Log.WithError(err).Error("failed to update user profile")
 		return err
 	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
 	return nil
 }
 

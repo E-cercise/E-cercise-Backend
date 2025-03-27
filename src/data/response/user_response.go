@@ -14,10 +14,16 @@ type UserProfileResponse struct {
 	Weight      *float64             `json:"weight,omitempty"`
 	Height      *float64             `json:"height,omitempty"`
 	Experience  *enum.UserExperience `json:"experience,omitempty"`
-	Goal        GoalResponse         `json:"goal,omitempty"`
+	Goal        *GoalResponse        `json:"goal,omitempty"`
+	Preferences []PrefResponse       `json:"preferences,omitempty"`
 }
 
 type GoalResponse struct {
+	ID   uuid.UUID `json:"id"`
+	Name string    `json:"name"`
+}
+
+type PrefResponse struct {
 	ID   uuid.UUID `json:"id"`
 	Name string    `json:"name"`
 }
