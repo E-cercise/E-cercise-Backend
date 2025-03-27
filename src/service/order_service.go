@@ -17,7 +17,7 @@ import (
 )
 
 type OrderService interface {
-	CreateOrder(req request.PlaceOrderCartRequest, user *model.User) error
+	CreateOrder(req request.PlaceOrderCartRequest, user *model.User) (*uuid.UUID, error)
 	GetOrderDetail(orderID uuid.UUID, user *model.User) (*response.OrderDetailResponse, error)
 	UpdateOrderStatus(orderID uuid.UUID) error
 	GetMyOrders(userID uuid.UUID, orderStatus enum.OrderStatus) (*response.MyOrderResponse, error)
@@ -35,7 +35,7 @@ func NewOrderService(db *gorm.DB, cartRepo repository.CartRepository, equipmentR
 	return &orderService{db: db, cartRepo: cartRepo, equipmentRepo: equipmentRepo, orderRepo: orderRepo}
 }
 
-func (s *orderService) CreateOrder(req request.PlaceOrderCartRequest, user *model.User) error {
+func (s *orderService) CreateOrder(req request.PlaceOrderCartRequest, user *model.User) (*uuid.UUID, error) {
 	logger.Log.Info("Starting order creation process", map[string]interface{}{"user_id": user.ID})
 
 	tx := s.db.Begin()
@@ -51,7 +51,7 @@ func (s *orderService) CreateOrder(req request.PlaceOrderCartRequest, user *mode
 	if err != nil {
 		logger.Log.WithError(err).Error("Failed to get cart for user", map[string]interface{}{"user_id": user.ID})
 		tx.Rollback()
-		return fmt.Errorf("failed to get cart for user %s: %v", user.ID, err)
+		return nil, fmt.Errorf("failed to get cart for user %s: %v", user.ID, err)
 	}
 
 	cartItemsMap := make(map[uuid.UUID]model.LineEquipment)
@@ -70,7 +70,7 @@ func (s *orderService) CreateOrder(req request.PlaceOrderCartRequest, user *mode
 	if err := s.orderRepo.CreateOrder(tx, order); err != nil {
 		tx.Rollback()
 		logger.Log.WithError(err).Error("Failed to create order", map[string]interface{}{"order_id": order.ID})
-		return fmt.Errorf("failed to create order: %v", err)
+		return nil, fmt.Errorf("failed to create order: %v", err)
 	}
 
 	var totalPrice float64
@@ -81,21 +81,21 @@ func (s *orderService) CreateOrder(req request.PlaceOrderCartRequest, user *mode
 			errMsg := fmt.Sprintf("Line item not found in cart: %s", lineEquipmentID)
 			logger.Log.Error(errMsg, map[string]interface{}{"user_id": user.ID, "line_equipment_id": lineEquipmentID})
 			tx.Rollback()
-			return errors.New(errMsg)
+			return nil, errors.New(errMsg)
 		}
 
 		equipmentOption, err := s.equipmentRepo.FindOptionByID(cartItem.EquipmentOptionID)
 		if err != nil {
 			logger.Log.WithError(err).Error("Failed to fetch equipment option", map[string]interface{}{"equipment_option_id": cartItem.EquipmentOptionID})
 			tx.Rollback()
-			return fmt.Errorf("failed to fetch equipment option %s: %v", cartItem.EquipmentOptionID, err)
+			return nil, fmt.Errorf("failed to fetch equipment option %s: %v", cartItem.EquipmentOptionID, err)
 		}
 
 		equipmentOption.RemainingProducts -= cartItem.Quantity
 		if err := tx.Save(equipmentOption).Error; err != nil {
 			logger.Log.WithError(err).Error("Failed to update inventory", map[string]interface{}{"equipment_option_id": cartItem.EquipmentOptionID})
 			tx.Rollback()
-			return fmt.Errorf("failed to update inventory: %v", err)
+			return nil, fmt.Errorf("failed to update inventory: %v", err)
 		}
 
 		totalPrice += float64(cartItem.Quantity) * equipmentOption.Price
@@ -104,7 +104,7 @@ func (s *orderService) CreateOrder(req request.PlaceOrderCartRequest, user *mode
 		if err := tx.Save(&cartItem).Error; err != nil {
 			logger.Log.WithError(err).Error("Failed to update cart item to order item", map[string]interface{}{"cart_item_id": cartItem.ID})
 			tx.Rollback()
-			return fmt.Errorf("failed to update cart item to order item: %v", err)
+			return nil, fmt.Errorf("failed to update cart item to order item: %v", err)
 		}
 		logger.Log.Info("Updated cart item to be part of the order", map[string]interface{}{"cart_item_id": cartItem.ID, "order_id": order.ID})
 	}
@@ -113,7 +113,7 @@ func (s *orderService) CreateOrder(req request.PlaceOrderCartRequest, user *mode
 	if err := s.orderRepo.SaveOrder(tx, order); err != nil {
 		tx.Rollback()
 		logger.Log.WithError(err).Error("Failed to save order", map[string]interface{}{"order_id": order.ID})
-		return fmt.Errorf("failed to save order: %v", err)
+		return nil, fmt.Errorf("failed to save order: %v", err)
 	}
 
 	logger.Log.Info("Order created successfully", map[string]interface{}{"order_id": order.ID, "total_price": totalPrice})
@@ -121,9 +121,9 @@ func (s *orderService) CreateOrder(req request.PlaceOrderCartRequest, user *mode
 	if err := tx.Commit().Error; err != nil {
 		logger.Log.WithError(err).Error("error committing transaction")
 		tx.Rollback()
-		return err
+		return nil, err
 	}
-	return nil
+	return &order.ID, nil
 
 }
 
