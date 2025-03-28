@@ -81,9 +81,7 @@ func (r *orderRepository) FindOrderList(q request.OrderListRequest) ([]model.Ord
 	}
 
 	err := query.
-		Preload("LineEquipments", func(db *gorm.DB) *gorm.DB {
-			return db.Limit(1)
-		}).
+		Preload("LineEquipments").
 		Preload("LineEquipments.EquipmentOption").
 		Find(&orders).Error
 

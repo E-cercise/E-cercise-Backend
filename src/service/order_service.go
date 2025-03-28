@@ -307,6 +307,12 @@ func (s *orderService) GetOrderList(q request.OrderListRequest) (*response.Order
 
 	for _, order := range orders {
 		logger.Log.Info(fmt.Sprintf("Order with ID: %s with Status: %s", order.ID, order.OrderStatus))
+
+		if len(order.LineEquipments) == 0 {
+			logger.Log.Warn(fmt.Sprintf("Order ID %s has no line items", order.ID))
+			continue
+		}
+
 		equipment, err := s.equipmentRepo.FindByID(order.LineEquipments[0].EquipmentID)
 		if err != nil {
 			logger.Log.WithError(err).Error("Failed to get equipment")
