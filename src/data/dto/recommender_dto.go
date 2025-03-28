@@ -1,5 +1,7 @@
 package dto
 
+import "github.com/google/uuid"
+
 type RecommenderRequest struct {
 	UserType    string                  `json:"user_type"`
 	Gender      string                  `json:"gender"`
@@ -19,10 +21,9 @@ type RecommenderPreference struct {
 }
 
 type RecommendedResponseDTO []struct {
-	ID          string  `json:"id"`
-	EquipmentID string  `json:"equipment_id"`
-	Name        string  `json:"name"`
-	Weight      float64 `json:"weight"`
-	Price       float64 `json:"price"`
-	Score       float64 `json:"score"`
+	EquipmentID      string    `json:"equipment_id"`
+	EquipmentName    string    `json:"equipment_name"`
+	OptionID         uuid.UUID `json:"option_id"`
+	Price            float64   `json:"price"`
+	RemainingProduct int64     `json:"remaining_product,omitempty"`
 }

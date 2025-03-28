@@ -80,7 +80,6 @@ func (s *equipmentService) GetEquipmentData(q request.EquipmentListRequest, pagi
 func (s *equipmentService) GetRecommendEquipmentData(user *model.User) (*response.EquipmentsResponse, error) {
 	var resp response.EquipmentsResponse
 
-	// Build payload for recommender
 	payload := dto.RecommenderRequest{
 		UserType:   strings.ToLower(string(user.Experience)),
 		Gender:     strings.ToLower(string(user.Gender)),
@@ -99,7 +98,6 @@ func (s *equipmentService) GetRecommendEquipmentData(user *model.User) (*respons
 		})
 	}
 
-	// Make POST request to recommender
 	recommenderURL := fmt.Sprintf("%s/recommend", config.RecommendationServiceBaseUrl)
 	res, err := helper.PostJSON(recommenderURL, payload)
 	if err != nil {
@@ -114,54 +112,27 @@ func (s *equipmentService) GetRecommendEquipmentData(user *model.User) (*respons
 		return nil, err
 	}
 
-	// Convert option IDs to UUIDs
-	var optionIDs []uuid.UUID
 	for _, item := range recommended {
-		if id, err := uuid.Parse(item.ID); err == nil {
-			optionIDs = append(optionIDs, id)
-		}
-	}
-
-	equipments, err := s.equipmentRepo.FindEquipmentsByOptionIDs(optionIDs)
-	if err != nil {
-		logger.Log.WithError(err).Error("failed to fetch equipment by option IDs")
-		return nil, err
-	}
-
-	bestOptions := make(map[string]string)
-	for _, item := range recommended {
-		bestOptions[item.EquipmentID] = item.ID
-	}
-
-	for _, eq := range equipments {
-		var selectedOption *model.EquipmentOption
-		for _, opt := range eq.EquipmentOptions {
-			if bestOptions[eq.ID.String()] == opt.ID.String() {
-				selectedOption = &opt
-				break
-			}
-		}
-		if selectedOption == nil {
-			continue
+		option, err := s.equipmentRepo.FindOptionByID(item.OptionID)
+		if err != nil {
+			logger.Log.WithError(err).Error("failed to fetch option ID", "optID", item.OptionID)
+			return nil, err
 		}
 
-		primaryImg := helper.FindPrimaryImage(*selectedOption)
+		primaryImg := helper.FindPrimaryImage(*option)
 		var imagePath string
 		if primaryImg != nil {
 			imagePath = primaryImg.CloudinaryPath
 		}
 
-		resp.Equipments = append(resp.Equipments, response.Equipment{
-			ID:              eq.ID,
-			Name:            eq.Name,
-			Price:           selectedOption.Price,
-			ImagePath:       imagePath,
-			MuscleGroupUsed: helper.GetMuscleGroupIDFromEquipment(eq),
-			RemainingProduct: func() *int64 {
-				v := int64(selectedOption.RemainingProducts)
-				return &v
-			}(),
-		})
+		newRecEq := response.Equipment{
+			ID:               option.EquipmentID,
+			Name:             helper.AbbreviateEquipmentName(item.EquipmentName, option.Name),
+			Price:            option.Price,
+			ImagePath:        imagePath,
+			RemainingProduct: &item.RemainingProduct,
+		}
+		resp.Equipments = append(resp.Equipments, newRecEq)
 	}
 
 	return &resp, nil

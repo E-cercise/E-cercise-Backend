@@ -63,24 +63,16 @@ func (c *EquipmentController) GetAllEquipments(ctx *fiber.Ctx) error {
 		"total_rows":  paginator.TotalRows,
 	}
 
-	currentUser := ctx.Locals("currentUser")
-	if currentUser != nil {
-		user, err := helper.GetCurrentUser(ctx)
+	user, _ := helper.GetCurrentUser(ctx)
+	if user != nil && user.Role == enum.RoleUser {
+		recommendationEquipments, err := c.EquipmentService.GetRecommendEquipmentData(user)
 		if err != nil {
-			return err
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": err.Error(),
+			})
 		}
-
-		if user.Role != enum.RoleAdmin {
-			recommendationEquipments, err := c.EquipmentService.GetRecommendEquipmentData(user)
-			if err != nil {
-				return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-					"error": err.Error(),
-				})
-			}
-			resp["recommendation_equipments"] = &recommendationEquipments
-		}
+		resp["recommendation_equipments"] = &recommendationEquipments
 	}
-
 	return ctx.Status(fiber.StatusOK).JSON(resp)
 }
 
