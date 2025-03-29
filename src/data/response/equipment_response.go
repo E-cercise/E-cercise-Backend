@@ -40,7 +40,7 @@ type CategoriesResponse struct {
 }
 
 type Category struct {
-	Value int64  `json:"value"`
+	Value string  `json:"value"`
 	Label string `json:"label"`
 }
 

@@ -573,9 +573,9 @@ func (s *equipmentService) GetAllEquipmentCategories() (*response.CategoriesResp
 
 	var resp response.CategoriesResponse
 
-	for i, equipment := range equipments {
+	for _, equipment := range equipments {
 		category := response.Category{
-			Value: int64(i + 1),
+			Value: equipment.Category,
 			Label: equipment.Category,
 		}
 		resp.Categories = append(resp.Categories, category)
