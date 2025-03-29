@@ -194,6 +194,20 @@ func (s *userService) UpdateUserProfile(user *model.User, req request.UpdateUser
 				TagID:  tagID,
 			})
 		}
+
+		var count int64
+		if err := tx.Model(&model.Tag{}).
+			Where("id IN ?", req.Preferences).
+			Count(&count).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+
+		if count != int64(len(req.Preferences)) {
+			tx.Rollback()
+			return errors.New("some provided tag IDs do not exist")
+		}
+
 		if err := s.userRepo.UpdateUserPreferences(tx, user, newPrefs); err != nil {
 			tx.Rollback()
 			logger.Log.WithError(err).Error("failed to update user preferences")

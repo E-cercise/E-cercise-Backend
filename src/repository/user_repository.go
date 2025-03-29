@@ -64,5 +64,6 @@ func (r *userRepository) SaveUserTransaction(tx *gorm.DB, user *model.User) erro
 }
 
 func (r *userRepository) UpdateUserPreferences(tx *gorm.DB, user *model.User, pref []model.UserPreference) error {
+
 	return tx.Model(user).Association("UserPreferences").Replace(pref)
 }
