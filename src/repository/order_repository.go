@@ -47,9 +47,7 @@ func (r *orderRepository) UpdateOrderStatusByID(orderID uuid.UUID, orderStatus e
 func (r *orderRepository) FindByStatus(userID uuid.UUID, orderStatus enum.OrderStatus) ([]model.Order, error) {
 	var orders []model.Order
 	err := r.db.
-		Preload("LineEquipments", func(db *gorm.DB) *gorm.DB {
-			return db.Limit(1)
-		}).
+		Preload("LineEquipments").
 		Preload("LineEquipments.EquipmentOption").
 		Where("user_id = ? AND order_status = ?", userID, orderStatus).
 		Find(&orders).Error
