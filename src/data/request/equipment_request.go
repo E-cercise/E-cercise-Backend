@@ -8,9 +8,12 @@ import (
 type EquipmentListRequest struct {
 	Q           string  `query:"q"`
 	MuscleGroup string  `query:"muscle_group"`
-	Category    string  `query:"category"`
 	MinBudget   float64 `query:"min_budget"`
 	MaxBudget   float64 `query:"max_budget"`
+}
+
+type EquipmentsInCategoryRequest struct {
+	Category    string  `query:"category"`
 }
 
 type EquipmentIDsRequest struct {

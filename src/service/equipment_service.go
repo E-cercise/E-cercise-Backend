@@ -26,6 +26,7 @@ type EquipmentService interface {
 	DeleteEquipment(eqID uuid.UUID, context context.Context) error
 	GetAllEquipmentCategories() (*response.CategoriesResponse, error)
 	GetAllEquipmentsDetail(eqIDs []uuid.UUID) (*response.EquipmentDetailComparisonResponse, error)
+	GetAllEquipmentsInCategory(req request.EquipmentsInCategoryRequest) (*response.EquipmentsResponse, error)
 }
 
 type equipmentService struct {
@@ -44,7 +45,7 @@ func (s *equipmentService) GetEquipmentData(q request.EquipmentListRequest, pagi
 	if q.MuscleGroup != "" {
 		muscleGroup = strings.Split(q.MuscleGroup, ",")
 	}
-	equipments, err := s.equipmentRepo.FindEquipmentList(q.Q, muscleGroup, paginator, q.Category, int(q.MinBudget), int(q.MaxBudget))
+	equipments, err := s.equipmentRepo.FindEquipmentList(q.Q, muscleGroup, paginator, int(q.MinBudget), int(q.MaxBudget))
 
 	if err != nil {
 		logger.Log.WithError(err).Error("error during find all equipments")
@@ -658,5 +659,37 @@ func (s *equipmentService) GetAllEquipmentsDetail(eqIDs []uuid.UUID) (*response.
 		Equipments: sortedEquipments,
 	}
 
+	return &resp, nil
+}
+
+func (s *equipmentService) GetAllEquipmentsInCategory(req request.EquipmentsInCategoryRequest) (*response.EquipmentsResponse, error) {
+	equipments, err := s.equipmentRepo.FindEquipmentsByCategory(req.Category)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp response.EquipmentsResponse
+
+	for _, equipment := range equipments {
+		primaryImage := helper.FindPrimaryImageFromEquipment(equipment)
+		var imagePath string
+		if primaryImage == nil {
+			newName := strings.ReplaceAll(equipment.Name, " ", "+")
+			imagePath = fmt.Sprintf("https://placehold.co/600x400?text=%v/png", newName)
+		} else {
+			imagePath = primaryImage.CloudinaryPath
+		}
+
+		price := findEquipmentMinimumPrice(equipment)
+		abbName := helper.AbbreviateEquipmentName(equipment.Name, equipment.EquipmentOptions[0].Name)
+		eq := response.Equipment{
+			ID:              equipment.ID,
+			Name:            abbName,
+			Price:           price,
+			ImagePath:       imagePath,
+			MuscleGroupUsed: helper.GetMuscleGroupIDFromEquipment(equipment),
+		}
+		resp.Equipments = append(resp.Equipments, eq)
+	}
 	return &resp, nil
 }
