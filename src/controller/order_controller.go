@@ -32,13 +32,15 @@ func (c *OrderController) CreateOrder(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	if err = c.OrderService.CreateOrder(req, user); err != nil {
+	orderID, err := c.OrderService.CreateOrder(req, user);
+	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": err.Error(),
 		})
 	}
 
 	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"order_id": orderID,
 		"message": "Order created successfully",
 	})
 }
@@ -66,7 +68,12 @@ func (c *OrderController) GetOrderDetail(ctx *fiber.Ctx) error {
 func (c *OrderController) UpdateOrderStatus(ctx *fiber.Ctx) error {
 	orderID := uuid.MustParse(ctx.Params("id"))
 
-	err := c.OrderService.UpdateOrderStatus(orderID)
+	user, err := helper.GetCurrentUser(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = c.OrderService.UpdateOrderStatus(orderID, user)
 	if err != nil {
 		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": err.Error(),

@@ -44,6 +44,7 @@ CREATE TYPE public.order_status AS ENUM (
     'Placed',
     'Paid',
     'Shipped out',
+    'To Receive',
     'Received'
 );
 

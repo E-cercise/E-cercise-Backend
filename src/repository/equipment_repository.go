@@ -64,6 +64,7 @@ func (r *equipmentRepository) FindEquipmentList(q string, muscleGroup []string, 
 			query = query.Joins("JOIN equipment_options eo ON eo.equipment_id = equipment.id").
 				Where("eo.price <= ?", maxBudget)
 		}
+		query = query.Select("DISTINCT equipment.*")
 	}
 
 	if len(muscleGroup) > 0 {

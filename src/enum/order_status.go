@@ -8,10 +8,11 @@ import (
 type OrderStatus string
 
 const (
-	OrderPlaced   OrderStatus = "Placed"
-	OrderPaid     OrderStatus = "Paid"
-	OrderShipped  OrderStatus = "Shipped out"
-	OrderReceived OrderStatus = "Received"
+	OrderPlaced    OrderStatus = "Placed"
+	OrderPaid      OrderStatus = "Paid"
+	OrderShipped   OrderStatus = "Shipped out"
+	OrderToReceive OrderStatus = "To Receive"
+	OrderReceived  OrderStatus = "Received"
 )
 
 func (r *OrderStatus) Scan(value interface{}) error {
