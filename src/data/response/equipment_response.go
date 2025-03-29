@@ -27,20 +27,13 @@ type EquipmentsResponse struct {
 }
 
 type Equipment struct {
-	ID              uuid.UUID `json:"ID"`
-	Name            string    `json:"name"`
-	Price           float64   `json:"price"`
-	ImagePath       string    `json:"image_path"`
-	MuscleGroupUsed []string  `json:"muscle_group_used"`
-	//Rating float64 `json:"rating"`
-	RemainingProduct *int64   `json:"remaining_product,omitempty"`
+	ID               uuid.UUID `json:"ID"`
+	Name             string    `json:"name"`
+	Price            float64   `json:"price"`
+	ImagePath        string    `json:"image_path"`
+	MuscleGroupUsed  []string  `json:"muscle_group_used"`
+	RemainingProduct *int64    `json:"remaining_product,omitempty"`
 }
-
-//type Options struct {
-//	RemainingProduct int64   `json:"remaining_product"`
-//	Price            float64 `json:"price"`
-//	Weight           float64 `json:"weight"`
-//}
 
 type CategoriesResponse struct {
 	Categories []Category `json:"categories"`

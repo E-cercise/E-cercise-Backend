@@ -30,6 +30,12 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;
 COMMENT ON EXTENSION "uuid-ossp" IS 'generate universally unique identifiers (UUIDs)';
 
 
+CREATE TYPE public.gender_type AS ENUM (
+    'Male',
+    'Female'
+);
+
+
 --
 -- Name: order_status; Type: TYPE; Schema: public; Owner: -
 --
@@ -42,11 +48,16 @@ CREATE TYPE public.order_status AS ENUM (
     'Received'
 );
 
+
+--
+-- Name: payment_type; Type: TYPE; Schema: public; Owner: -
+--
+
 CREATE TYPE public.payment_type AS ENUM (
     'Unpaid',
-	'QRPromptPay',
-	'Cash',
-	'CreditOrDebitCard'
+    'QRPromptPay',
+    'Cash',
+    'CreditOrDebitCard'
 );
 
 
@@ -57,6 +68,19 @@ CREATE TYPE public.payment_type AS ENUM (
 CREATE TYPE public.role_type AS ENUM (
     'USER',
     'ADMIN'
+);
+
+
+--
+-- Name: user_experience; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.user_experience AS ENUM (
+    'Beginner',
+    'Intermediate',
+    'Advanced',
+    'Athlete',
+    'Elderly'
 );
 
 
@@ -138,6 +162,16 @@ CREATE TABLE public.equipment_options (
 
 
 --
+-- Name: goals; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.goals (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    name character varying(50) NOT NULL
+);
+
+
+--
 -- Name: images; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -180,17 +214,39 @@ CREATE TABLE public.muscle_groups (
 -- Name: orders; Type: TABLE; Schema: public; Owner: -
 --
 
--- Table creation with auditing columns included
 CREATE TABLE public.orders (
-    id uuid DEFAULT public.uuid_generate_v4() PRIMARY KEY,
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
     user_id uuid NOT NULL,
     delivery_address text NOT NULL,
-    payment_type public.payment_type DEFAULT 'Unpaid'::public.payment_type NOT NULL,
+    payment_type public.payment_type,
     total_price numeric(10,2) NOT NULL,
     order_status public.order_status DEFAULT 'Placed'::public.order_status NOT NULL,
-    created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );
+
+
+--
+-- Name: tags; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.tags (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    name character varying(50) NOT NULL
+);
+
+
+--
+-- Name: user_preferences; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_preferences (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    user_id uuid NOT NULL,
+    tag_id uuid NOT NULL
+);
+
+
 --
 -- Name: users; Type: TABLE; Schema: public; Owner: -
 --
@@ -201,10 +257,17 @@ CREATE TABLE public.users (
     last_name character varying(100) NOT NULL,
     email character varying(255) NOT NULL,
     password character varying(255) NOT NULL,
-    role text DEFAULT 'USER'::text NOT NULL,
-    address text,
-    phone_number character varying(20)
+    role public.role_type DEFAULT 'USER'::public.role_type NOT NULL,
+    address text NOT NULL,
+    phone_number character varying(20) NOT NULL,
+    weight numeric(10,2) NOT NULL,
+    height numeric(10,2) NOT NULL,
+    experience public.user_experience NOT NULL,
+    gender public.gender_type NOT NULL,
+    age bigint NOT NULL,
+    goal_id uuid
 );
+
 
 
 --
@@ -9101,12 +9164,6 @@ INSERT INTO public.attributes VALUES ('b0030fa7-0d37-492f-8778-714f6eb1e181', '7
 INSERT INTO public.attributes VALUES ('99e9aa84-4ba5-4eef-8ac8-29c084627437', '75240443-0dee-4017-8aab-d0ab2db960eb', 'Size', '15 lb');
 INSERT INTO public.attributes VALUES ('0e2cbd83-099a-4069-846f-0c964866cb76', '75240443-0dee-4017-8aab-d0ab2db960eb', 'Date First Available', 'March 1, 2021');
 
-
---
--- Data for Name: carts; Type: TABLE DATA; Schema: public; Owner: -
---
-
-INSERT INTO public.carts VALUES ('797427c0-b867-47f8-af57-52cdb069e7e2', '6820e660-730f-430f-8f7a-8d08363c6d47');
 
 
 --
@@ -28740,13 +28797,79 @@ INSERT INTO public.muscle_groups VALUES ('ft_45', 'Outer lower leg muscle [LT]',
 -- Data for Name: orders; Type: TABLE DATA; Schema: public; Owner: -
 --
 
+INSERT INTO public.carts VALUES ('19b887d4-9623-426e-b20c-0d7cec7d6f83', '6249fc0d-2ef8-4814-b17c-8eca08373eee');
+
+INSERT INTO public.goals VALUES ('9ab65a93-1253-4753-bd8d-405617330397', 'tone');
+INSERT INTO public.goals VALUES ('dd3c5089-a82a-450f-8494-7bf2ca79dc38', 'build-muscle');
+INSERT INTO public.goals VALUES ('2c22fe8c-6b17-4798-8610-b1a97c817cbe', 'weight-loss');
+INSERT INTO public.goals VALUES ('20d5d672-3f82-4733-9d59-156bb4a48a83', 'rehab');
+INSERT INTO public.goals VALUES ('7802bc8d-62e6-4017-afe7-4b07c1f426a5', 'mobility');
+INSERT INTO public.goals VALUES ('f31fefda-eb99-4c3a-8b1d-1abcb0d4fbef', 'strength');
+INSERT INTO public.goals VALUES ('177c9d0d-32a6-4ebf-a203-b51dab1862fd', 'endurance');
+INSERT INTO public.goals VALUES ('be136ae2-cda3-45a1-8490-a68521eb15c1', 'flexibility');
+INSERT INTO public.goals VALUES ('61a1f9fb-7375-4ce5-ad2b-d3c44c11fc7b', 'posture-correction');
+INSERT INTO public.goals VALUES ('b19ce61c-0df6-4344-9bc5-180467c9881d', 'pre/post-natal');
+INSERT INTO public.goals VALUES ('ad5e6216-fcc4-4945-9cd5-eca5d3c66c17', 'athletic-training');
+INSERT INTO public.goals VALUES ('6d4086bf-f43e-43a0-8e68-71ab2d8504db', 'injury-prevention');
+INSERT INTO public.goals VALUES ('94d10769-73e0-41d3-a594-56ff516705e3', 'functionality');
 
 
---
--- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: -
---
+INSERT INTO public.tags VALUES ('68ebaf0b-fb9a-4b45-ba96-2bfced45cd39', 'abs');
+INSERT INTO public.tags VALUES ('946c98b9-d28c-4fa8-b253-2b227e157b97', 'core');
+INSERT INTO public.tags VALUES ('adb62db3-c83c-4599-b4c4-c6e004ec12ee', 'arms');
+INSERT INTO public.tags VALUES ('695d60d3-fac2-4e32-bd4c-4e9b070d790f', 'shoulders');
+INSERT INTO public.tags VALUES ('2e43c0f5-dae3-4eac-af45-0988746cf3eb', 'chest');
+INSERT INTO public.tags VALUES ('7e581082-7214-40d4-824f-20432b2e7be7', 'back');
+INSERT INTO public.tags VALUES ('d6d0eab2-866f-4427-9271-d81465cac9de', 'legs');
+INSERT INTO public.tags VALUES ('08dbe0c9-74d6-488e-a0a1-3fd6c12ae3de', 'glutes');
+INSERT INTO public.tags VALUES ('b17ebb43-105c-47fd-8840-ac30a34090d2', 'full-body');
+INSERT INTO public.tags VALUES ('8629c67c-5d2d-439d-b2cc-b15da3708443', 'bodyweight');
+INSERT INTO public.tags VALUES ('760a7d84-c219-456b-a06a-61ed9af2a643', 'resistance');
+INSERT INTO public.tags VALUES ('7c28fcc5-2e80-4ddc-a987-70fadcb88b07', 'weighted');
+INSERT INTO public.tags VALUES ('9b421449-1967-4973-b21d-8e4b529cda8f', 'calisthenics');
+INSERT INTO public.tags VALUES ('0b681c4a-e3e8-4283-9818-3e734cc9a141', 'stretching');
+INSERT INTO public.tags VALUES ('940253fd-5a99-47c1-ac3f-b9756bc09ac3', 'cardio');
+INSERT INTO public.tags VALUES ('e129dc5b-ff6a-4244-88a5-3d6e4caef301', 'beginner-friendly');
+INSERT INTO public.tags VALUES ('ef3a4e32-7663-488a-8d8e-57693179ae27', 'intermediate');
+INSERT INTO public.tags VALUES ('f9f59523-65c8-4310-b2e0-28b950731d5f', 'advanced');
+INSERT INTO public.tags VALUES ('1b3d162b-e313-491c-b591-f60a8962f160', 'athlete');
+INSERT INTO public.tags VALUES ('1d9ece5f-d240-4adc-bafa-4f67cf6abb7a', 'tone');
+INSERT INTO public.tags VALUES ('da733d41-a4f5-4b2b-b098-085aa3f61518', 'build-muscle');
+INSERT INTO public.tags VALUES ('8da2f28d-5377-49a6-b578-a5cec750441c', 'weight-loss');
+INSERT INTO public.tags VALUES ('7f066a39-4cbb-476f-a61f-c789ea7f5e8f', 'endurance');
+INSERT INTO public.tags VALUES ('a3977862-7ebc-4605-bb4b-ac45fe54d7e5', 'rehab');
+INSERT INTO public.tags VALUES ('7e53053f-25df-4feb-bcf0-c951d3cfbd4d', 'mobility');
+INSERT INTO public.tags VALUES ('81e47d99-064e-4a9d-b621-5e4110e3d34a', 'flexibility');
+INSERT INTO public.tags VALUES ('0c33140a-5a25-42da-a4ba-f339157d9fb3', 'low-impact');
+INSERT INTO public.tags VALUES ('1e4431dc-8745-4b6e-b344-669e269fd28e', 'joint-friendly');
+INSERT INTO public.tags VALUES ('901765db-edca-47ed-be8b-408833a2e73a', 'post-injury');
+INSERT INTO public.tags VALUES ('8f955e6e-14e3-4a6c-9582-04b76e91333c', 'elderly');
+INSERT INTO public.tags VALUES ('64e68739-9cd1-402f-b23d-a9640ecb4eee', 'pull-up');
+INSERT INTO public.tags VALUES ('d500634a-b9ad-4d1d-ac1b-d27eeacdc66a', 'dip');
+INSERT INTO public.tags VALUES ('e047e32a-8265-44a4-a290-6ac5819eb14b', 'ab-machine');
+INSERT INTO public.tags VALUES ('b62744bf-88e8-431b-8b38-3f6e37a2f679', 'rowing');
+INSERT INTO public.tags VALUES ('c158abda-ce6f-4980-b2e1-dfe542941f93', 'cable');
+INSERT INTO public.tags VALUES ('3cc0f8e9-924a-4467-ad4e-0dd49221b45f', 'tower');
+INSERT INTO public.tags VALUES ('b63c22a9-f013-49e0-9346-565eee6760f1', 'barbell-compatible');
+INSERT INTO public.tags VALUES ('7257d021-488d-4f43-bb42-6fda3b3ce4ed', 'compact');
+INSERT INTO public.tags VALUES ('d26e0f7c-ebe0-4b61-b9cb-dd22c4a4dd13', 'adjustable');
+INSERT INTO public.tags VALUES ('0d2751dc-5b91-48ce-bc7a-086af40496f5', 'budget');
+INSERT INTO public.tags VALUES ('f6bf7d19-2589-41c9-ac0a-7bdf388e8cac', 'foldable');
+INSERT INTO public.tags VALUES ('4dceffb8-de2e-47b1-aef2-59365a9318d1', 'portable');
+INSERT INTO public.tags VALUES ('939e9c19-11f4-4c61-9b9d-933a30229e78', 'multi-function');
+INSERT INTO public.tags VALUES ('83a55006-fd53-4898-b01f-a80e4c32660b', 'gym-grade');
 
-INSERT INTO public.users VALUES ('6820e660-730f-430f-8f7a-8d08363c6d47', 'Preawpan', 'Thamapipol', 'godjangg@gmail.com', '$2a$10$gPVosADLmCU4oWBubGnwC.vCAAM2gShu2gxqfeq2UEmkLwxoLz8.S', 'ADMIN', 'eiei hello', '0812345678');
+
+
+INSERT INTO public.users VALUES ('6249fc0d-2ef8-4814-b17c-8eca08373eee', 'Preawpan', 'Thamapipol', 'godjangg@gmail.com', '$2a$10$RUXyyP3gBjNLPPosOIKrJe86iRVst7BI.o5TcpCO57MkPCZLCSw7C', 'ADMIN', 'eiei hello', '0812345678', -80431587.25, 20743092.78, 'Advanced', 'Female', 22, '9ab65a93-1253-4753-bd8d-405617330397');
+
+
+
+
+
+
+
+
 
 
 --
@@ -28798,6 +28921,14 @@ ALTER TABLE ONLY public.equipment
 
 
 --
+-- Name: goals goals_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.goals
+    ADD CONSTRAINT goals_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: images images_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -28820,6 +28951,23 @@ ALTER TABLE ONLY public.line_equipments
 ALTER TABLE ONLY public.muscle_groups
     ADD CONSTRAINT muscle_groups_pkey PRIMARY KEY (id);
 
+
+--
+-- Name: orders orders_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.orders
+    ADD CONSTRAINT orders_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: tags tags_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tags
+    ADD CONSTRAINT tags_pkey PRIMARY KEY (id);
+
+
 --
 -- Name: carts uni_carts_user_id; Type: CONSTRAINT; Schema: public; Owner: -
 --
@@ -28829,11 +28977,35 @@ ALTER TABLE ONLY public.carts
 
 
 --
+-- Name: goals uni_goals_name; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.goals
+    ADD CONSTRAINT uni_goals_name UNIQUE (name);
+
+
+--
+-- Name: tags uni_tags_name; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tags
+    ADD CONSTRAINT uni_tags_name UNIQUE (name);
+
+
+--
 -- Name: users uni_users_email; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT uni_users_email UNIQUE (email);
+
+
+--
+-- Name: user_preferences user_preferences_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_preferences
+    ADD CONSTRAINT user_preferences_pkey PRIMARY KEY (id);
 
 
 --
@@ -28897,7 +29069,15 @@ ALTER TABLE ONLY public.equipment_muscle_groups
 --
 
 ALTER TABLE ONLY public.images
-    ADD CONSTRAINT fk_equipment_options_images FOREIGN KEY (equipment_option_id) REFERENCES public.equipment_options(id) ON DELETE CASCADE;
+    ADD CONSTRAINT fk_equipment_options_images FOREIGN KEY (equipment_option_id) REFERENCES public.equipment_options(id);
+
+
+--
+-- Name: line_equipments fk_line_equipments_equipment_option; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.line_equipments
+    ADD CONSTRAINT fk_line_equipments_equipment_option FOREIGN KEY (equipment_option_id) REFERENCES public.equipment_options(id);
 
 
 --
@@ -28909,11 +29089,27 @@ ALTER TABLE ONLY public.line_equipments
 
 
 --
+-- Name: user_preferences fk_user_preferences_tag; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_preferences
+    ADD CONSTRAINT fk_user_preferences_tag FOREIGN KEY (tag_id) REFERENCES public.tags(id);
+
+
+--
 -- Name: carts fk_users_cart; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.carts
     ADD CONSTRAINT fk_users_cart FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: users fk_users_goal; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT fk_users_goal FOREIGN KEY (goal_id) REFERENCES public.goals(id);
 
 
 --
@@ -28923,3 +29119,15 @@ ALTER TABLE ONLY public.carts
 ALTER TABLE ONLY public.orders
     ADD CONSTRAINT fk_users_orders FOREIGN KEY (user_id) REFERENCES public.users(id);
 
+
+--
+-- Name: user_preferences fk_users_user_preferences; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_preferences
+    ADD CONSTRAINT fk_users_user_preferences FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- PostgreSQL database dump complete
+--

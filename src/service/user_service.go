@@ -21,12 +21,13 @@ type UserService interface {
 }
 
 type userService struct {
-	db       *gorm.DB
-	userRepo repository.UserRepository
+	db           *gorm.DB
+	userRepo     repository.UserRepository
+	userPrefRepo repository.UserPreferenceRepository
 }
 
-func NewUserService(db *gorm.DB, userRepo repository.UserRepository) UserService {
-	return &userService{db: db, userRepo: userRepo}
+func NewUserService(db *gorm.DB, userRepo repository.UserRepository, userPrefRepo repository.UserPreferenceRepository) UserService {
+	return &userService{db: db, userRepo: userRepo, userPrefRepo: userPrefRepo}
 }
 
 func (s *userService) RegisterUser(reqBody request.RegisterRequest) error {
@@ -47,6 +48,12 @@ func (s *userService) RegisterUser(reqBody request.RegisterRequest) error {
 		LastName:    reqBody.LastName,
 		Address:     reqBody.Address,
 		PhoneNumber: reqBody.PhoneNumber,
+		Weight:      reqBody.Weight,
+		Height:      reqBody.Height,
+		Experience:  reqBody.Experience,
+		GoalID:      reqBody.GoalID,
+		Gender:      reqBody.Gender,
+		Age:         reqBody.Age,
 	}
 
 	err = s.userRepo.CreateUser(&newUser)
@@ -84,18 +91,48 @@ func (s *userService) LoginUser(reqBody request.LoginRequest) (*string, error) {
 }
 
 func (s *userService) GetUserProfile(user *model.User) response.UserProfileResponse {
+
+	var preferences []response.PrefResponse
+
+	for _, preference := range user.UserPreferences {
+
+		preferences = append(preferences, response.PrefResponse{
+			ID:   preference.Tag.ID,
+			Name: preference.Tag.Name,
+		})
+	}
+
 	res := response.UserProfileResponse{
 		Email:       user.Email,
 		FirstName:   user.FirstName,
 		LastName:    user.LastName,
 		Address:     user.Address,
 		PhoneNumber: user.PhoneNumber,
+		Weight:      user.Weight,
+		Height:      user.Height,
+		Experience:  user.Experience,
+		Goal: response.GoalResponse{
+			ID:   user.Goal.ID,
+			Name: user.Goal.Name,
+		},
+		Preferences: preferences,
+		Gender:      user.Gender,
+		Age:         user.Age,
 	}
 
 	return res
 }
 
 func (s *userService) UpdateUserProfile(user *model.User, req request.UpdateUserProfileRequest) error {
+
+	tx := s.db.Begin()
+
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Log.Error("error ", r)
+			tx.Rollback()
+		}
+	}()
 
 	if req.Email != nil {
 		existingUser, err := s.userRepo.FindByEmail(*req.Email)
@@ -121,10 +158,67 @@ func (s *userService) UpdateUserProfile(user *model.User, req request.UpdateUser
 		user.PhoneNumber = *req.PhoneNumber
 	}
 
-	err := s.userRepo.SaveUser(user)
+	if req.Weight != nil {
+		user.Weight = *req.Weight
+	}
+	if req.Height != nil {
+		user.Height = *req.Height
+	}
+	if req.Experience != nil {
+		user.Experience = *req.Experience
+	}
+	if req.GoalID != nil {
+		user.GoalID = *req.GoalID
+	}
+
+	if req.Age != nil {
+		user.Age = *req.Age
+	}
+
+	if req.Gender != nil {
+		user.Gender = *req.Gender
+	}
+
+	err := s.userRepo.SaveUserTransaction(tx, user)
 	if err != nil {
+		tx.Rollback()
 		logger.Log.WithError(err).Error("failed to update user profile")
 		return err
 	}
+
+	if req.Preferences != nil {
+		var newPrefs []model.UserPreference
+		for _, tagID := range req.Preferences {
+			newPrefs = append(newPrefs, model.UserPreference{
+				UserID: user.ID,
+				TagID:  tagID,
+			})
+		}
+
+		var count int64
+		if err := tx.Model(&model.Tag{}).
+			Where("id IN ?", req.Preferences).
+			Count(&count).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+
+		if count != int64(len(req.Preferences)) {
+			tx.Rollback()
+			return errors.New("some provided tag IDs do not exist")
+		}
+
+		if err := s.userRepo.UpdateUserPreferences(tx, user, newPrefs); err != nil {
+			tx.Rollback()
+			logger.Log.WithError(err).Error("failed to update user preferences")
+			return err
+		}
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
 	return nil
 }

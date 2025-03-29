@@ -10,6 +10,8 @@ type UserRepository interface {
 	FindByEmail(email string) (*model.User, error)
 	FindByID(userID string) (*model.User, error)
 	SaveUser(user *model.User) error
+	SaveUserTransaction(tx *gorm.DB, user *model.User) error
+	UpdateUserPreferences(tx *gorm.DB, user *model.User, pref []model.UserPreference) error
 }
 
 type userRepository struct {
@@ -38,6 +40,8 @@ func (r *userRepository) FindByEmail(email string) (*model.User, error) {
 func (r *userRepository) FindByID(userID string) (*model.User, error) {
 	var user model.User
 	result := r.db.Where("id = ?", userID).
+		Preload("Goal").
+		Preload("UserPreferences.Tag").
 		First(&user)
 
 	if result.Error != nil {
@@ -53,4 +57,13 @@ func (r *userRepository) FindByID(userID string) (*model.User, error) {
 
 func (r *userRepository) SaveUser(user *model.User) error {
 	return r.db.Save(user).Error
+}
+
+func (r *userRepository) SaveUserTransaction(tx *gorm.DB, user *model.User) error {
+	return tx.Save(user).Error
+}
+
+func (r *userRepository) UpdateUserPreferences(tx *gorm.DB, user *model.User, pref []model.UserPreference) error {
+
+	return tx.Model(user).Association("UserPreferences").Replace(pref)
 }

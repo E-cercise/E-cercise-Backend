@@ -23,6 +23,9 @@ func InitRouter(db *gorm.DB) *fiber.App {
 	muscleGroupRepo := repository.NewMuscleGroupRepository(db)
 	cartRepo := repository.NewCartRepository(db)
 	orderRepo := repository.NewOrderRepository(db)
+	userPreferenceRepo := repository.NewUserPreferenceRepository(db)
+	tagRepo := repository.NewTagRepository(db)
+	goalRepo := repository.NewGoalRepository(db)
 
 	cloudinaryService, err := service.NewCloudinaryService()
 
@@ -30,11 +33,14 @@ func InitRouter(db *gorm.DB) *fiber.App {
 		panic(err)
 	}
 
-	userService := service.NewUserService(db, userRepo)
+	userService := service.NewUserService(db, userRepo, userPreferenceRepo)
 	imageService := service.NewImageService(db, imageRepo, cloudinaryService)
 	equipmentService := service.NewEquipmentService(db, equipmentRepo, muscleGroupRepo, imageService)
 	cartService := service.NewCartService(db, cartRepo, equipmentRepo)
 	orderService := service.NewOrderService(db, cartRepo, equipmentRepo, orderRepo)
+	userPreferenceService := service.NewUserPreferenceService(userPreferenceRepo)
+	tagService := service.NewTagService(tagRepo)
+	goalService := service.NewGoalService(goalRepo)
 
 	authController := controller.NewAuthControllerImpl(userService)
 	equipmentController := controller.NewEquipmentControllerImpl(equipmentService)
@@ -42,6 +48,8 @@ func InitRouter(db *gorm.DB) *fiber.App {
 	cartController := controller.NewCartControllerImpl(cartService)
 	orderController := controller.NewOrderControllerImpl(orderService)
 	userController := controller.NewUserControllerImpl(userService)
+	TagController := controller.NewTagControllerImpl(tagService, userPreferenceService)
+	GoalController := controller.NewGoalControllerImpl(goalService)
 
 	app := fiber.New()
 
@@ -85,10 +93,11 @@ func InitRouter(db *gorm.DB) *fiber.App {
 	CartRouter(apiGroup, cartController, userRepo)
 	OrderRouter(apiGroup, orderController, userRepo)
 	UserRouter(apiGroup, userController, userRepo)
+	TagRouter(apiGroup, TagController, userRepo)
+	GoalRouter(apiGroup, GoalController)
 
 	logger2.Log.Info("Router initialized")
 	for _, route := range app.GetRoutes() {
-		// You can format the output however you like
 		if route.Method == "HEAD" || route.Method == "CONNECT" || route.Method == "OPTIONS" || route.Method == "TRACE" || route.Method == "PATCH" {
 			continue
 		}

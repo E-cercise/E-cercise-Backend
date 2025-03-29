@@ -2,7 +2,10 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/E-cercise/E-cercise/src/config"
+	"github.com/E-cercise/E-cercise/src/data/dto"
 	"github.com/E-cercise/E-cercise/src/data/request"
 	"github.com/E-cercise/E-cercise/src/data/response"
 	"github.com/E-cercise/E-cercise/src/helper"
@@ -16,7 +19,7 @@ import (
 
 type EquipmentService interface {
 	GetEquipmentData(q request.EquipmentListRequest, paginatior *helper.Paginator) (*response.EquipmentsResponse, error)
-	GetRecommendEquipmentData(q request.EquipmentListRequest, paginatior *helper.Paginator, userID uuid.UUID) (*response.EquipmentsResponse, error)
+	GetRecommendEquipmentData(user *model.User) (*response.EquipmentsResponse, error)
 	AddEquipment(req request.EquipmentPostRequest, context context.Context) error
 	GetEquipmentDetail(eqID uuid.UUID) (*response.EquipmentDetailResponse, error)
 	UpdateEquipment(eqID uuid.UUID, context context.Context, req request.EquipmentPutRequest) error
@@ -61,10 +64,10 @@ func (s *equipmentService) GetEquipmentData(q request.EquipmentListRequest, pagi
 		}
 
 		price := findEquipmentMinimumPrice(equipment)
-
+		abbName := helper.AbbreviateEquipmentName(equipment.Name, equipment.EquipmentOptions[0].Name)
 		eq := response.Equipment{
 			ID:              equipment.ID,
-			Name:            equipment.Name,
+			Name:            abbName,
 			Price:           price,
 			ImagePath:       imagePath,
 			MuscleGroupUsed: helper.GetMuscleGroupIDFromEquipment(equipment),
@@ -74,10 +77,64 @@ func (s *equipmentService) GetEquipmentData(q request.EquipmentListRequest, pagi
 	return &resp, nil
 }
 
-func (s *equipmentService) GetRecommendEquipmentData(q request.EquipmentListRequest, paginatior *helper.Paginator, userID uuid.UUID) (*response.EquipmentsResponse, error) {
+func (s *equipmentService) GetRecommendEquipmentData(user *model.User) (*response.EquipmentsResponse, error) {
 	var resp response.EquipmentsResponse
-	var equipments []response.Equipment
-	resp.Equipments = equipments
+
+	payload := dto.RecommenderRequest{
+		UserType:   strings.ToLower(string(user.Experience)),
+		Gender:     strings.ToLower(string(user.Gender)),
+		Age:        user.Age,
+		Weight:     user.Weight,
+		Height:     user.Height,
+		Goal:       strings.ToLower(user.Goal.Name),
+		Experience: strings.ToLower(string(user.Experience)),
+	}
+
+	for _, pref := range user.UserPreferences {
+		group := helper.GetTagGroup(pref.Tag.Name)
+		payload.Preferences = append(payload.Preferences, dto.RecommenderPreference{
+			Tag:   pref.Tag.Name,
+			Group: group,
+		})
+	}
+
+	recommenderURL := fmt.Sprintf("%s/recommend", config.RecommendationServiceBaseUrl)
+	res, err := helper.PostJSON(recommenderURL, payload)
+	if err != nil {
+		logger.Log.WithError(err).Error("failed to call recommender service")
+		return nil, err
+	}
+
+	var recommended dto.RecommendedResponseDTO
+
+	if err := json.Unmarshal(res, &recommended); err != nil {
+		logger.Log.WithError(err).Error("failed to parse recommender response")
+		return nil, err
+	}
+
+	for _, item := range recommended {
+		option, err := s.equipmentRepo.FindOptionByID(item.OptionID)
+		if err != nil {
+			logger.Log.WithError(err).Error("failed to fetch option ID", "optID", item.OptionID)
+			return nil, err
+		}
+
+		primaryImg := helper.FindPrimaryImage(*option)
+		var imagePath string
+		if primaryImg != nil {
+			imagePath = primaryImg.CloudinaryPath
+		}
+
+		newRecEq := response.Equipment{
+			ID:               option.EquipmentID,
+			Name:             helper.AbbreviateEquipmentName(item.EquipmentName, option.Name),
+			Price:            option.Price,
+			ImagePath:        imagePath,
+			RemainingProduct: &item.RemainingProduct,
+		}
+		resp.Equipments = append(resp.Equipments, newRecEq)
+	}
+
 	return &resp, nil
 }
 
