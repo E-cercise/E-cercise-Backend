@@ -64,10 +64,10 @@ func (s *equipmentService) GetEquipmentData(q request.EquipmentListRequest, pagi
 		}
 
 		price := findEquipmentMinimumPrice(equipment)
-
+		abbName := helper.AbbreviateEquipmentName(equipment.Name, equipment.EquipmentOptions[0].Name)
 		eq := response.Equipment{
 			ID:              equipment.ID,
-			Name:            equipment.Name,
+			Name:            abbName,
 			Price:           price,
 			ImagePath:       imagePath,
 			MuscleGroupUsed: helper.GetMuscleGroupIDFromEquipment(equipment),
