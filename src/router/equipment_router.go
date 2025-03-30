@@ -17,6 +17,8 @@ func EquipmentRouter(router fiber.Router, equipmentController *controller.Equipm
 
 	equipmentGroup.Get("/categories", equipmentController.GetAllEquipmentCategories)
 
+	equipmentGroup.Get("/equipments-category", equipmentController.GetAllEquipmentsInCategory)
+
 	equipmentGroup.Get("/comparison", equipmentController.GetAllEquipmentsDetail)
 
 	equipmentGroup.Post("", middleware.Authentication(userRepo), middleware.RoleAuthorization(enum.RoleAdmin),

@@ -171,3 +171,22 @@ func (c *EquipmentController) GetAllEquipmentsDetail(ctx *fiber.Ctx) error {
 
 	return ctx.Status(fiber.StatusOK).JSON(resp)
 }
+
+func (c *EquipmentController) GetAllEquipmentsInCategory(ctx *fiber.Ctx) error {
+	var req request.EquipmentsInCategoryRequest
+
+	if err := ctx.QueryParser(&req); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request data",
+		})
+	}
+
+	resp, err := c.EquipmentService.GetAllEquipmentsInCategory(req)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(resp)
+}
