@@ -663,7 +663,7 @@ func (s *equipmentService) GetAllEquipmentsDetail(eqIDs []uuid.UUID) (*response.
 }
 
 func (s *equipmentService) GetAllEquipmentsInCategory(req request.EquipmentsInCategoryRequest) (*response.EquipmentsResponse, error) {
-	equipments, err := s.equipmentRepo.FindEquipmentsByCategory(req.Category)
+	equipments, err := s.equipmentRepo.FindByCategory(req.Category)
 	if err != nil {
 		return nil, err
 	}

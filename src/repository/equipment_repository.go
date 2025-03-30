@@ -30,7 +30,7 @@ type EquipmentRepository interface {
 	GetAllEquipmentCategories() ([]model.Equipment, error)
 	FindByIDs(ids []uuid.UUID) ([]model.Equipment, error)
 	FindEquipmentsByOptionIDs(optionIDs []uuid.UUID) ([]model.Equipment, error)
-	FindEquipmentsByCategory(category string) ([]model.Equipment, error)
+	FindByCategory(category string) ([]model.Equipment, error)
 }
 
 type equipmentRepository struct {
@@ -223,7 +223,7 @@ func (r *equipmentRepository) FindEquipmentsByOptionIDs(optionIDs []uuid.UUID) (
 	return equipments, nil
 }
 
-func (r *equipmentRepository) FindEquipmentsByCategory(category string) ([]model.Equipment, error) {
+func (r *equipmentRepository) FindByCategory(category string) ([]model.Equipment, error) {
 	var equipments []model.Equipment
 
 	query := r.db.Model(&model.Equipment{})
