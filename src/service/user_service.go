@@ -18,6 +18,7 @@ type UserService interface {
 	LoginUser(reqBody request.LoginRequest) (*string, error)
 	GetUserProfile(user *model.User) response.UserProfileResponse
 	UpdateUserProfile(user *model.User, req request.UpdateUserProfileRequest) error
+	CheckUserExist(email string) (bool, error)
 }
 
 type userService struct {
@@ -221,4 +222,12 @@ func (s *userService) UpdateUserProfile(user *model.User, req request.UpdateUser
 	}
 
 	return nil
+}
+
+func (s *userService) CheckUserExist(email string) (bool, error) {
+	user, err := s.userRepo.FindByEmailNotPreloaded(email)
+	if err != nil {
+		return false, err
+	}
+	return user != nil, nil
 }

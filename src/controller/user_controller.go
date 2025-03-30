@@ -50,3 +50,27 @@ func (c *UserController) UpdateProfile(ctx *fiber.Ctx) error {
 		"message": "User profile updated",
 	})
 }
+
+func (c *UserController) CheckEmailExists(ctx *fiber.Ctx) error {
+	var emailReq request.CheckEmailExistsRequest
+
+	if err := ctx.QueryParser(&emailReq); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   err.Error(),
+			"message": "Invalid email address",
+		})
+	}
+	isUserExists, err := c.UserService.CheckUserExist(emailReq.Email)
+
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":   err.Error(),
+			"message": "Failed to check user existence",
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"isUserExists": isUserExists,
+	})
+
+}

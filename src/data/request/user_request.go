@@ -19,3 +19,7 @@ type UpdateUserProfileRequest struct {
 	Gender      *enum.Gender         `json:"gender,omitempty"`
 	Age         *int                 `json:"age,omitempty"`
 }
+
+type CheckEmailExistsRequest struct {
+	Email string `query:"email"`
+}

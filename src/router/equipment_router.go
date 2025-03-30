@@ -13,7 +13,7 @@ func EquipmentRouter(router fiber.Router, equipmentController *controller.Equipm
 	equipmentGroup := router.Group("/equipment")
 
 	equipmentGroup.Get("/list", middleware.OptionalAuthentication(userRepo),
-		middleware.PreparePagination("1", "10"), equipmentController.GetAllEquipments) //group by collaborative filtering later
+		middleware.PreparePagination("1", "10"), equipmentController.GetAllEquipments)
 
 	equipmentGroup.Get("/categories", equipmentController.GetAllEquipmentCategories)
 

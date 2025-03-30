@@ -12,6 +12,7 @@ type UserRepository interface {
 	SaveUser(user *model.User) error
 	SaveUserTransaction(tx *gorm.DB, user *model.User) error
 	UpdateUserPreferences(tx *gorm.DB, user *model.User, pref []model.UserPreference) error
+	FindByEmailNotPreloaded(email string) (*model.User, error)
 }
 
 type userRepository struct {
@@ -66,4 +67,14 @@ func (r *userRepository) SaveUserTransaction(tx *gorm.DB, user *model.User) erro
 func (r *userRepository) UpdateUserPreferences(tx *gorm.DB, user *model.User, pref []model.UserPreference) error {
 
 	return tx.Model(user).Association("UserPreferences").Replace(pref)
+}
+
+func (r *userRepository) FindByEmailNotPreloaded(email string) (*model.User, error) {
+	var user model.User
+	result := r.db.Where("LOWER(email) = LOWER(?)", email).
+		First(&user)
+	if result.RowsAffected == 0 {
+		return nil, nil
+	}
+	return &user, result.Error
 }

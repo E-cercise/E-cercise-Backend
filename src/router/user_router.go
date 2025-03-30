@@ -12,4 +12,5 @@ func UserRouter(router fiber.Router, userController *controller.UserController, 
 	profileGroup := router.Group("/profile")
 	profileGroup.Get("/me", middleware.Authentication(userRepo), userController.GetProfile)
 	profileGroup.Put("/me", middleware.Authentication(userRepo), validation.ValidateUserUpdateProfile(), userController.UpdateProfile)
+	profileGroup.Get("/is_exist", userController.CheckEmailExists)
 }
