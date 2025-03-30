@@ -65,8 +65,17 @@ func (r *userRepository) SaveUserTransaction(tx *gorm.DB, user *model.User) erro
 }
 
 func (r *userRepository) UpdateUserPreferences(tx *gorm.DB, user *model.User, pref []model.UserPreference) error {
+	if err := tx.Where("user_id = ?", user.ID).Delete(&model.UserPreference{}).Error; err != nil {
+		return err
+	}
 
-	return tx.Model(user).Association("UserPreferences").Replace(pref)
+	if len(pref) > 0 {
+		if err := tx.Create(&pref).Error; err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (r *userRepository) FindByEmailNotPreloaded(email string) (*model.User, error) {

@@ -195,6 +195,7 @@ func (s *userService) UpdateUserProfile(user *model.User, req request.UpdateUser
 		logger.Log.WithError(err).Error("failed to update user profile")
 		return err
 	}
+	fmt.Println("User ID after save:", user.ID)
 
 	if req.Preferences != nil {
 		var newPrefs []model.UserPreference
