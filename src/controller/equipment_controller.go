@@ -64,14 +64,30 @@ func (c *EquipmentController) GetAllEquipments(ctx *fiber.Ctx) error {
 	}
 
 	user, _ := helper.GetCurrentUser(ctx)
-	if user != nil && user.Role == enum.RoleUser {
-		recommendationEquipments, err := c.EquipmentService.GetRecommendEquipmentData(user)
-		if err != nil {
-			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": err.Error(),
-			})
+	if user != nil {
+		if user.Role == enum.RoleAdmin {
+			for i, equipment := range equipments.Equipments {
+				resp, err := c.EquipmentService.GetEquipmentDetail(equipment.ID)
+				if err != nil {
+					return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+				}
+
+				var totalRemaining int64
+				for _, opt := range resp.Option {
+					totalRemaining += int64(opt.Available)
+				}
+
+				equipments.Equipments[i].RemainingProduct = &totalRemaining
+			}
+		} else if user.Role == enum.RoleUser {
+			recommendationEquipments, err := c.EquipmentService.GetRecommendEquipmentData(user)
+			if err != nil {
+				return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"error": err.Error(),
+				})
+			}
+			resp["recommendation_equipments"] = &recommendationEquipments
 		}
-		resp["recommendation_equipments"] = &recommendationEquipments
 	}
 	return ctx.Status(fiber.StatusOK).JSON(resp)
 }

@@ -55,17 +55,17 @@ func (s *equipmentService) GetEquipmentData(q request.EquipmentListRequest, pagi
 	var resp response.EquipmentsResponse
 
 	for _, equipment := range equipments {
+		abbName := helper.AbbreviateEquipmentName(equipment.Name, equipment.EquipmentOptions[0].Name)
 		primaryImage := helper.FindPrimaryImageFromEquipment(equipment)
 		var imagePath string
 		if primaryImage == nil {
-			newName := strings.ReplaceAll(equipment.Name, " ", "+")
+			newName := strings.ReplaceAll(abbName, " ", "+")
 			imagePath = fmt.Sprintf("https://placehold.co/600x400?text=%v/png", newName)
 		} else {
 			imagePath = primaryImage.CloudinaryPath
 		}
 
 		price := findEquipmentMinimumPrice(equipment)
-		abbName := helper.AbbreviateEquipmentName(equipment.Name, equipment.EquipmentOptions[0].Name)
 		eq := response.Equipment{
 			ID:              equipment.ID,
 			Name:            abbName,
@@ -73,6 +73,7 @@ func (s *equipmentService) GetEquipmentData(q request.EquipmentListRequest, pagi
 			ImagePath:       imagePath,
 			MuscleGroupUsed: helper.GetMuscleGroupIDFromEquipment(equipment),
 		}
+
 		resp.Equipments = append(resp.Equipments, eq)
 	}
 	return &resp, nil
