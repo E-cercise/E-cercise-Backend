@@ -11,13 +11,13 @@ type UserProfileResponse struct {
 	LastName    string              `json:"last_name"`
 	Address     string              `json:"address"`
 	PhoneNumber string              `json:"phone_number"`
-	Weight      float64             `json:"weight,omitempty"`
-	Height      float64             `json:"height,omitempty"`
-	Experience  enum.UserExperience `json:"experience,omitempty"`
-	Goal        GoalResponse        `json:"goal,omitempty"`
-	Preferences []PrefResponse      `json:"preferences,omitempty"`
-	Gender      enum.Gender         `json:"gender,omitempty"`
-	Age         int                 `json:"age,omitempty"`
+	Weight      float64             `json:"weight"`
+	Height      float64             `json:"height"`
+	Experience  enum.UserExperience `json:"experience"`
+	Goal        GoalResponse        `json:"goal"`
+	Preferences []PrefResponse      `json:"preferences"`
+	Gender      enum.Gender         `json:"gender"`
+	Age         int                 `json:"age"`
 }
 
 type GoalResponse struct {

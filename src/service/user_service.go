@@ -9,6 +9,7 @@ import (
 	"github.com/E-cercise/E-cercise/src/logger"
 	"github.com/E-cercise/E-cercise/src/model"
 	"github.com/E-cercise/E-cercise/src/repository"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"strings"
 )
@@ -42,7 +43,9 @@ func (s *userService) RegisterUser(reqBody request.RegisterRequest) error {
 		return errors.New("failed to encrypt password")
 	}
 
+	userID := uuid.New()
 	newUser := model.User{
+		ID:          userID,
 		Email:       reqBody.Email,
 		Password:    password,
 		FirstName:   reqBody.FirstName,
@@ -61,6 +64,12 @@ func (s *userService) RegisterUser(reqBody request.RegisterRequest) error {
 	if err != nil {
 		logger.Log.WithError(err).Error("failed to create user")
 		return fmt.Errorf("failed to create user: %w", err)
+	}
+
+	err = s.userPrefRepo.SetPreferences(userID, reqBody.Preferences)
+	if err != nil {
+		logger.Log.WithError(err).Error("failed to set preferences")
+		return fmt.Errorf("failed to set preferences: %w", err)
 	}
 
 	return nil
