@@ -1,7 +1,10 @@
 package controller
 
 import (
+	"strings"
+
 	"github.com/E-cercise/E-cercise/src/data/request"
+	"github.com/E-cercise/E-cercise/src/enum"
 	"github.com/E-cercise/E-cercise/src/helper"
 	"github.com/E-cercise/E-cercise/src/service"
 	"github.com/gofiber/fiber/v2"
@@ -18,7 +21,7 @@ func NewEquipmentControllerImpl(equipmentService service.EquipmentService) *Equi
 	}
 }
 
-func (c *EquipmentController) GetAllEquipment(ctx *fiber.Ctx) error {
+func (c *EquipmentController) GetAllEquipments(ctx *fiber.Ctx) error {
 	page, ok := ctx.Locals("page").(int)
 
 	if !ok {
@@ -27,6 +30,7 @@ func (c *EquipmentController) GetAllEquipment(ctx *fiber.Ctx) error {
 		})
 	}
 	limit, ok := ctx.Locals("limit").(int)
+
 	if !ok {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "limit not found in context",
@@ -44,19 +48,48 @@ func (c *EquipmentController) GetAllEquipment(ctx *fiber.Ctx) error {
 	}
 
 	equipments, err := c.EquipmentService.GetEquipmentData(req, paginator)
+
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+	resp := fiber.Map{
 		"equipments":  &equipments,
 		"page":        paginator.Page,
 		"limit":       paginator.Limit,
 		"total_pages": paginator.TotalPages,
 		"total_rows":  paginator.TotalRows,
-	})
+	}
+
+	user, _ := helper.GetCurrentUser(ctx)
+	if user != nil {
+		if user.Role == enum.RoleAdmin {
+			for i, equipment := range equipments.Equipments {
+				resp, err := c.EquipmentService.GetEquipmentDetail(equipment.ID)
+				if err != nil {
+					return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+				}
+
+				var totalRemaining int64
+				for _, opt := range resp.Option {
+					totalRemaining += int64(opt.Available)
+				}
+
+				equipments.Equipments[i].RemainingProduct = &totalRemaining
+			}
+		} else if user.Role == enum.RoleUser {
+			recommendationEquipments, err := c.EquipmentService.GetRecommendEquipmentData(user)
+			if err != nil {
+				return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"error": err.Error(),
+				})
+			}
+			resp["recommendation_equipments"] = &recommendationEquipments
+		}
+	}
+	return ctx.Status(fiber.StatusOK).JSON(resp)
 }
 
 func (c *EquipmentController) AddEquipment(ctx *fiber.Ctx) error {
@@ -102,4 +135,74 @@ func (c *EquipmentController) UpdateEquipment(ctx *fiber.Ctx) error {
 	}
 
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{"message": "equipment update successfully"})
+}
+
+func (c *EquipmentController) DeleteEquipment(ctx *fiber.Ctx) error {
+	equipmentID := uuid.MustParse(ctx.Params("id"))
+
+	err := c.EquipmentService.DeleteEquipment(equipmentID, ctx.Context())
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{"message": "equipment has been deleted"})
+}
+
+func (c *EquipmentController) GetAllEquipmentCategories(ctx *fiber.Ctx) error {
+	resp, err := c.EquipmentService.GetAllEquipmentCategories()
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(resp)
+}
+
+func (c *EquipmentController) GetAllEquipmentsDetail(ctx *fiber.Ctx) error {
+	var req request.EquipmentIDsRequest
+
+	if err := ctx.QueryParser(&req); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request data",
+		})
+	}
+
+	equipmentIDStrings := strings.Split(req.EquipmentIDs, ",")
+	if len(equipmentIDStrings) != 3 {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Exactly 3 equipment IDs are required"})
+	}
+
+	equipmentUUIDs, err := helper.ParseUUIDs(equipmentIDStrings)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid UUID format"})
+	}
+
+	resp, err := c.EquipmentService.GetAllEquipmentsDetail(equipmentUUIDs)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(resp)
+}
+
+func (c *EquipmentController) GetAllEquipmentsInCategory(ctx *fiber.Ctx) error {
+	var req request.EquipmentsInCategoryRequest
+
+	if err := ctx.QueryParser(&req); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request data",
+		})
+	}
+
+	resp, err := c.EquipmentService.GetAllEquipmentsInCategory(req)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(resp)
 }

@@ -9,16 +9,17 @@ import (
 )
 
 var (
-	DatabasePort        string
-	DatabaseHost        string
-	DatabaseUsername    string
-	DatabasePassword    string
-	DatabaseName        string
-	JwtSecret           string
-	FrontendBaseURL     string
-	CloudinaryCloudName string
-	CloudinaryApiKey    string
-	CloudinaryApiSecret string
+	DatabasePort                 string
+	DatabaseHost                 string
+	DatabaseUsername             string
+	DatabasePassword             string
+	DatabaseName                 string
+	JwtSecret                    string
+	FrontendBaseURL              string
+	RecommendationServiceBaseUrl string
+	CloudinaryCloudName          string
+	CloudinaryApiKey             string
+	CloudinaryApiSecret          string
 )
 
 func Init() {
@@ -34,6 +35,7 @@ func Init() {
 	DatabaseName = getEnv("DATABASE_NAME", "crud")
 	JwtSecret = getEnv("JWT_SECRET", "secret")
 	FrontendBaseURL = getEnv("FRONTEND_BASE_URL", "localhost:5173")
+	RecommendationServiceBaseUrl = getEnv("RECOMMENDATION_SERVICE_BASE_URL", "localhost:8080")
 	CloudinaryCloudName = getEnv("CLOUDINARY_CLOUD_NAME", "")
 	CloudinaryApiKey = getEnv("CLOUDINARY_API_KEY", "")
 	CloudinaryApiSecret = getEnv("CLOUDINARY_API_SECRET", "")

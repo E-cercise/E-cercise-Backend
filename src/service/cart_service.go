@@ -1,9 +1,11 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"github.com/E-cercise/E-cercise/src/data/request"
 	"github.com/E-cercise/E-cercise/src/data/response"
+	"github.com/E-cercise/E-cercise/src/helper"
 	"github.com/E-cercise/E-cercise/src/logger"
 	"github.com/E-cercise/E-cercise/src/model"
 	"github.com/E-cercise/E-cercise/src/repository"
@@ -15,8 +17,9 @@ type CartService interface {
 	AddEquipmentToCart(req request.CartItemPostRequest, userID uuid.UUID) error
 	DeleteLineEquipmentInCart(lineEquipmentID uuid.UUID) (string, error)
 	GetAllLineEquipmentInCart(userID uuid.UUID) (*response.GetCartItemResponse, error)
-	ModifyLineEquipmentInCart(req request.CartItemPutRequest) error
+	ModifyLineEquipmentInCart(req request.CartItemPutRequest, userID uuid.UUID) error
 	ClearAllLineEquipmentInCart(userID uuid.UUID) error
+	GetLineEquipmentsInCart(userID uuid.UUID, lineEquipmentIDs []uuid.UUID) (*response.GetCartItemResponse, error)
 }
 
 type cartService struct {
@@ -53,6 +56,20 @@ func (s *cartService) AddEquipmentToCart(req request.CartItemPostRequest, userID
 	if err != nil {
 		logger.Log.WithError(err).Error("cant find equipment Option ID:", eqpOptID)
 		return fmt.Errorf("equipmentOptionID: %v not found", eqpOptID)
+	}
+
+	existingLineEquipment, err := s.cartRepo.FindLineEquipmentByEquipmentIDAndOptionID(userID, equipmentID, eqpOptID)
+
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		logger.Log.WithError(err).Error("error finding line existing equipment")
+		return err
+	}
+
+	if existingLineEquipment != nil {
+		errorMsg := fmt.Sprintf("equipment Option already exists in lineequipmrnt: %v with quantity: %v", existingLineEquipment.ID, existingLineEquipment.Quantity)
+		err := &helper.CustomRecordNotFoundError{Msg: errorMsg}
+		logger.Log.WithError(err).Error(errorMsg)
+		return err
 	}
 
 	newLineEquipment := model.LineEquipment{
@@ -107,9 +124,11 @@ func (s *cartService) GetAllLineEquipmentInCart(userID uuid.UUID) (*response.Get
 
 		equipmentOption, err := s.equipmentRepo.FindOptionByID(line.EquipmentOptionID)
 		if err != nil {
-			logger.Log.WithError(err).Error("error during find equipmentOpyion ID", equipmentOption.ID)
+			logger.Log.WithError(err).Error("error during find equipmentOption ID", equipmentOption.ID)
 			return nil, err
 		}
+
+		img := helper.FindPrimaryImage(*equipmentOption)
 
 		lineTotal := float64(line.Quantity) * equipmentOption.Price
 		total += lineTotal
@@ -117,6 +136,8 @@ func (s *cartService) GetAllLineEquipmentInCart(userID uuid.UUID) (*response.Get
 		resp.LineEquipments = append(resp.LineEquipments, response.LineEquipment{
 			EquipmentName:   fmt.Sprintf("%v: %v", equipment.Name, equipmentOption.Name),
 			LineEquipmentID: line.ID.String(),
+			PerUnitPrice:    equipmentOption.Price,
+			ImgUrl:          img.CloudinaryPath,
 			Quantity:        line.Quantity,
 			Total:           lineTotal,
 		})
@@ -128,18 +149,48 @@ func (s *cartService) GetAllLineEquipmentInCart(userID uuid.UUID) (*response.Get
 	return &resp, nil
 }
 
-func (s *cartService) ModifyLineEquipmentInCart(req request.CartItemPutRequest) error {
+func (s *cartService) ModifyLineEquipmentInCart(req request.CartItemPutRequest, userID uuid.UUID) error {
 	tx := s.db.Begin()
-
 	defer func() {
 		if r := recover(); r != nil {
 			tx.Rollback()
 		}
 	}()
 
+	cart, err := s.cartRepo.GetCart(userID)
+	if err != nil {
+		logger.Log.WithError(err).Error("Failed to get cart for user", map[string]interface{}{"user_id": userID})
+		tx.Rollback()
+		return fmt.Errorf("failed to get cart for user %s: %v", userID, err)
+	}
+
+	cartItemsMap := make(map[uuid.UUID]model.LineEquipment)
+	for _, item := range cart.LineEquipments {
+		cartItemsMap[item.ID] = item
+	}
+
 	for _, item := range req.Items {
-		err := s.cartRepo.ModifyLineItem(tx, uuid.MustParse(item.LineEquipmentID), item.Quantity)
+
+		cartItem, exists := cartItemsMap[uuid.MustParse(item.LineEquipmentID)]
+		if !exists {
+			tx.Rollback()
+			return fmt.Errorf("failed to find cart item with id %v", item.LineEquipmentID)
+		}
+
+		eqOpt, err := s.equipmentRepo.FindOptionByID(cartItem.EquipmentOptionID)
 		if err != nil {
+			tx.Rollback()
+			logger.Log.WithError(err).Error("error finding equipment option")
+			return fmt.Errorf("failed to find equipment option with id %v: %v", cartItem.EquipmentOptionID, err)
+		}
+
+		if eqOpt.RemainingProducts < item.Quantity {
+			tx.Rollback()
+			logger.Log.Warning("remaining products is less than quantity")
+			return fmt.Errorf("remaining products is less than quantity")
+		}
+
+		if err := s.cartRepo.ModifyLineItem(tx, uuid.MustParse(item.LineEquipmentID), item.Quantity); err != nil {
 			tx.Rollback()
 			logger.Log.WithError(err).Error("cant modify line equipment with ID:", item.LineEquipmentID)
 			return err
@@ -147,19 +198,58 @@ func (s *cartService) ModifyLineEquipmentInCart(req request.CartItemPutRequest) 
 	}
 
 	if err := tx.Commit().Error; err != nil {
+		logger.Log.WithError(err).Error("error committing transaction")
 		tx.Rollback()
-	
-   return err
+		return err
 	}
 	return nil
 }
 
-    
- func (s *cartService) ClearAllLineEquipmentInCart(userID uuid.UUID) error {
+func (s *cartService) ClearAllLineEquipmentInCart(userID uuid.UUID) error {
 	err := s.cartRepo.ClearAllLineItems(userID)
 	if err != nil {
 		logger.Log.WithError(err).Error("error clearing all line items")
 		return err
 	}
 	return nil
+}
+
+func (s *cartService) GetLineEquipmentsInCart(userID uuid.UUID, lineEquipmentIDs []uuid.UUID) (*response.GetCartItemResponse, error) {
+	lineEquipments, err := s.cartRepo.FindLineEquipmentsByLineEquipmentIDs(userID, lineEquipmentIDs)
+	if err != nil {
+		logger.Log.WithError(err).Error("error finding the line equipments in cart")
+		return nil, err
+	}
+
+	var resp response.GetCartItemResponse
+	total := 0.0
+	for _, lineEquipment := range lineEquipments {
+		equipment, err := s.equipmentRepo.FindByID(lineEquipment.EquipmentID)
+		if err != nil {
+			logger.Log.WithError(err).Error("error during find equipment ID", equipment.ID)
+			return nil, err
+		}
+
+		equipmentOption, err := s.equipmentRepo.FindOptionByID(lineEquipment.EquipmentOptionID)
+		if err != nil {
+			logger.Log.WithError(err).Error("error during find equipment option ID", equipmentOption.ID)
+			return nil, err
+		}
+		img := helper.FindPrimaryImage(*equipmentOption)
+
+		lineTotal := float64(equipmentOption.Price) * float64(lineEquipment.Quantity)
+		total += lineTotal
+
+		resp.LineEquipments = append(resp.LineEquipments, response.LineEquipment{
+			EquipmentName: equipment.Name,
+			LineEquipmentID: lineEquipment.ID.String(),
+			ImgUrl: img.CloudinaryPath,
+			PerUnitPrice: equipmentOption.Price,
+			Quantity: lineEquipment.Quantity,
+			Total: lineTotal,
+		})
+	}
+	resp.TotalPrice = total
+
+	return &resp, err
 }

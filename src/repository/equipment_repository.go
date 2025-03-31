@@ -2,14 +2,16 @@ package repository
 
 import (
 	"github.com/E-cercise/E-cercise/src/helper"
+	"github.com/E-cercise/E-cercise/src/logger"
 	"github.com/E-cercise/E-cercise/src/model"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type EquipmentRepository interface {
-	FindEquipmentList(q string, muscleGroup []string, paginator *helper.Paginator) ([]model.Equipment, error)
+	FindEquipmentList(q string, muscleGroup []string, paginator *helper.Paginator, minBudget int, maxBudget int) ([]model.Equipment, error)
 	CreateEquipment(tx *gorm.DB, eq model.Equipment) error
 	AddAttributes(tx *gorm.DB, attr []model.Attribute) error
 	FindByID(eqID uuid.UUID) (*model.Equipment, error)
@@ -24,6 +26,11 @@ type EquipmentRepository interface {
 	SaveEquipment(tx *gorm.DB, equipment *model.Equipment) error
 	CreateEquipmentFeatures(tx *gorm.DB, features []model.EquipmentFeature) error
 	FindOptionByID(optionID uuid.UUID) (*model.EquipmentOption, error)
+	DeleteEquipment(tx *gorm.DB, eqID uuid.UUID) error
+	GetAllEquipmentCategories() ([]model.Equipment, error)
+	FindByIDs(ids []uuid.UUID) ([]model.Equipment, error)
+	FindEquipmentsByOptionIDs(optionIDs []uuid.UUID) ([]model.Equipment, error)
+	FindByCategory(category string) ([]model.Equipment, error)
 }
 
 type equipmentRepository struct {
@@ -34,13 +41,27 @@ func NewEquipmentRepository(db *gorm.DB) EquipmentRepository {
 	return &equipmentRepository{db: db}
 }
 
-func (r *equipmentRepository) FindEquipmentList(q string, muscleGroup []string, paginator *helper.Paginator) ([]model.Equipment, error) {
+func (r *equipmentRepository) FindEquipmentList(q string, muscleGroup []string, paginator *helper.Paginator, minBudget int, maxBudget int) ([]model.Equipment, error) {
 	var equipments []model.Equipment
 
 	query := r.db.Model(&model.Equipment{})
 
 	if q != "" {
 		query = query.Where("equipment.name ILIKE ? OR equipment.description ILIKE ?", "%"+q+"%", "%"+q+"%")
+	}
+
+	if minBudget != 0 || maxBudget != 0 {
+		if minBudget != 0 && maxBudget != 0 {
+			query = query.Joins("JOIN equipment_options eo ON eo.equipment_id = equipment.id").
+				Where("eo.price BETWEEN ? and ?", minBudget, maxBudget)
+		} else if minBudget != 0 {
+			query = query.Joins("JOIN equipment_options eo ON eo.equipment_id = equipment.id").
+				Where("eo.price >= ?", minBudget)
+		} else if maxBudget != 0 {
+			query = query.Joins("JOIN equipment_options eo ON eo.equipment_id = equipment.id").
+				Where("eo.price <= ?", maxBudget)
+		}
+		query = query.Select("DISTINCT equipment.*")
 	}
 
 	if len(muscleGroup) > 0 {
@@ -74,8 +95,8 @@ func (r *equipmentRepository) DeleteEquipmentOption(tx *gorm.DB, optID []uuid.UU
 	return tx.Where("id IN ?", optID).Delete(&model.EquipmentOption{}).Error
 }
 
-func (r *equipmentRepository) DeleteEquipmentFeature(tx *gorm.DB, optID []uuid.UUID) error {
-	return tx.Where("id IN ?", optID).Delete(&model.EquipmentFeature{}).Error
+func (r *equipmentRepository) DeleteEquipmentFeature(tx *gorm.DB, featIDs []uuid.UUID) error {
+	return tx.Where("id IN ?", featIDs).Delete(&model.EquipmentFeature{}).Error
 }
 
 func (r *equipmentRepository) AddAttributes(tx *gorm.DB, attr []model.Attribute) error {
@@ -87,6 +108,7 @@ func (r *equipmentRepository) FindByID(eqID uuid.UUID) (*model.Equipment, error)
 
 	err := r.db.Preload("MuscleGroups").
 		Preload("EquipmentOptions").
+		Preload("EquipmentOptions.Images").
 		Preload("EquipmentFeature").
 		Preload("Attribute").
 		First(&equipment, "id = ?", eqID).Error
@@ -99,16 +121,17 @@ func (r *equipmentRepository) FindByID(eqID uuid.UUID) (*model.Equipment, error)
 
 func (r *equipmentRepository) FindOptionByID(optionID uuid.UUID) (*model.EquipmentOption, error) {
 	var opt *model.EquipmentOption
-	err := r.db.Find(&opt, "id = ?", optionID).Error
+	err := r.db.Preload("Images").Find(&opt, "id = ?", optionID).Error
 	return opt, err
 }
 
 func (r *equipmentRepository) FindByIDTransaction(tx *gorm.DB, eqID uuid.UUID) (*model.Equipment, error) {
 	var equipment *model.Equipment
 
-	err := tx.Preload("Images").
-		Preload("MuscleGroups").
+	err := tx.Preload("MuscleGroups").
 		Preload("EquipmentOptions").
+		Preload("EquipmentOptions.Images").
+		Preload("EquipmentFeature").
 		Preload("Attribute").
 		First(&equipment, "id = ?", eqID).Error
 
@@ -131,7 +154,14 @@ func (r *equipmentRepository) SaveAttributes(tx *gorm.DB, attr *model.Attribute)
 }
 
 func (r *equipmentRepository) DeletesAttributes(tx *gorm.DB, attrID []uuid.UUID) error {
-	return tx.Delete(model.Attribute{}, attrID).Error
+	logger.Log.Infof("🧪 DEBUG Delete Attribute IDs: %v", attrID)
+
+	debugTx := tx.Session(&gorm.Session{Logger: tx.Logger.LogMode(4)}) // 4 = Info level
+
+	result := debugTx.Where("id IN ?", attrID).Delete(&model.Attribute{})
+	logger.Log.Infof("🧾 Rows affected in attribute delete: %d", result.RowsAffected)
+
+	return result.Error
 }
 
 func (r *equipmentRepository) SaveEquipment(tx *gorm.DB, equipment *model.Equipment) error {
@@ -140,4 +170,78 @@ func (r *equipmentRepository) SaveEquipment(tx *gorm.DB, equipment *model.Equipm
 
 func (r *equipmentRepository) CreateEquipmentFeatures(tx *gorm.DB, features []model.EquipmentFeature) error {
 	return tx.Create(features).Error
+}
+
+func (r *equipmentRepository) DeleteEquipment(tx *gorm.DB, eqID uuid.UUID) error {
+	return tx.Select(clause.Associations).Delete(&model.Equipment{ID: eqID}).Error
+}
+
+func (r *equipmentRepository) GetAllEquipmentCategories() ([]model.Equipment, error) {
+	var equipments []model.Equipment
+	err := r.db.Distinct("category").Find(&equipments).Error
+	if err != nil {
+		return nil, err
+	}
+	return equipments, nil
+}
+
+func (r *equipmentRepository) FindByIDs(ids []uuid.UUID) ([]model.Equipment, error) {
+	var equipments []model.Equipment
+	err := r.db.Preload("MuscleGroups").
+		Preload("EquipmentOptions").
+		Preload("EquipmentOptions.Images").
+		Preload("EquipmentFeature").
+		Preload("Attribute").
+		Where("id IN ?", ids).
+		Find(&equipments).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return equipments, nil
+}
+
+func (r *equipmentRepository) FindEquipmentsByOptionIDs(optionIDs []uuid.UUID) ([]model.Equipment, error) {
+	var equipments []model.Equipment
+
+	var equipmentIDs []uuid.UUID
+	if err := r.db.Model(&model.EquipmentOption{}).
+		Select("DISTINCT(equipment_id)").
+		Where("id IN ?", optionIDs).
+		Pluck("equipment_id", &equipmentIDs).Error; err != nil {
+		return nil, err
+	}
+
+	if err := r.db.
+		Preload("EquipmentOptions", "id IN ?", optionIDs).
+		Preload("EquipmentOptions.Images").
+		Preload("MuscleGroups").
+		Find(&equipments, "id IN ?", equipmentIDs).Error; err != nil {
+		return nil, err
+	}
+
+	return equipments, nil
+}
+
+func (r *equipmentRepository) FindByCategory(category string) ([]model.Equipment, error) {
+	var equipments []model.Equipment
+
+	query := r.db.Model(&model.Equipment{})
+
+	if category != "" {
+    	query = query.Where("equipment.category = ?", category)
+    }
+
+	err := query.
+		Preload("MuscleGroups").
+		Preload("EquipmentOptions").
+		Preload("EquipmentOptions.Images").
+		Preload("EquipmentFeature").
+		Find(&equipments).Error
+
+	if err != nil {
+		return nil, err
+	}
+	
+	return equipments, nil
 }

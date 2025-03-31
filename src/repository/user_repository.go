@@ -9,6 +9,10 @@ type UserRepository interface {
 	CreateUser(user *model.User) error
 	FindByEmail(email string) (*model.User, error)
 	FindByID(userID string) (*model.User, error)
+	SaveUser(user *model.User) error
+	SaveUserTransaction(tx *gorm.DB, user *model.User) error
+	UpdateUserPreferences(tx *gorm.DB, user *model.User, pref []model.UserPreference) error
+	FindByEmailNotPreloaded(email string) (*model.User, error)
 }
 
 type userRepository struct {
@@ -37,6 +41,8 @@ func (r *userRepository) FindByEmail(email string) (*model.User, error) {
 func (r *userRepository) FindByID(userID string) (*model.User, error) {
 	var user model.User
 	result := r.db.Where("id = ?", userID).
+		Preload("Goal").
+		Preload("UserPreferences.Tag").
 		First(&user)
 
 	if result.Error != nil {
@@ -48,4 +54,36 @@ func (r *userRepository) FindByID(userID string) (*model.User, error) {
 	}
 
 	return &user, nil
+}
+
+func (r *userRepository) SaveUser(user *model.User) error {
+	return r.db.Save(user).Error
+}
+
+func (r *userRepository) SaveUserTransaction(tx *gorm.DB, user *model.User) error {
+	return tx.Save(user).Error
+}
+
+func (r *userRepository) UpdateUserPreferences(tx *gorm.DB, user *model.User, pref []model.UserPreference) error {
+	if err := tx.Where("user_id = ?", user.ID).Delete(&model.UserPreference{}).Error; err != nil {
+		return err
+	}
+
+	if len(pref) > 0 {
+		if err := tx.Create(&pref).Error; err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (r *userRepository) FindByEmailNotPreloaded(email string) (*model.User, error) {
+	var user model.User
+	result := r.db.Where("LOWER(email) = LOWER(?)", email).
+		First(&user)
+	if result.RowsAffected == 0 {
+		return nil, nil
+	}
+	return &user, result.Error
 }

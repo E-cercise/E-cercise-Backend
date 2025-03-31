@@ -5,33 +5,54 @@ import (
 	"github.com/google/uuid"
 )
 
+type EquipmentDetailComparisonResponse struct {
+	Equipments []EquipmentDetail `json:"equipments"`
+}
+
+type EquipmentDetail struct {
+	ID              uuid.UUID         `json:"id"`
+	Name            string            `json:"name"`
+	Brand           string            `json:"brand"`
+	Color           string            `json:"color"`
+	Category        string            `json:"category"`
+	Description     string            `json:"description"`
+	Material        string            `json:"material"`
+	Model           string            `json:"model"`
+	Option          []Option          `json:"option"`
+	AdditionalField []AdditionalField `json:"additional_field"`
+}
+
 type EquipmentsResponse struct {
 	Equipments []Equipment `json:"equipments"`
 }
 
 type Equipment struct {
-	ID              uuid.UUID `json:"ID"`
-	Name            string    `json:"Description"`
-	Price           float64   `json:"price"`
-	ImagePath       string    `json:"image_path"`
-	MuscleGroupUsed []string  `json:"muscle_group_used"`
-	//Rating float64 `json:"rating"`
+	ID               uuid.UUID `json:"ID"`
+	Name             string    `json:"name"`
+	Price            float64   `json:"price"`
+	ImagePath        string    `json:"image_path"`
+	MuscleGroupUsed  []string  `json:"muscle_group_used"`
+	RemainingProduct *int64    `json:"remaining_product,omitempty"`
 }
 
-//type Options struct {
-//	RemainingProduct int64   `json:"remaining_product"`
-//	Price            float64 `json:"price"`
-//	Weight           float64 `json:"weight"`
-//}
+type CategoriesResponse struct {
+	Categories []Category `json:"categories"`
+}
+
+type Category struct {
+	Value string  `json:"value"`
+	Label string `json:"label"`
+}
 
 type EquipmentDetailResponse struct {
-	Band            string            `json:"band"`
+	Brand           string            `json:"brand"`
 	Color           string            `json:"color"`
+	Category        string            `json:"category"`
 	Description     string            `json:"description"`
 	Material        string            `json:"material"`
 	Model           string            `json:"model"`
 	MuscleGroupUsed []string          `json:"muscle_group_used"`
-	Name            string            `json:"Description"`
+	Name            string            `json:"name"`
 	Option          []Option          `json:"option"`
 	AdditionalField []AdditionalField `json:"additional_field"`
 	Feature         []Feature         `json:"feature"`
@@ -59,7 +80,7 @@ type Option struct {
 
 type Feature struct {
 	ID          string `json:"id"`
-	Description string `json:"Description"`
+	Description string `json:"description"`
 }
 
 func FormatEquipmentDetailResponse(equipment *model.Equipment) *EquipmentDetailResponse {
@@ -113,8 +134,9 @@ func FormatEquipmentDetailResponse(equipment *model.Equipment) *EquipmentDetailR
 	}
 
 	resp := EquipmentDetailResponse{
-		Band:            equipment.Brand,
+		Brand:           equipment.Brand,
 		Color:           equipment.Color,
+		Category:        equipment.Category,
 		Description:     equipment.Description,
 		Material:        equipment.Material,
 		Model:           equipment.Model,

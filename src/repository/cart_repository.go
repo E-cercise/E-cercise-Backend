@@ -3,6 +3,8 @@ package repository
 import (
 	"errors"
 	"fmt"
+
+	"github.com/E-cercise/E-cercise/src/helper"
 	"github.com/E-cercise/E-cercise/src/model"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -14,6 +16,8 @@ type CartRepository interface {
 	GetCart(userID uuid.UUID) (*model.Cart, error)
 	ModifyLineItem(tx *gorm.DB, lineEquipmentID uuid.UUID, quantity int) error
 	ClearAllLineItems(userID uuid.UUID) error
+	FindLineEquipmentByEquipmentIDAndOptionID(userID uuid.UUID, equipmentID uuid.UUID, equipmentOptionID uuid.UUID) (*model.LineEquipment, error)
+	FindLineEquipmentsByLineEquipmentIDs(userID uuid.UUID, lineEquipmentIDs []uuid.UUID) ([]model.LineEquipment, error)
 }
 
 type cartRepository struct {
@@ -34,7 +38,7 @@ func (r *cartRepository) AddLineItem(userID uuid.UUID, lineEquipment *model.Line
 		return err
 	}
 
-	lineEquipment.CartID = cart.ID
+	lineEquipment.CartID = &cart.ID
 
 	if err := r.db.Create(lineEquipment).Error; err != nil {
 		return fmt.Errorf("failed to add line equipment to cart: %v", err)
@@ -65,6 +69,7 @@ func (r *cartRepository) GetCart(userID uuid.UUID) (*model.Cart, error) {
 func (r *cartRepository) ModifyLineItem(tx *gorm.DB, lineEquipmentID uuid.UUID, quantity int) error {
 	return tx.Model(&model.LineEquipment{}).Where("id = ?", lineEquipmentID).Update("quantity", quantity).Error
 }
+
 func (r *cartRepository) ClearAllLineItems(userID uuid.UUID) error {
 	var cart model.Cart
 
@@ -80,4 +85,43 @@ func (r *cartRepository) ClearAllLineItems(userID uuid.UUID) error {
 	}
 
 	return nil
+}
+
+func (r *cartRepository) FindLineEquipmentByEquipmentIDAndOptionID(userID uuid.UUID, equipmentID uuid.UUID, equipmentOptionID uuid.UUID) (*model.LineEquipment, error) {
+	var cart model.Cart
+
+	if err := r.db.Where("user_id = ?", userID).First(&cart).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("cart not found for user ID: %s", userID)
+		}
+		return nil, err
+	}
+
+	var lineEquipment model.LineEquipment
+	if err := r.db.Where("cart_id = ? AND equipment_id = ? AND equipment_option_id = ?", cart.ID, equipmentID, equipmentOptionID).First(&lineEquipment).Error; err != nil {
+		return nil, err
+	}
+
+	return &lineEquipment, nil
+}
+
+func (r *cartRepository) FindLineEquipmentsByLineEquipmentIDs(userID uuid.UUID, lineEquipmentIDs []uuid.UUID) ([]model.LineEquipment, error) {
+	var cart model.Cart
+
+	if err := r.db.Preload("LineEquipments").Where("user_id = ?", userID).First(&cart).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("cart not found for user ID: %s", userID)
+		}
+		return nil, err
+	}
+
+	var lineEquipments []model.LineEquipment
+
+	for _, lineEquipment := range cart.LineEquipments {
+		if helper.Contains(lineEquipmentIDs, lineEquipment.ID) {
+			lineEquipments = append(lineEquipments, lineEquipment)
+		}
+	}
+
+	return lineEquipments, nil
 }

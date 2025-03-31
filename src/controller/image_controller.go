@@ -26,7 +26,6 @@ func (c *ImageController) UplaodFile(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "file not provided or invalid"})
 	}
 
-	// Open the uploaded file
 	file, err := fileHeader.Open()
 	if err != nil {
 		logger.Log.WithError(err).Error("Error opening uploaded file", "err", err.Error())
@@ -34,12 +33,12 @@ func (c *ImageController) UplaodFile(ctx *fiber.Ctx) error {
 	}
 	defer file.Close()
 
-	fileID, err := c.ImageService.UploadImage(ctx.Context(), file, fileHeader, false)
+	fileID, filePath, err := c.ImageService.UploadImage(ctx.Context(), file, fileHeader, false)
 
 	if err != nil {
 		logger.Log.WithError(err).Error("error uploading image", "err", err.Error())
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "error uploading image: " + err.Error()})
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{"message": "file uploaded successfully", "fileID": fileID})
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{"message": "file uploaded successfully", "fileID": fileID, "url": filePath})
 }

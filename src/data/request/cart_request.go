@@ -1,5 +1,9 @@
 package request
 
+type CartItemGetRequest struct {
+	LineEquipmentIDs string `query:"line_equipment_ids"`
+}
+
 type CartItemPostRequest struct {
 	EquipmentID       string `json:"equipment_id"`
 	EquipmentOptionID string `json:"equipment_option_id"`

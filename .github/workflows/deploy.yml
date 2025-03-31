@@ -20,7 +20,7 @@ jobs:
           credentials_json: ${{ secrets.GCP_CREDENTIALS }}
 
       - name: Set up Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@v1
+        uses: google-github-actions/setup-gcloud@v2.1.4
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
@@ -42,4 +42,4 @@ jobs:
             --allow-unauthenticated \
             --port=8888 \
             --add-cloudsql-instances=${{ secrets.CLOUD_SQL_CONNECTION_NAME }} \
-            --set-env-vars "DATABASE_PORT=${{ secrets.DATABASE_PORT }},DATABASE_HOST=/cloudsql/${{ secrets.CLOUD_SQL_CONNECTION_NAME }},DATABASE_USERNAME=${{ secrets.DATABASE_USERNAME }},DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }},DATABASE_NAME=${{ secrets.DATABASE_NAME }},JWT_SECRET=${{ secrets.JWT_SECRET }},FRONTEND_BASE_URL=${{ secrets.FRONTEND_BASE_URL }},CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }},CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }},CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }}"
+            --set-env-vars "DATABASE_PORT=${{ secrets.DATABASE_PORT }},DATABASE_HOST=/cloudsql/${{ secrets.CLOUD_SQL_CONNECTION_NAME }},DATABASE_USERNAME=${{ secrets.DATABASE_USERNAME }},DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }},DATABASE_NAME=${{ secrets.DATABASE_NAME }},JWT_SECRET=${{ secrets.JWT_SECRET }},FRONTEND_BASE_URL=${{ secrets.FRONTEND_BASE_URL }},CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }},CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }},CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }},RECOMMENDATION_SERVICE_BASE_URL=${{ secrets.RECOMMENDATION_SERVICE_BASE_URL }}"

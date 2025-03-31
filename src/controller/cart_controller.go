@@ -1,12 +1,15 @@
 package controller
 
 import (
+	"errors"
 	"fmt"
+	"strings"
 	"github.com/E-cercise/E-cercise/src/data/request"
 	"github.com/E-cercise/E-cercise/src/helper"
 	"github.com/E-cercise/E-cercise/src/service"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type CartController struct {
@@ -29,13 +32,17 @@ func (c *CartController) AddEquipmentToCart(ctx *fiber.Ctx) error {
 	}
 
 	user, err := helper.GetCurrentUser(ctx)
-
 	if err != nil {
 		return err
 	}
 
 	err = c.CartService.AddEquipmentToCart(req, user.ID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ctx.Status(fiber.StatusConflict).JSON(fiber.Map{
+				"error": err.Error(),
+			})
+		}
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
@@ -88,7 +95,12 @@ func (c *CartController) ModifyItemInCart(ctx *fiber.Ctx) error {
 		})
 	}
 
-	if err := c.CartService.ModifyLineEquipmentInCart(req); err != nil {
+	user, err := helper.GetCurrentUser(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := c.CartService.ModifyLineEquipmentInCart(req, user.ID); err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": fmt.Sprintf("error cant modify item in cart with error: %v", err.Error()),
 		})
@@ -97,8 +109,7 @@ func (c *CartController) ModifyItemInCart(ctx *fiber.Ctx) error {
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{"message": "cart modified successfully"})
 }
 
-
-func (c * CartController) ClearAllItemsInCart(ctx *fiber.Ctx) error {
+func (c *CartController) ClearAllItemsInCart(ctx *fiber.Ctx) error {
 	user, err := helper.GetCurrentUser(ctx)
 
 	if err != nil {
@@ -112,4 +123,36 @@ func (c * CartController) ClearAllItemsInCart(ctx *fiber.Ctx) error {
 	}
 
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{"message": fmt.Sprintf("All Line equipments have been deleted successfully")})
+}
+
+func (c *CartController) GetItemsInCart(ctx *fiber.Ctx) error {
+	var req request.CartItemGetRequest
+
+	if err := ctx.QueryParser(&req); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request data",
+		})
+	}
+
+	user, err := helper.GetCurrentUser(ctx)
+
+	if err != nil {
+		return err
+	}
+
+	lineEquipmentIDStrings := strings.Split(req.LineEquipmentIDs, ",")
+
+	lineEquipmentUUIDs, err := helper.ParseUUIDs(lineEquipmentIDStrings)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid UUID format"})
+	}
+
+	resp, err := c.CartService.GetLineEquipmentsInCart(user.ID, lineEquipmentUUIDs)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(resp)
 }

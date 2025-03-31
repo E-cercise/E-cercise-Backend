@@ -1,12 +1,29 @@
 package model
 
-import "github.com/google/uuid"
+import (
+	"errors"
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+)
 
 type LineEquipment struct {
 	ID                uuid.UUID  `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
 	OrderID           *uuid.UUID `gorm:"type:uuid;"`
-	CartID            uuid.UUID  `gorm:"type:uuid;not null" json:"cart_id"`
+	CartID            *uuid.UUID `gorm:"type:uuid" json:"cart_id"`
 	EquipmentID       uuid.UUID  `gorm:"type:uuid;not null" json:"equipment_id"`
 	EquipmentOptionID uuid.UUID  `gorm:"type:uuid;not null" json:"equipment_option_id"`
 	Quantity          int        `gorm:"type:int;not null;default:1" json:"quantity"`
+	
+	EquipmentOption EquipmentOption `gorm:"foreignKey:EquipmentOptionID" json:"equipment_option"`
+}
+
+func (l *LineEquipment) BeforeUpdate(tx *gorm.DB) error {
+	if l.Quantity < 0 {
+		return errors.New("quantity cannot be less than 0")
+	}
+
+	if l.Quantity == 0 {
+		tx.Delete(l)
+	}
+	return nil
 }

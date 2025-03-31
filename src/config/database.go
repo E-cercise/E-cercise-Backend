@@ -45,7 +45,7 @@ func DatabaseConnection() *gorm.DB {
 	}
 
 	err = db.AutoMigrate(&model.User{}, &model.Equipment{}, &model.EquipmentOption{}, &model.EquipmentFeature{}, &model.Image{},
-		&model.Attribute{}, &model.Cart{}, &model.LineEquipment{}, &model.Order{}, &model.MuscleGroup{})
+		&model.Attribute{}, &model.Cart{}, &model.LineEquipment{}, &model.Order{}, &model.MuscleGroup{}, &model.Tag{}, &model.UserPreference{})
 
 	if err != nil {
 		panic(err)
@@ -81,6 +81,59 @@ func migrateEnum(db *gorm.DB) error {
 					'Paid',
 					'Shipped out',
 					'Received'
+				);
+			END IF;
+		END$$;
+	`).Error
+
+	if err != nil {
+		return err
+	}
+
+	err = db.Exec(`
+		DO $$
+		BEGIN
+			IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'payment_type') THEN
+				CREATE TYPE payment_type AS ENUM (
+					'Unpaid',
+					'QRPromptPay',
+				 	'Cash',
+					'CreditOrDebitCard'
+				);
+			END IF;
+		END$$;
+	`).Error
+
+	if err != nil {
+		return err
+	}
+
+	err = db.Exec(`
+		DO $$
+		BEGIN
+			IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_experience') THEN
+				CREATE TYPE user_experience AS ENUM (
+					'Beginner',
+					'Intermediate',
+				 	'Advanced',
+					'Athlete',
+					'Elderly'
+				);
+			END IF;
+		END$$;
+	`).Error
+
+	if err != nil {
+		return err
+	}
+
+	err = db.Exec(`
+		DO $$
+		BEGIN
+			IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'gender_type') THEN
+				CREATE TYPE gender_type AS ENUM (
+				 	'Male',
+					'Female'
 				);
 			END IF;
 		END$$;
