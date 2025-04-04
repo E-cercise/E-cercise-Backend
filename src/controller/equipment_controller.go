@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"github.com/E-cercise/E-cercise/src/logger"
 	"strings"
 
 	"github.com/E-cercise/E-cercise/src/data/request"
@@ -42,6 +43,7 @@ func (c *EquipmentController) GetAllEquipments(ctx *fiber.Ctx) error {
 	var req request.EquipmentListRequest
 
 	if err := ctx.QueryParser(&req); err != nil {
+		logger.Log.WithError(err).Errorln("QueryParser failed")
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid request data",
 		})
@@ -50,6 +52,7 @@ func (c *EquipmentController) GetAllEquipments(ctx *fiber.Ctx) error {
 	equipments, err := c.EquipmentService.GetEquipmentData(req, paginator)
 
 	if err != nil {
+		logger.Log.WithError(err).Errorln("GetEquipmentData failed")
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
