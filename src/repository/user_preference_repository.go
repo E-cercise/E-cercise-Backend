@@ -29,6 +29,7 @@ func (r *userPrefRepo) SetPreferences(userID uuid.UUID, tagIDs []uuid.UUID) erro
 			TagID:  tagID,
 		})
 	}
+
 	return nil
 }
 
@@ -43,5 +44,6 @@ func (r *userPrefRepo) GetPreferences(userID uuid.UUID) ([]model.Tag, error) {
 	for _, p := range prefs {
 		tags = append(tags, p.Tag)
 	}
+
 	return tags, nil
 }
