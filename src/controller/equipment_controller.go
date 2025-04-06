@@ -76,7 +76,7 @@ func (c *EquipmentController) GetAllEquipments(ctx *fiber.Ctx) error {
 				}
 
 				var totalRemaining int64
-				for _, opt := range resp.Option {
+				for _, opt := range resp.Options {
 					totalRemaining += int64(opt.Available)
 				}
 

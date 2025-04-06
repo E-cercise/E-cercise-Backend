@@ -45,17 +45,17 @@ type Category struct {
 }
 
 type EquipmentDetailResponse struct {
-	Brand           string            `json:"brand"`
-	Color           string            `json:"color"`
-	Category        string            `json:"category"`
-	Description     string            `json:"description"`
-	Material        string            `json:"material"`
-	Model           string            `json:"model"`
-	MuscleGroupUsed []string          `json:"muscle_group_used"`
-	Name            string            `json:"name"`
-	Option          []Option          `json:"option"`
-	AdditionalField []AdditionalField `json:"additional_field"`
-	Feature         []Feature         `json:"feature"`
+	Brand            string            `json:"brand"`
+	Color            string            `json:"color"`
+	Category         string            `json:"category"`
+	Description      string            `json:"description"`
+	Material         string            `json:"material"`
+	Model            string            `json:"model"`
+	MuscleGroupUsed  []string          `json:"muscle_group_used"`
+	Name             string            `json:"name"`
+	Options          []Option          `json:"options"`
+	AdditionalFields []AdditionalField `json:"additional_fields"`
+	Features         []Feature         `json:"features"`
 }
 
 type AdditionalField struct {
@@ -134,17 +134,17 @@ func FormatEquipmentDetailResponse(equipment *model.Equipment) *EquipmentDetailR
 	}
 
 	resp := EquipmentDetailResponse{
-		Brand:           equipment.Brand,
-		Color:           equipment.Color,
-		Category:        equipment.Category,
-		Description:     equipment.Description,
-		Material:        equipment.Material,
-		Model:           equipment.Model,
-		MuscleGroupUsed: muscleGroupUsed,
-		Name:            equipment.Name,
-		Option:          opts,
-		AdditionalField: attributes,
-		Feature:         feats,
+		Brand:            equipment.Brand,
+		Color:            equipment.Color,
+		Category:         equipment.Category,
+		Description:      equipment.Description,
+		Material:         equipment.Material,
+		Model:            equipment.Model,
+		MuscleGroupUsed:  muscleGroupUsed,
+		Name:             equipment.Name,
+		Options:          opts,
+		AdditionalFields: attributes,
+		Features:         feats,
 	}
 
 	return &resp

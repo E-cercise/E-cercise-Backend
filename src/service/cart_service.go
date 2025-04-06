@@ -54,7 +54,7 @@ func (s *cartService) AddEquipmentToCart(req request.CartItemPostRequest, userID
 
 	_, err = s.equipmentRepo.FindOptionByID(eqpOptID)
 	if err != nil {
-		logger.Log.WithError(err).Error("cant find equipment Option ID:", eqpOptID)
+		logger.Log.WithError(err).Error("cant find equipment Options ID:", eqpOptID)
 		return fmt.Errorf("equipmentOptionID: %v not found", eqpOptID)
 	}
 
@@ -66,7 +66,7 @@ func (s *cartService) AddEquipmentToCart(req request.CartItemPostRequest, userID
 	}
 
 	if existingLineEquipment != nil {
-		errorMsg := fmt.Sprintf("equipment Option already exists in lineequipmrnt: %v with quantity: %v", existingLineEquipment.ID, existingLineEquipment.Quantity)
+		errorMsg := fmt.Sprintf("equipment Options already exists in lineequipmrnt: %v with quantity: %v", existingLineEquipment.ID, existingLineEquipment.Quantity)
 		err := &helper.CustomRecordNotFoundError{Msg: errorMsg}
 		logger.Log.WithError(err).Error(errorMsg)
 		return err
@@ -241,12 +241,12 @@ func (s *cartService) GetLineEquipmentsInCart(userID uuid.UUID, lineEquipmentIDs
 		total += lineTotal
 
 		resp.LineEquipments = append(resp.LineEquipments, response.LineEquipment{
-			EquipmentName: equipment.Name,
+			EquipmentName:   equipment.Name,
 			LineEquipmentID: lineEquipment.ID.String(),
-			ImgUrl: img.CloudinaryPath,
-			PerUnitPrice: equipmentOption.Price,
-			Quantity: lineEquipment.Quantity,
-			Total: lineTotal,
+			ImgUrl:          img.CloudinaryPath,
+			PerUnitPrice:    equipmentOption.Price,
+			Quantity:        lineEquipment.Quantity,
+			Total:           lineTotal,
 		})
 	}
 	resp.TotalPrice = total
