@@ -13,7 +13,7 @@ type EquipmentListRequest struct {
 }
 
 type EquipmentsInCategoryRequest struct {
-	Category    string  `query:"category"`
+	Category string `query:"category"`
 }
 
 type EquipmentIDsRequest struct {
@@ -75,8 +75,8 @@ type EquipmentPutRequest struct {
 	Model           *string             `json:"model,omitempty"`
 	MuscleGroupUsed []string            `json:"muscle_group_used,omitempty"`
 	Name            *string             `json:"name,omitempty"`
-	Option          *OptionPut          `json:"option,omitempty"`
-	Feature         *FeaturePut         `json:"feature,omitempty"`
+	Options         *OptionPut          `json:"options,omitempty"`
+	Features        *FeaturePut         `json:"features,omitempty"`
 }
 
 type AdditionalFieldPut struct {

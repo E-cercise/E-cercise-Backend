@@ -296,9 +296,9 @@ func (s *equipmentService) UpdateEquipment(eqID uuid.UUID, context context.Conte
 		logger.Log.Infof("✅ Muscle groups updated for equipment ID: %v", eqID)
 	}
 
-	if req.Option != nil && req.Option.Deleted != nil {
+	if req.Options != nil && req.Options.Deleted != nil {
 		var opts []uuid.UUID
-		for _, opt := range req.Option.Deleted {
+		for _, opt := range req.Options.Deleted {
 			optID := uuid.MustParse(opt)
 			if err := s.imageService.DeleteImagesByOptionID(s.db, context, optID); err != nil {
 				logger.Log.WithError(err).Error("Error deleting images for option", "optionID", optID)
@@ -318,8 +318,8 @@ func (s *equipmentService) UpdateEquipment(eqID uuid.UUID, context context.Conte
 		return err
 	}
 
-	if req.Option != nil && req.Option.Updated != nil {
-		for _, updateOption := range req.Option.Updated {
+	if req.Options != nil && req.Options.Updated != nil {
+		for _, updateOption := range req.Options.Updated {
 			optID := uuid.MustParse(updateOption.ID)
 			updatedOpt := model.EquipmentOption{
 				ID:                optID,
@@ -353,9 +353,9 @@ func (s *equipmentService) UpdateEquipment(eqID uuid.UUID, context context.Conte
 		}
 	}
 
-	if req.Feature != nil && req.Feature.Deleted != nil {
+	if req.Features != nil && req.Features.Deleted != nil {
 		var ids []uuid.UUID
-		for _, feat := range req.Feature.Deleted {
+		for _, feat := range req.Features.Deleted {
 			id := uuid.MustParse(feat)
 			ids = append(ids, id)
 		}
@@ -387,9 +387,9 @@ func (s *equipmentService) UpdateEquipment(eqID uuid.UUID, context context.Conte
 		}
 	}()
 
-	if req.Option != nil {
-		if req.Option.Created != nil {
-			for _, optCreated := range req.Option.Created {
+	if req.Options != nil {
+		if req.Options.Created != nil {
+			for _, optCreated := range req.Options.Created {
 				optID := uuid.New()
 				newOption := model.EquipmentOption{
 					ID:                optID,
@@ -418,10 +418,10 @@ func (s *equipmentService) UpdateEquipment(eqID uuid.UUID, context context.Conte
 
 	}
 
-	if req.Feature != nil {
-		if req.Feature.Created != nil {
+	if req.Features != nil {
+		if req.Features.Created != nil {
 			var feats []model.EquipmentFeature
-			for _, description := range req.Feature.Created {
+			for _, description := range req.Features.Created {
 				feats = append(feats, model.EquipmentFeature{
 					EquipmentID: equipment.ID,
 					Description: description,
@@ -434,8 +434,8 @@ func (s *equipmentService) UpdateEquipment(eqID uuid.UUID, context context.Conte
 			}
 		}
 
-		if req.Feature.Updated != nil {
-			for _, feat := range req.Feature.Updated {
+		if req.Features.Updated != nil {
+			for _, feat := range req.Features.Updated {
 				featID := uuid.MustParse(feat.ID)
 				updated := model.EquipmentFeature{
 					ID:          featID,

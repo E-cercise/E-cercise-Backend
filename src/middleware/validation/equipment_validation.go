@@ -54,8 +54,8 @@ func ValidateUpdateEquipment() fiber.Handler {
 		}
 
 		// Safe nil-checking for option updates
-		if req.Option != nil && req.Option.Updated != nil {
-			for _, opt := range req.Option.Updated {
+		if req.Options != nil && req.Options.Updated != nil {
+			for _, opt := range req.Options.Updated {
 				if opt.Images != nil {
 					if err := request.ValidateImagePutReq(*opt.Images); err != nil {
 						logger.Log.WithError(err).Error("Invalid image format in update request")
