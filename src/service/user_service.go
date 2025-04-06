@@ -134,7 +134,6 @@ func (s *userService) GetUserProfile(user *model.User) response.UserProfileRespo
 }
 
 func (s *userService) UpdateUserProfile(user *model.User, req request.UpdateUserProfileRequest) error {
-
 	tx := s.db.Begin()
 
 	defer func() {
@@ -144,58 +143,60 @@ func (s *userService) UpdateUserProfile(user *model.User, req request.UpdateUser
 		}
 	}()
 
+	// Step 1: Check email uniqueness
 	if req.Email != nil {
 		existingUser, err := s.userRepo.FindByEmail(*req.Email)
 		if existingUser != nil || err != nil {
+			tx.Rollback()
 			return errors.New("email already exists")
 		}
-		user.Email = *req.Email
 	}
 
+	// Step 2: Build updates map
+	updateFields := map[string]interface{}{}
+
+	if req.Email != nil {
+		updateFields["email"] = *req.Email
+	}
 	if req.FirstName != nil {
-		user.FirstName = *req.FirstName
+		updateFields["first_name"] = *req.FirstName
 	}
-
 	if req.LastName != nil {
-		user.LastName = *req.LastName
+		updateFields["last_name"] = *req.LastName
 	}
-
 	if req.Address != nil {
-		user.Address = *req.Address
+		updateFields["address"] = *req.Address
 	}
-
 	if req.PhoneNumber != nil {
-		user.PhoneNumber = *req.PhoneNumber
+		updateFields["phone_number"] = *req.PhoneNumber
 	}
-
 	if req.Weight != nil {
-		user.Weight = *req.Weight
+		updateFields["weight"] = *req.Weight
 	}
 	if req.Height != nil {
-		user.Height = *req.Height
+		updateFields["height"] = *req.Height
 	}
 	if req.Experience != nil {
-		user.Experience = *req.Experience
+		updateFields["experience"] = *req.Experience
 	}
 	if req.GoalID != nil {
-		user.GoalID = *req.GoalID
+		updateFields["goal_id"] = *req.GoalID
 	}
-
 	if req.Age != nil {
-		user.Age = *req.Age
+		updateFields["age"] = *req.Age
 	}
-
 	if req.Gender != nil {
-		user.Gender = *req.Gender
+		updateFields["gender"] = *req.Gender
 	}
 
-	err := s.userRepo.SaveUserTransaction(tx, user)
-	if err != nil {
-		tx.Rollback()
-		logger.Log.WithError(err).Error("failed to update user profile")
-		return err
+	// Step 3: Apply updates
+	if len(updateFields) > 0 {
+		if err := s.userRepo.UpdateUserTransaction(tx, &user.ID, updateFields); err != nil {
+			tx.Rollback()
+			logger.Log.WithError(err).Error("failed to update user profile fields")
+			return err
+		}
 	}
-	fmt.Println("User ID after save:", user.ID)
 
 	if req.Preferences != nil {
 		var newPrefs []model.UserPreference

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"github.com/E-cercise/E-cercise/src/model"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -10,7 +11,7 @@ type UserRepository interface {
 	FindByEmail(email string) (*model.User, error)
 	FindByID(userID string) (*model.User, error)
 	SaveUser(user *model.User) error
-	SaveUserTransaction(tx *gorm.DB, user *model.User) error
+	UpdateUserTransaction(tx *gorm.DB, userID *uuid.UUID, updateFields map[string]interface{}) error
 	UpdateUserPreferences(tx *gorm.DB, user *model.User, pref []model.UserPreference) error
 	FindByEmailNotPreloaded(email string) (*model.User, error)
 }
@@ -60,8 +61,8 @@ func (r *userRepository) SaveUser(user *model.User) error {
 	return r.db.Save(user).Error
 }
 
-func (r *userRepository) SaveUserTransaction(tx *gorm.DB, user *model.User) error {
-	return tx.Save(user).Error
+func (r *userRepository) UpdateUserTransaction(tx *gorm.DB, userID *uuid.UUID, updateFields map[string]interface{}) error {
+	return tx.Model(model.User{}).Where("id = ?", userID).Updates(updateFields).Error
 }
 
 func (r *userRepository) UpdateUserPreferences(tx *gorm.DB, user *model.User, pref []model.UserPreference) error {
