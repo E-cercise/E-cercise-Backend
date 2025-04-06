@@ -18,7 +18,7 @@ type EquipmentDetail struct {
 	Description     string            `json:"description"`
 	Material        string            `json:"material"`
 	Model           string            `json:"model"`
-	Option          []Option          `json:"option"`
+	Options         []Option          `json:"options"`
 	AdditionalField []AdditionalField `json:"additional_field"`
 }
 
@@ -40,7 +40,7 @@ type CategoriesResponse struct {
 }
 
 type Category struct {
-	Value string  `json:"value"`
+	Value string `json:"value"`
 	Label string `json:"label"`
 }
 

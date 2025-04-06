@@ -623,7 +623,7 @@ func (s *equipmentService) GetAllEquipmentsDetail(eqIDs []uuid.UUID) (*response.
 				}
 				option.Images = append(option.Images, image)
 			}
-			filteredData.Option = append(filteredData.Option, option)
+			filteredData.Options = append(filteredData.Options, option)
 		}
 
 		var additionalAttributes []response.AdditionalField
