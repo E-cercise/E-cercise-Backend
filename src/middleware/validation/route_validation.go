@@ -31,7 +31,6 @@ func ValidateParam(paramName, validationType string) fiber.Handler {
 			}
 		default:
 		}
-
 		return c.Next()
 	}
 }
