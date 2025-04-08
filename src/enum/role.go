@@ -17,7 +17,6 @@ func (r *Role) Scan(value interface{}) error {
 	if !ok {
 		return fmt.Errorf("invalid str")
 	}
-
 	*r = Role(str)
 	return nil
 }
