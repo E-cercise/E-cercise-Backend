@@ -19,7 +19,7 @@ type EquipmentDetail struct {
 	Material        string            `json:"material"`
 	Model           string            `json:"model"`
 	Options         []Option          `json:"options"`
-	AdditionalField []AdditionalField `json:"additional_field"`
+	AdditionalField []AdditionalField `json:"additional_fields"`
 }
 
 type EquipmentsResponse struct {
