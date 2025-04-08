@@ -29028,16 +29028,17 @@ ALTER TABLE ONLY public.line_equipments
 -- Name: attributes fk_equipment_attribute; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.attributes
-    ADD CONSTRAINT fk_equipment_attribute FOREIGN KEY (equipment_id) REFERENCES public.equipment(id);
 
-
+ALTER TABLE public.attributes
+    ADD CONSTRAINT fk_equipment_attribute FOREIGN KEY (equipment_id) REFERENCES equipment(id)
+    ON DELETE CASCADE;
 --
 -- Name: equipment_features fk_equipment_equipment_feature; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.equipment_features
-    ADD CONSTRAINT fk_equipment_equipment_feature FOREIGN KEY (equipment_id) REFERENCES public.equipment(id);
+    ADD CONSTRAINT fk_equipment_equipment_feature FOREIGN KEY (equipment_id) REFERENCES public.equipment(id)
+    ON DELETE CASCADE;
 
 
 --
@@ -29045,7 +29046,8 @@ ALTER TABLE ONLY public.equipment_features
 --
 
 ALTER TABLE ONLY public.equipment_options
-    ADD CONSTRAINT fk_equipment_equipment_options FOREIGN KEY (equipment_id) REFERENCES public.equipment(id);
+    ADD CONSTRAINT fk_equipment_equipment_options FOREIGN KEY (equipment_id) REFERENCES public.equipment(id)
+    ON DELETE CASCADE;
 
 
 --
@@ -29053,7 +29055,8 @@ ALTER TABLE ONLY public.equipment_options
 --
 
 ALTER TABLE ONLY public.equipment_muscle_groups
-    ADD CONSTRAINT fk_equipment_muscle_groups_equipment FOREIGN KEY (equipment_id) REFERENCES public.equipment(id);
+    ADD CONSTRAINT fk_equipment_muscle_groups_equipment FOREIGN KEY (equipment_id) REFERENCES public.equipment(id)
+    ON DELETE CASCADE;
 
 
 --
