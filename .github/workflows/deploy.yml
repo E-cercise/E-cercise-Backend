@@ -24,6 +24,10 @@ jobs:
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
+      - name: Enable required Google APIs
+        run: |
+          gcloud services enable run.googleapis.com sqladmin.googleapis.com
+
       - name: Configure Docker authentication
         run: gcloud auth configure-docker
 
