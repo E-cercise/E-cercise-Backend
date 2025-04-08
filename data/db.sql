@@ -29030,7 +29030,7 @@ ALTER TABLE ONLY public.line_equipments
 
 
 ALTER TABLE public.attributes
-    ADD CONSTRAINT fk_equipment_attribute FOREIGN KEY (equipment_id) REFERENCES equipment(id)
+    ADD CONSTRAINT fk_equipment_attribute FOREIGN KEY (equipment_id) REFERENCES public.equipment(id)
     ON DELETE CASCADE;
 --
 -- Name: equipment_features fk_equipment_equipment_feature; Type: FK CONSTRAINT; Schema: public; Owner: -
