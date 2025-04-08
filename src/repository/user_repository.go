@@ -86,5 +86,6 @@ func (r *userRepository) FindByEmailNotPreloaded(email string) (*model.User, err
 	if result.RowsAffected == 0 {
 		return nil, nil
 	}
+
 	return &user, result.Error
 }
